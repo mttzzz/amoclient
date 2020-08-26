@@ -8,7 +8,6 @@ use mttzzz\AmoClient\Entities;
 class Contact extends AbstractModel
 {
     protected $entity = 'contacts';
-    protected $class = 'Contact';
 
     public function __construct($http)
     {

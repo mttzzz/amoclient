@@ -6,6 +6,7 @@ namespace mttzzz\AmoClient\Entities;
 
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 
 abstract class AbstractEntity
 {
@@ -24,15 +25,20 @@ abstract class AbstractEntity
 
     public function update()
     {
-        $this->checkID();
-        $this->http->patch($this->entity, $this->data())->throw();
-        return $this;
+        try {
+            return $this->http->patch($this->entity, [$this->toArray()])->throw()->json();
+        } catch (RequestException $e) {
+            return json_decode($e->response->body(), 1) ?? [];
+        }
     }
 
-    public function create(): int
+    public function create()
     {
-        $result = $this->http->post($this->entity, $this->data())->throw()->json();
-        return $result['_embedded'][$this->entity][0]['id'];
+        try {
+            return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
+        } catch (RequestException $e) {
+            return json_decode($e->response->body(), 1) ?? [];
+        }
     }
 
     public function delete()
@@ -42,25 +48,18 @@ abstract class AbstractEntity
         return null;
     }
 
-    private function checkID()
-    {
-        if (!$this->id) throw new Exception('id is empty! Set id, please!');
-    }
-
     public function toArray()
     {
         $item = [];
-        $except = ['http', 'entity', '_links', 'closest_task_at', 'updated_by', 'created_by'];
+        $except = ['http', 'entity', 'notes', '_links', 'closest_task_at', 'updated_by', 'created_by'];
         foreach ($this as $key => $value) {
-            if (!in_array($key,$except)) {
+            if (!in_array($key, $except)) {
                 $item[$key] = $value;
+            }
+            if (empty($item[$key])) {
+                unset($item[$key]);
             }
         }
         return $item;
-    }
-
-    protected function data()
-    {
-        return [$this->toArray()];
     }
 }

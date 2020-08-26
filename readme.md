@@ -1,13 +1,11 @@
 # AmoClient
 
 [![Latest Version on Packagist][ico-version]][link-packagist]
-[![Total Downloads][ico-downloads]][link-downloads]
-[![Build Status][ico-travis]][link-travis]
-[![StyleCI][ico-styleci]][link-styleci]
 
-This is where your description should go. Take a look at [contributing.md](contributing.md) to see a to do list.
 
-## Installation
+Клиент для amoCRM. 
+
+# Installation
 
 Via Composer
 
@@ -15,43 +13,95 @@ Via Composer
 $ composer require mttzzz/amoclient
 ```
 
-## Usage
-
-## Change log
-
-Please see the [changelog](changelog.md) for more information on what has changed recently.
-
-## Testing
-
-``` bash
-$ composer test
+#Usage
+``` php
+$amo = new AmoClient($key);
+```
+##Account
+### get
+https://www.amocrm.ru/developers/content/crm_platform/account-info#with-96b1f0be-e739-4716-85ad-ec1799c5a11d-params
+``` php
+$account = $amo->account;
+$account
+    ->withAmojoId()
+    ->withAmojoRights()
+    ->withUsersGroups()
+    ->withTaskTypes()
+    ->withVersion()
+    ->withEntityNames()
+    ->withDateTimeSettings()
+    ->get();
 ```
 
-## Contributing
+##Lead
+### get
+``` php
+$leads = $amo->leads
+->page(2)
+->limit(10)
+->query('test')
+->orderByCreatedAtAsc()
+->orderByCreatedAtDesc()
+->orderByUpdatedAtAsc()
+->orderByUpdatedAtDesc()
+->orderByIdAsc()
+->orderByIdDesc()
+->withCatalogElements()
+->withIsPriceModifiedByRobot()
+->withLossReason()
+->withContacts()
+->withOnlyDeleted()
+->get();
+$lead = $amo->leads->find(27211533);
+```
 
-Please see [contributing.md](contributing.md) for details and a todolist.
+### createOne
+``` php
+$lead = $amo->leads->entity();
+$lead->name = 'testLead';
+$lead->create();
+```
 
-## Security
+### createMany
+``` php
+$lead = $amo->leads->entity();
+$lead->name = 'testOne1';
+$lead->status_id = 21714793;
+$lead2 = $amo->leads->entity();
+$lead2->name = 'testOne2';
+$lead2->setCF(449541, 'test');
+$lead2->price = 100;
+$lead2->status_id = 21714793;
+$lead2->responsible_user_id = 1693807;
+$data = $amo->leads->create([$lead,$lead2]);
+```
 
-If you discover any security related issues, please email info@pushka.biz instead of using the issue tracker.
+### updateOne
+``` php
+$lead = $amo->leads->entity(27211595);
+$lead->name = 'testOne22';
+$lead->price = 222;
+$lead->responsible_user_id = 1693807;
+$lead->setCF(449541, 'test');
+$lead->update();
+```
 
-## Credits
+### updateMany
+``` php
+$ids = [27211595, 27211597];
+$leads = [];
+foreach ($ids as $id) {
+    $lead = $amo->leads->entity($id);
+    $lead->tag('updateMany');
+    $leads[] = $lead;
+    }
+$amo->leads->update($leads);
+```
 
-- [pushka.biz][link-author]
-- [All Contributors][link-contributors]
+### delete
+``` php
+not work
+```
 
-## License
 
-MIT. Please see the [license file](license.md) for more information.
 
-[ico-version]: https://img.shields.io/packagist/v/mttzzz/amoclient.svg?style=flat-square
-[ico-downloads]: https://img.shields.io/packagist/dt/mttzzz/amoclient.svg?style=flat-square
-[ico-travis]: https://img.shields.io/travis/mttzzz/amoclient/master.svg?style=flat-square
-[ico-styleci]: https://styleci.io/repos/12345678/shield
-
-[link-packagist]: https://packagist.org/packages/mttzzz/amoclient
-[link-downloads]: https://packagist.org/packages/mttzzz/amoclient
-[link-travis]: https://travis-ci.org/mttzzz/amoclient
-[link-styleci]: https://styleci.io/repos/12345678
-[link-author]: https://github.com/mttzzz
-[link-contributors]: ../../contributors

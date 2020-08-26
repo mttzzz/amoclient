@@ -15,6 +15,8 @@ class AmoClient
     public $notes;
     public $catalogs;
     public $catalogElements;
+    public $account;
+    public $users;
 
     public function __construct($key)
     {
@@ -27,5 +29,7 @@ class AmoClient
         $this->catalogElements = new Models\CatalogElement();
         $this->catalogs = new Models\Catalog($http);
         $this->tasks = new Models\Task($http);
+        $this->account = new Models\Account($http);
+        $this->users = new Models\User($http);
     }
 }

@@ -18,7 +18,7 @@ class Lead extends AbstractEntity
 
     public function __construct($data, PendingRequest $http)
     {
-        $this->notes = new Note([], $http, $this->entity);
         parent::__construct($data, $http);
+        $this->notes = new Note([], $http, $this->entity, $this->id);
     }
 }
