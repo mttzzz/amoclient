@@ -43,7 +43,6 @@ abstract class AbstractEntity
 
     public function delete()
     {
-        $this->checkID();
         $this->http->delete($this->entity, ['id' => $this->id])->throw()->json();
         return null;
     }

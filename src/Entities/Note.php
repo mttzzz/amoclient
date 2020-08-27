@@ -3,35 +3,77 @@
 namespace mttzzz\AmoClient\Entities;
 
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Str;
 
 class Note extends AbstractEntity
 {
     protected $entity;
-    protected $parentId;
-    public $id, $entity_id, $note_type = 'common', $params = [];
+    public $id, $entity_id, $note_type, $params = [];
 
-    public function __construct($data, PendingRequest $http, $parentEntity, $parentId = null)
+    public function __construct($data, PendingRequest $http, $parentEntity, $entityId = null)
     {
         $this->entity = $parentEntity . '/notes';
-        $this->entity_id = $parentId;
+        $this->entity_id = $entityId;
         parent::__construct($data, $http);
     }
 
-    public function createCommon($text)
+    public function common($text)
     {
         $this->params = compact('text');
-        return $this->create();
+        return $this->createNote(__FUNCTION__);
     }
 
-    public function createInvoice($text, $service, $icon_url)
+    public function callIn($uniq, $duration, $link, $phone, $source = 'ASTERISK')
     {
-        $this->note_type = 'invoice_paid';
+        $this->params = compact('uniq', 'duration', 'link', 'phone', 'source');
+        return $this->createNote(__FUNCTION__);
+    }
+
+    public function callOut($uniq, $duration, $link, $phone, $source = 'ASTERISK')
+    {
+        $this->params = compact('uniq', 'duration', 'link', 'phone', 'source');
+        return $this->createNote(__FUNCTION__);
+    }
+
+    public function serviceMessage($text = 'Текст для примечания', $service = 'Сервис для примера')
+    {
+        $this->params = compact('service', 'text');
+        return $this->createNote(__FUNCTION__);
+    }
+
+    public function messageCashier($status, $text)
+    {
+        $this->params = compact('status', 'text'); //created, shown, canceled
+        return $this->createNote(__FUNCTION__);
+    }
+
+    public function invoicePaid($text, $service, $icon_url)
+    {
         $this->params = compact('text', 'service', 'icon_url');
-        return $this->create();
+        return $this->createNote(__FUNCTION__);
     }
 
-    public function setParams($params)
+    public function geolocation($text, $address, $longitude, $latitude)
     {
-        $this->params = $params;
+        $this->params = compact('text', 'address', 'longitude', 'latitude');
+        return $this->createNote(__FUNCTION__);
+    }
+
+    public function smsIn($text, $phone)
+    {
+        $this->params = compact('text', 'phone');
+        return $this->createNote(__FUNCTION__);
+    }
+
+    public function smsOut($text, $phone)
+    {
+        $this->params = compact('text', 'phone');
+        return $this->createNote(__FUNCTION__);
+    }
+
+    private function createNote($type)
+    {
+        $this->note_type = Str::snake($type);
+        return $this->create();
     }
 }

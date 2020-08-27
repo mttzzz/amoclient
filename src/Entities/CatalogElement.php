@@ -13,9 +13,9 @@ class CatalogElement extends AbstractEntity
     protected $entity;
 
     public $id, $name, $custom_fields_values = [];
-    public function __construct($data, PendingRequest $http, $catalogId)
+    public function __construct($data, PendingRequest $http, $entity)
     {
-        $this->entity = "catalogs/$catalogId/elements";
+        $this->entity = $entity;
         parent::__construct($data, $http);
     }
 }

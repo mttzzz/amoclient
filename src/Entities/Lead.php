@@ -12,7 +12,7 @@ class Lead extends AbstractEntity
 
     protected $entity = 'leads';
 
-    public $name, $notes;
+    public $name, $notes, $tasks;
     public $id, $price, $status_id, $responsible_user_id;
     public $custom_fields_values = [], $_embedded = [];
 
@@ -20,5 +20,6 @@ class Lead extends AbstractEntity
     {
         parent::__construct($data, $http);
         $this->notes = new Note([], $http, $this->entity, $this->id);
+        $this->tasks = new Task([], $http, $this->entity, $this->id);
     }
 }

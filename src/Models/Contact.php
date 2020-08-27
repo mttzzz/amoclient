@@ -3,29 +3,48 @@
 
 namespace mttzzz\AmoClient\Models;
 
+use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Traits;
 
 class Contact extends AbstractModel
 {
+    use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
     protected $entity = 'contacts';
 
-    public function __construct($http)
+    public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
     }
 
-    public function find($id): Entities\Contact
+    public function entity($id = null)
     {
-        return parent::find($id);
+        return new Entities\Contact(['id' => $id], $this->http);
     }
 
-    public function note()
+    public function find($id)
     {
-        return new Note($this->http, $this->entity);
+        return new Entities\Contact($this->findEntity($id), $this->http);
     }
 
-    public function entity()
+    public function query($query)
     {
-        return new Entities\Contact([], $this->http);
+        $this->query = $query;
+        return $this;
+    }
+
+    public function withCatalogElements()
+    {
+        return $this->addWith(__FUNCTION__);
+    }
+
+    public function withLeads()
+    {
+        return $this->addWith(__FUNCTION__);
+    }
+
+    public function withCustomers()
+    {
+        return $this->addWith(__FUNCTION__);
     }
 }

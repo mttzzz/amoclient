@@ -4,62 +4,49 @@
 namespace mttzzz\AmoClient\Models;
 
 
-class Account
+class Account extends AbstractModel
 {
     protected $http;
-
+    protected $entity = 'account';
     public $with = [];
 
     public function __construct($http)
     {
-        $this->http = $http;
-    }
-
-    public function get(): array
-    {
-        return $this->http->get('account', ['with' => implode(',', $this->with)])
-            ->throw()->json();
+        parent::__construct($http);
     }
 
     public function withAmojoId()
     {
-        $this->with[] = 'amojo_id';
-        return $this;
+        return $this->addWith(__FUNCTION__);
     }
 
     public function withAmojoRights()
     {
-        $this->with[] = 'amojo_rights';
-        return $this;
+        return $this->addWith(__FUNCTION__);
     }
 
     public function withUsersGroups()
     {
-        $this->with[] = 'users_groups';
-        return $this;
+        return $this->addWith(__FUNCTION__);
     }
 
     public function withTaskTypes()
     {
-        $this->with[] = 'task_types';
-        return $this;
+        return $this->addWith(__FUNCTION__);
     }
 
     public function withVersion()
     {
-        $this->with[] = 'version';
-        return $this;
+        return $this->addWith(__FUNCTION__);
     }
 
     public function withEntityNames()
     {
-        $this->with[] = 'entity_names';
-        return $this;
+        return $this->addWith(__FUNCTION__);
     }
 
-    public function withDateTimeSettings()
+    public function withDatetimeSettings()
     {
-        $this->with[] = 'datetime_settings';
-        return $this;
+        return $this->addWith(__FUNCTION__);
     }
 }

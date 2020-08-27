@@ -2,33 +2,46 @@
 
 namespace mttzzz\AmoClient\Models;
 
-use Illuminate\Http\Client\RequestException;
-use mttzzz\AmoClient\Traits;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Str;
 
 abstract class AbstractModel
 {
-    use Traits\CrudTrait;
+    protected $http, $entity;
+    protected $with = [], $page, $limit, $query, $filter = [], $order = [];
 
-    protected $http;
-
-    public function __construct($http = null)
+    public function __construct(PendingRequest $http)
     {
         $this->http = $http;
     }
 
-    public function find($id)
+    public function get()
     {
-        $data = $this->entity === 'notes' ? ['id' => $id, 'parentEntity' => $this->parentEntity] : ['id' => $id];
-        try {
-            $entities = $this->http->get($this->entity, $data)->throw()->json();
-            if ($entity = $entities['_embedded'][$this->entity][0] ?? null) {
-                $class = "\mttzzz\AmoClient\Entities\\{$this->class}";
-                $entity = $this->entity === 'notes' ? new $class($entity, $this->http, $this->parentEntity)
-                    : new $class($entity, $this->http);
+        $query = [];
+        foreach (['with', 'page', 'limit', 'query', 'filter', 'order'] as $param) {
+            if (!empty($this->$param)) {
+                $query[$param] = $param === 'with' ? implode(',', $this->with) : $this->$param;
             }
-            return $entity;
-        } catch (RequestException $e) {
-            return json_decode($e->response->body(), 1) ?? [];
         }
+        return $this->http->get($this->entity, $query)->throw()->json()['_embedded'][$this->entity] ?? [];
+    }
+
+    public function page(int $page)
+    {
+        $this->page = $page;
+        return $this;
+    }
+
+    public function limit(int $limit)
+    {
+        $limit = $limit > 250 ? 250 : $limit;
+        $this->limit = $limit;
+        return $this;
+    }
+
+    protected function addWith($with)
+    {
+        $this->with[] = Str::snake(Str::after($with, 'with'));
+        return $this;
     }
 }

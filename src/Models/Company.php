@@ -3,31 +3,54 @@
 
 namespace mttzzz\AmoClient\Models;
 
-
+use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Traits;
 
 class Company extends AbstractModel
 {
-    protected $entity = 'contacts';
-    protected $class = 'Contact';
+    use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
 
-    public function __construct($http)
+    protected $entity = 'companies';
+
+    public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
     }
 
-    public function find($id): Entities\Company
+    public function entity($id = null)
     {
-        return parent::find($id);
+        return new Entities\Company(['id' => $id], $this->http);
     }
 
-    public function note()
+    public function find($id)
     {
-        return new Note($this->http, $this->entity);
+        return new Entities\Company($this->findEntity($id), $this->http);
     }
 
-    public function entity()
+    public function query($query)
     {
-        return new Entities\Company([], $this->http);
+        $this->query = $query;
+        return $this;
+    }
+
+    public function withContacts()
+    {
+        return $this->addWith(__FUNCTION__);
+    }
+
+    public function withCatalogElements()
+    {
+        return $this->addWith(__FUNCTION__);
+    }
+
+    public function withLeads()
+    {
+        return $this->addWith(__FUNCTION__);
+    }
+
+    public function withCustomers()
+    {
+        return $this->addWith(__FUNCTION__);
     }
 }

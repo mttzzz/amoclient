@@ -10,7 +10,7 @@ class Contact extends AbstractEntity
 {
     use Traits\CustomFieldTrait, Traits\TagTrait, Traits\PhoneTrait, Traits\EmailTrait;
 
-    protected $entity = 'contacts';
+    protected $entity = 'contacts', $notes, $tasks;
 
     public $id, $first_name, $last_name, $name, $responsible_user_id;
     public $custom_fields_values = [];
@@ -19,16 +19,7 @@ class Contact extends AbstractEntity
     public function __construct($data = [], PendingRequest $http = null)
     {
         parent::__construct($data, $http);
-    }
-
-    public function toArray()
-    {
-        $item = parent::toArray();
-        foreach (['id', 'name', 'last_name', 'first_name'] as $key) {
-            if (empty($item->$key)) {
-                unset($item->$key);
-            }
-        }
-        return $item;
+        $this->notes = new Note([], $http, $this->entity, $this->id);
+        $this->tasks = new Task([], $http, $this->entity, $this->id);
     }
 }

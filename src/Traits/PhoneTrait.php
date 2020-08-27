@@ -27,6 +27,7 @@ trait PhoneTrait
     {
         $key = key($this->phoneGet());
         $this->custom_fields_values[$key]['values'][] = ['value' => $phone, 'enum_code' => 'WORK'];
+        return $this;
     }
 
     public function phoneSet(array $phones)
@@ -37,6 +38,7 @@ trait PhoneTrait
             $values[] = ['value' => $phone, 'enum_code' => 'WORK'];
         }
         $this->custom_fields_values[$key]['values'] = $values;
+        return $this;
     }
 
     public function phoneDelete(int $phone)
@@ -48,5 +50,6 @@ trait PhoneTrait
                 unset($this->custom_fields_values[$key]['values'][$key]);
             }
         }
+        return $this;
     }
 }
