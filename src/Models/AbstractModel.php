@@ -3,6 +3,7 @@
 namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Str;
 
 abstract class AbstractModel
@@ -17,13 +18,18 @@ abstract class AbstractModel
 
     public function get()
     {
-        $query = [];
-        foreach (['with', 'page', 'limit', 'query', 'filter', 'order'] as $param) {
-            if (!empty($this->$param)) {
-                $query[$param] = $param === 'with' ? implode(',', $this->with) : $this->$param;
+        try {
+            $query = [];
+            foreach (['with', 'page', 'limit', 'query', 'filter', 'order'] as $param) {
+                if (!empty($this->$param)) {
+                    $query[$param] = $param === 'with' ? implode(',', $this->with) : $this->$param;
+                }
             }
+            return $this->http->get($this->entity, $query)->throw()->json()['_embedded']
+                [Str::after($this->entity, '/')] ?? [];
+        } catch (RequestException $e) {
+            return json_decode($e->response->body(), 1) ?? [];
         }
-        return $this->http->get($this->entity, $query)->throw()->json()['_embedded'][$this->entity] ?? [];
     }
 
     public function page(int $page)

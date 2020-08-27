@@ -23,6 +23,11 @@ class Lead extends AbstractModel
         return new Entities\Lead(['id' => $id], $this->http);
     }
 
+    public function customFields()
+    {
+        return new CustomField($this->http, $this->entity);
+    }
+
     public function find($id)
     {
         return new Entities\Lead($this->findEntity($id), $this->http);

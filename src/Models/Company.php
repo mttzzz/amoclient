@@ -28,6 +28,11 @@ class Company extends AbstractModel
         return new Entities\Company($this->findEntity($id), $this->http);
     }
 
+    public function customFields()
+    {
+        return new CustomField($this->http, $this->entity);
+    }
+
     public function query($query)
     {
         $this->query = $query;
