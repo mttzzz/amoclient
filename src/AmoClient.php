@@ -3,6 +3,7 @@
 namespace mttzzz\AmoClient;
 
 use App\Models\Account;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use mttzzz\AmoClient\Models;
 
@@ -13,7 +14,10 @@ class AmoClient
 
     public function __construct($key)
     {
-        $account = Account::where('key', $key)->first();
+        $account = DB::connection('api.amocrm.pushka.biz')
+            ->table('accounts')
+            ->where('key', $key)
+            ->first();
         $http = Http::withToken($account->access_token)->baseUrl("https://{$account->subdomain}.amocrm.ru/api/v4");
         $this->account = new Models\Account($http);
         $this->leads = new Models\Lead($http);
