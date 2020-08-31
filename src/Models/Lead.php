@@ -5,11 +5,13 @@ namespace mttzzz\AmoClient\Models;
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Traits;
+use mttzzz\AmoClient\Traits\Filter;
 
 
 class Lead extends AbstractModel
 {
     use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
+    use Filter\Common, Filter\Lead;
 
     protected $entity = 'leads';
 

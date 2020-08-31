@@ -6,15 +6,19 @@ namespace mttzzz\AmoClient\Models;
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Traits;
+use mttzzz\AmoClient\Traits\Filter;
 
 class Company extends AbstractModel
 {
     use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
+    use Filter\Common, Filter\PhoneEmail;
 
     protected $entity = 'companies';
 
-    public function __construct(PendingRequest $http)
+    public function __construct(PendingRequest $http, $phoneId, $emailId)
     {
+        $this->fieldPhoneId = $phoneId;
+        $this->fieldEmailId = $emailId;
         parent::__construct($http);
     }
 

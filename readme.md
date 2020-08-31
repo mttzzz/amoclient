@@ -55,6 +55,25 @@ $leads = $amo->leads
 $lead = $amo->leads->find(27211533);
 ```
 
+### filter
+``` php
+$leads = $amo->leads
+->filterId($id)
+->filterName($name)
+->filterCreatedBy($createdBy)
+->filterResponsibleUserId($id)
+->filterCreatedAt($from, $to)
+->filterUpdatedAt($from, $to)
+->filterClosestTaskAt($from, $to)
+->filterCustomField($fieldId, $value)
+->filterCustomFieldFromTo($fieldId, $from, $to)
+->filterPhone($phone)
+->filterEmail($email)
+
+->get();
+$lead = $amo->leads->find(27211533);
+```
+
 ### createOne
 ``` php
 $lead = $amo->leads->entity();

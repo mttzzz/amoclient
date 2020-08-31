@@ -3,12 +3,12 @@
 namespace mttzzz\AmoClient\Entities;
 
 use Illuminate\Http\Client\PendingRequest;
-use mttzzz\AmoClient\Traits\CustomFieldTrait;
-use mttzzz\AmoClient\Traits\TagTrait;
+use mttzzz\AmoClient\Traits;
+
 
 class Lead extends AbstractEntity
 {
-    use CustomFieldTrait, TagTrait;
+    use Traits\CustomFieldTrait, Traits\TagTrait;
 
     protected $entity = 'leads';
 

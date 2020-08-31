@@ -4,6 +4,7 @@ namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 abstract class AbstractModel
@@ -25,8 +26,7 @@ abstract class AbstractModel
                     $query[$param] = $param === 'with' ? implode(',', $this->with) : $this->$param;
                 }
             }
-            return $this->http->get($this->entity, $query)->throw()->json()['_embedded']
-                [Str::after($this->entity, '/')] ?? [];
+            return Arr::first($this->http->get($this->entity, $query)->throw()->json()['_embedded']) ?? [];
         } catch (RequestException $e) {
             return json_decode($e->response->body(), 1) ?? [];
         }
