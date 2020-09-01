@@ -26,7 +26,8 @@ abstract class AbstractModel
                     $query[$param] = $param === 'with' ? implode(',', $this->with) : $this->$param;
                 }
             }
-            return Arr::first($this->http->get($this->entity, $query)->throw()->json()['_embedded']) ?? [];
+            $data = $this->http->get($this->entity, $query)->throw()->json();
+            return isset($data['_embedded']) ? Arr::first($data['_embedded']) : $data;
         } catch (RequestException $e) {
             return json_decode($e->response->body(), 1) ?? [];
         }
@@ -49,5 +50,13 @@ abstract class AbstractModel
     {
         $this->with[] = Str::snake(Str::after($with, 'with'));
         return $this;
+    }
+
+    protected function prepareEntities($entities)
+    {
+        foreach ($entities as $key => $entity) {
+            $entities[$key] = $entity->toArray();
+        }
+        return $entities;
     }
 }

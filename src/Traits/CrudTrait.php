@@ -14,7 +14,7 @@ trait CrudTrait
                 ->throw()->json() ?? [];
     }
 
-    protected function createEntity(array $entities)
+    public function create(array $entities)
     {
         try {
             return $this->http->post($this->entity, $this->prepareEntities($entities))->throw()->json() ?? [];
@@ -23,20 +23,12 @@ trait CrudTrait
         }
     }
 
-    protected function updateEntity(array $entities)
+    public function update(array $entities)
     {
         try {
             return $this->http->patch($this->entity, $this->prepareEntities($entities))->throw()->json() ?? [];
         } catch (RequestException $e) {
             return json_decode($e->response->body(), 1) ?? [];
         }
-    }
-
-    protected function prepareEntities($entities)
-    {
-        foreach ($entities as $key => $entity) {
-            $entities[$key] = $entity->toArray();
-        }
-        return $entities;
     }
 }

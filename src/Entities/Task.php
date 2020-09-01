@@ -5,9 +5,13 @@ namespace mttzzz\AmoClient\Entities;
 
 
 use Illuminate\Http\Client\PendingRequest;
+use mttzzz\AmoClient\Traits;
 
 class Task extends AbstractEntity
 {
+
+    use Traits\CrudEntityTrait;
+
     protected $entity = 'tasks';
     public $id, $responsible_user_id, $entity_id, $entity_type, $duration,
         $is_completed, $task_type_id, $text, $result, $complete_till;

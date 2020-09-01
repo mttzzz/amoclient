@@ -5,9 +5,11 @@ namespace mttzzz\AmoClient\Entities;
 
 
 use Illuminate\Http\Client\PendingRequest;
+use mttzzz\AmoClient\Traits;
 
 class CustomField extends AbstractEntity
 {
+    use Traits\CrudEntityTrait;
     protected $entity;
     public $type, $name, $code, $sort, $group_id, $is_api_only, $required_statuses, $remind, $enums;
 

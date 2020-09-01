@@ -8,7 +8,7 @@ use mttzzz\AmoClient\Traits;
 
 class Contact extends AbstractEntity
 {
-    use Traits\CustomFieldTrait, Traits\TagTrait, Traits\PhoneTrait, Traits\EmailTrait;
+    use Traits\CustomFieldTrait, Traits\TagTrait, Traits\PhoneTrait, Traits\EmailTrait, Traits\CrudEntityTrait;
 
     protected $entity = 'contacts', $notes, $tasks;
 

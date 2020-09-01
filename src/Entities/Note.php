@@ -4,9 +4,12 @@ namespace mttzzz\AmoClient\Entities;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Str;
+use mttzzz\AmoClient\Traits;
 
 class Note extends AbstractEntity
 {
+    use Traits\CrudEntityTrait;
+
     protected $entity;
     public $id, $entity_id, $note_type, $params = [];
 

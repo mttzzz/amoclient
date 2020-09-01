@@ -73,6 +73,23 @@ $leads = $amo->leads
 ->get();
 $lead = $amo->leads->find(27211533);
 ```
+### link
+``` php
+$link = $amo->leads->entity(27222853)->links->catalogElement(811471, 4419, 2);
+$link2 = $amo->leads->entity(27222853)->links->contact(43637153, false);
+$link3 = $amo->leads->entity(27222853)->links->companies(43706869);
+$link4 = $amo->leads->entity(27222853)->links->contact(43706907, true);
+$amo->leads->entity(27222853)->links->link([$link, $link2, $link3, $link4]);    
+```
+
+### unlink
+``` php
+$link = $amo->leads->entity(27222853)->links->catalogElement(811471, 4419, 2);
+$link2 = $amo->leads->entity(27222853)->links->contact(43637153, false);
+$link3 = $amo->leads->entity(27222853)->links->companies(43706869);
+$link4 = $amo->leads->entity(27222853)->links->contact(43706907, true);
+$amo->leads->entity(27222853)->links->unlink([$link, $link2, $link3, $link4]);    
+```
 
 ### createOne
 ``` php

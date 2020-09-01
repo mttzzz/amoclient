@@ -3,11 +3,12 @@
 
 namespace mttzzz\AmoClient\Entities;
 
-
 use Illuminate\Http\Client\PendingRequest;
+use mttzzz\AmoClient\Traits;
 
 class CustomFieldGroup extends AbstractEntity
 {
+    use Traits\CrudEntityTrait;
     protected $entity;
     public $name, $sort;
 
