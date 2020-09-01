@@ -24,31 +24,31 @@ class Link extends AbstractModel
         return new Entities\Link(['id' => $id], $this->http, $this->entity);
     }
 
-    public function catalogElement($to_entity_id, $catalog_id, $quantity = null)
+    public function catalogElement($catalogElementId, $catalogId, $quantity = null)
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
-        $entity->to_entity_id = $to_entity_id;
+        $entity->to_entity_id = (int)$catalogElementId;
         $entity->to_entity_type = 'catalog_elements';
-        $entity->metadata['catalog_id'] = $catalog_id;
+        $entity->metadata['catalog_id'] = (int)$catalogId;
         if ($quantity) {
             $entity->metadata['quantity'] = $quantity;
         }
         return $entity;
     }
 
-    public function contact($contactId, $main_contact = false)
+    public function contact($contactId, $mainContact = false)
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
-        $entity->to_entity_id = $contactId;
+        $entity->to_entity_id = (int)$contactId;
         $entity->to_entity_type = 'contacts';
-        $entity->metadata['is_main'] = $main_contact;
+        $entity->metadata['is_main'] = (bool)$mainContact;
         return $entity;
     }
 
     public function companies($companyId)
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
-        $entity->to_entity_id = $companyId;
+        $entity->to_entity_id = (int)$companyId;
         $entity->to_entity_type = 'companies';
         $entity->metadata = null;
         return $entity;
