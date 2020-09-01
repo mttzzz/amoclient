@@ -2,6 +2,7 @@
 
 namespace mttzzz\AmoClient\Entities;
 
+use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
@@ -23,5 +24,18 @@ class Lead extends AbstractEntity
         $this->notes = new Note([], $http, $this->entity, $this->id);
         $this->tasks = new Task([], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
+    }
+
+    public function getMainContactId()
+    {
+        if (!isset($this->_embedded['contacts'])) {
+            throw new Exception('add withContacts() before call this function');
+        }
+        foreach ($this->_embedded['contacts'] as $contact) {
+            if ($contact['is_main']) {
+                return $contact['id'];
+            }
+        }
+        return null;
     }
 }
