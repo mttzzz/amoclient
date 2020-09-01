@@ -11,6 +11,7 @@ class CatalogElement extends AbstractModel
 {
     use Traits\CrudTrait, Traits\QueryTrait;
 
+    protected $filter = [];
     protected $entity;
 
     public function __construct(PendingRequest $http, $catalogId)
@@ -27,5 +28,11 @@ class CatalogElement extends AbstractModel
     public function find($id)
     {
         return new Entities\CatalogElement($this->findEntity($id), $this->http, $this->entity);
+    }
+
+    public function filterId($id)
+    {
+        $this->filter['id'] = $id;
+        return $this;
     }
 }
