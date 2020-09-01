@@ -31,6 +31,6 @@ trait CustomFieldTrait
 
     public function getCFV($id)
     {
-        return $this->getCF($id)[0]['values'][0]['value'] ?? null;
+        return Arr::first($this->getCF($id))['values'][0]['value'] ?? null;
     }
 }
