@@ -11,6 +11,7 @@ class CatalogElement extends AbstractModel
 {
     use Traits\CrudTrait, Traits\QueryTrait;
 
+
     protected $filter = [];
     protected $entity;
 
