@@ -18,7 +18,7 @@ trait CustomFieldTrait
         if (!empty($f = $this->getCF($id))) {
             $this->custom_fields_values[array_key_first($f)]['values'] = $values;
         } else {
-            $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
+            $this->custom_fields_values[] = ['field_id' => (int)$id, 'values' => $values];
         }
 
         return $this;
