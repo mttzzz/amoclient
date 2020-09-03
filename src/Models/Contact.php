@@ -27,6 +27,11 @@ class Contact extends AbstractModel
         return new Entities\Contact(['id' => $id], $this->http);
     }
 
+    public function entityData($data)
+    {
+        return new Entities\Contact($data, $this->http);
+    }
+
     public function find($id)
     {
         return new Entities\Contact($this->findEntity($id), $this->http);

@@ -27,6 +27,11 @@ class Company extends AbstractModel
         return new Entities\Company(['id' => $id], $this->http);
     }
 
+    public function entityData($data)
+    {
+        return new Entities\Company($data, $this->http);
+    }
+
     public function find($id)
     {
         return new Entities\Company($this->findEntity($id), $this->http);

@@ -24,6 +24,11 @@ class CatalogElement extends AbstractModel
         return new Entities\CatalogElement(['id' => $id], $this->http, $this->entity);
     }
 
+    public function entityData($data)
+    {
+        return new Entities\CatalogElement($data, $this->http, $this->entity);
+    }
+
     public function find($id)
     {
         return new Entities\CatalogElement($this->findEntity($id), $this->http, $this->entity);
