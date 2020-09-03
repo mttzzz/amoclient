@@ -32,4 +32,10 @@ class Task extends AbstractEntity
         $this->task_type_id = $type;
         return $this->create();
     }
+
+    public function setResultText($text)
+    {
+        $this->result['text'] = $text;
+        return $this;
+    }
 }

@@ -8,9 +8,9 @@ use mttzzz\AmoClient\Models;
 
 class AmoClient
 {
-    public $leads, $contacts, $companies, $catalogs, $account, $users, $pipelines;
+    public $leads, $contacts, $companies, $catalogs, $account, $users, $pipelines, $tasks;
 
-    //public $tasks, $notes;
+    //public $notes;
 
     public function __construct($key)
     {
@@ -27,7 +27,7 @@ class AmoClient
         $this->catalogs = new Models\Catalog($http);
         $this->users = new Models\User($http);
         $this->pipelines = new Models\Pipeline($http);
-        //$this->tasks = new Models\Task($http);
+        $this->tasks = new Models\Task($http);
         //$this->notes = new Models\Note($http);
     }
 }

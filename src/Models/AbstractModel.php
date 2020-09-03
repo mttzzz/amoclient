@@ -10,7 +10,8 @@ use Illuminate\Support\Str;
 abstract class AbstractModel
 {
     protected $http, $entity;
-    protected $with = [], $page, $limit, $query, $filter = [], $order = [];
+    protected $with = [], $page, $limit, $query, $order = [];
+    protected array $filter = [];
 
     public function __construct(PendingRequest $http)
     {

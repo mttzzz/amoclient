@@ -4,8 +4,6 @@ namespace mttzzz\AmoClient\Traits\Filter;
 
 trait Common
 {
-    protected $filter = [];
-
     public function filterId($id)
     {
         $this->filter['id'] = $id;

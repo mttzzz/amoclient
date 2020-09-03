@@ -240,6 +240,31 @@ $amo->leads->update($leads);
 ``` php
 not work
 ```
+##Task
+### create
+``` php
+$task1 = $amo->tasks->entity();
+$task1->text = 'test1';
+$task1->entity_type = 'leads';
+$task1->entity_id = 27222853;
+$task1->complete_till = Carbon::now('Europe/Minsk')->endOfDay()->timestamp;
+$task2 = $amo->tasks->entity();
+$task2->text = 'test2';
+$task2->entity_type = 'leads';
+$task2->entity_id = 27222853;
+$task2->complete_till = Carbon::now('Europe/Minsk')->endOfDay()->timestamp;
+$data = $amo->tasks->create([$task1, $task2]);
+```
 
-
-
+### update
+``` php
+$tasks = $amo->tasks->filterEntityId(27222853)->filterIsCompletedFalse()->get();
+$updateTasks = [];
+foreach ($tasks as $task) {
+      $updateTask = $amo->tasks->entity($task['id']);
+      $updateTask->is_completed = true;
+      $updateTask->setResultText('Задача закрыта автоматически');
+      $updateTasks[] = $updateTask;
+    }
+$amo->tasks->update($updateTasks);
+```
