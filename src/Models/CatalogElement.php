@@ -11,8 +11,6 @@ class CatalogElement extends AbstractModel
 {
     use Traits\CrudTrait, Traits\QueryTrait;
 
-
-    protected $filter = [];
     protected $entity;
 
     public function __construct(PendingRequest $http, $catalogId)
