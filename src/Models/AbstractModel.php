@@ -28,6 +28,7 @@ abstract class AbstractModel
                 }
             }
             $data = $this->http->get($this->entity, $query)->throw()->json();
+            $data = is_null($data) ? [] : $data;
             return isset($data['_embedded']) ? Arr::first($data['_embedded']) : $data;
         } catch (RequestException $e) {
             return json_decode($e->response->body(), 1) ?? [];
