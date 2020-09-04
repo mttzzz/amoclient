@@ -31,7 +31,7 @@ class Link extends AbstractModel
         $entity->to_entity_type = 'catalog_elements';
         $entity->metadata['catalog_id'] = (int)$catalogId;
         if ($quantity) {
-            $entity->metadata['quantity'] = $quantity;
+            $entity->metadata['quantity'] = (int)$quantity;
         }
         return $entity;
     }

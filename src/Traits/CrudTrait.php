@@ -10,8 +10,14 @@ trait CrudTrait
 {
     protected function findEntity($id)
     {
-        return $data = $this->http->get($this->entity . '/' . $id, ['with' => implode(',', $this->with)])
-                ->throw()->json() ?? [];
+        try {
+            return $data = $this->http->get($this->entity . '/' . $id,
+                    ['with' => implode(',', $this->with)])
+                    ->throw()->json() ?? [];
+        } catch (RequestException $e) {
+            report($e);
+            return json_decode($e->response->body(), 1) ?? [];
+        }
     }
 
     public function create(array $entities)
@@ -19,6 +25,7 @@ trait CrudTrait
         try {
             return $this->http->post($this->entity, $this->prepareEntities($entities))->throw()->json() ?? [];
         } catch (RequestException $e) {
+            report($e);
             return json_decode($e->response->body(), 1) ?? [];
         }
     }
@@ -28,6 +35,7 @@ trait CrudTrait
         try {
             return $this->http->patch($this->entity, $this->prepareEntities($entities))->throw()->json() ?? [];
         } catch (RequestException $e) {
+            report($e);
             return json_decode($e->response->body(), 1) ?? [];
         }
     }

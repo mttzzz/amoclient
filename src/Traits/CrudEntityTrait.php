@@ -13,6 +13,7 @@ trait CrudEntityTrait
         try {
             return $this->http->patch($this->entity, [$this->toArray()])->throw()->json();
         } catch (RequestException $e) {
+            report($e);
             return json_decode($e->response->body(), 1) ?? [];
         }
     }
@@ -22,6 +23,7 @@ trait CrudEntityTrait
         try {
             return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
         } catch (RequestException $e) {
+            report($e);
             return json_decode($e->response->body(), 1) ?? [];
         }
     }

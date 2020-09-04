@@ -21,7 +21,7 @@ abstract class AbstractEntity
     {
         try {
             foreach ($data as $key => $item) {
-                $this->{$key} = $item;
+                $this->{$key} = ($key === 'id' && $item) ? (int)$item : $item;
             }
         } catch (Exception $e) {
         }

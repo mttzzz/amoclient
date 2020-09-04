@@ -10,6 +10,7 @@ use mttzzz\AmoClient\Traits\CrudTrait;
 class Catalog extends AbstractModel
 {
     use CrudTrait;
+
     protected $entity = 'catalogs';
 
     public function __construct(PendingRequest $http)
