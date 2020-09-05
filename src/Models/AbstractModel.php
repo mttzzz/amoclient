@@ -61,4 +61,15 @@ abstract class AbstractModel
         }
         return $entities;
     }
+
+    public function each($c, $limit = 50)
+    {
+        $page = 0;
+        $this->limit = $limit;
+        while (true) {
+            $chunk = $this->page($page++)->get();
+            $c($chunk);
+            if (count($chunk) < $limit) break;
+        }
+    }
 }
