@@ -62,13 +62,13 @@ abstract class AbstractModel
         return $entities;
     }
 
-    public function each($c, $limit = 50)
+    public function each($function, $limit = 50)
     {
         $page = 0;
         $this->limit = $limit;
         while (true) {
             $chunk = $this->page($page++)->get();
-            $c($chunk);
+            $function($chunk);
             if (count($chunk) < $limit) break;
         }
     }
