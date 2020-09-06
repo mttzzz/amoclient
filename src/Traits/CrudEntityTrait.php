@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Traits;
 
 
 use Illuminate\Http\Client\RequestException;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 trait CrudEntityTrait
 {
@@ -13,8 +14,7 @@ trait CrudEntityTrait
         try {
             return $this->http->patch($this->entity, [$this->toArray()])->throw()->json();
         } catch (RequestException $e) {
-            report($e);
-            return json_decode($e->response->body(), 1) ?? [];
+            throw new AmoCustomException($e);
         }
     }
 
@@ -23,14 +23,17 @@ trait CrudEntityTrait
         try {
             return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
         } catch (RequestException $e) {
-            report($e);
-            return json_decode($e->response->body(), 1) ?? [];
+            throw new AmoCustomException($e);
         }
     }
 
     public function delete()
     {
-        $this->http->delete($this->entity, ['id' => $this->id])->throw()->json();
-        return null;
+        try {
+            $this->http->delete($this->entity, ['id' => $this->id])->throw()->json();
+            return null;
+        } catch (RequestException $e) {
+            throw new AmoCustomException($e);
+        }
     }
 }
