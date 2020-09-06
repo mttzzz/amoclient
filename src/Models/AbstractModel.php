@@ -2,11 +2,11 @@
 
 namespace mttzzz\AmoClient\Models;
 //sadsd
-use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 abstract class AbstractModel
 {
@@ -32,7 +32,7 @@ abstract class AbstractModel
             $data = is_null($data) ? [] : $data;
             return isset($data['_embedded']) ? Arr::first($data['_embedded']) : $data;
         } catch (RequestException $e) {
-            throw new Exception(json_encode(json_decode($e->response->body()), 64 | 128 | 256));
+            throw new AmoCustomException($e);
         }
     }
 
