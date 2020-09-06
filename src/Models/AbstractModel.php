@@ -64,7 +64,7 @@ abstract class AbstractModel
 
     public function each($function, $limit = 50)
     {
-        $page = 0;
+        $page = 1;
         $this->limit = $limit;
         while (true) {
             $chunk = $this->page($page++)->get();
