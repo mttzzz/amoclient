@@ -16,8 +16,9 @@ class Company extends AbstractEntity
     public $custom_fields_values = [];
     public $_embedded = [];
 
-    public function __construct($data = [], PendingRequest $http = null)
+    public function __construct($data, PendingRequest $http, $cf)
     {
+        $this->cf = $cf;
         parent::__construct($data, $http);
     }
 }

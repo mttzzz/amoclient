@@ -14,20 +14,22 @@ class Lead extends AbstractModel
     use Filter\Common, Filter\Lead;
 
     protected $entity = 'leads';
+    private $cf;
 
-    public function __construct(PendingRequest $http)
+    public function __construct(PendingRequest $http, $cf)
     {
+        $this->cf = $cf;
         parent::__construct($http);
     }
 
     public function entity($id = null)
     {
-        return new Entities\Lead(['id' => $id], $this->http);
+        return new Entities\Lead(['id' => $id], $this->http, $this->cf);
     }
 
     public function entityData($data)
     {
-        return new Entities\Lead($data, $this->http);
+        return new Entities\Lead($data, $this->http, $this->cf);
     }
 
     public function customFields()
@@ -37,7 +39,7 @@ class Lead extends AbstractModel
 
     public function find($id)
     {
-        return new Entities\Lead($this->findEntity($id), $this->http);
+        return new Entities\Lead($this->findEntity($id), $this->http, $this->cf);
     }
 
     public function withCatalogElements()

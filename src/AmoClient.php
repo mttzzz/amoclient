@@ -16,12 +16,19 @@ class AmoClient
             ->table('accounts')
             ->where('key', $key)
             ->first();
+
+        $cf = DB::connection('api.amocrm.pushka.biz')
+            ->table('custom_field_accounts')
+            ->select('id', 'type')
+            ->where('account_id', $account->id)
+            ->get()->pluck('type', 'id')->toArray();
+
         $http = Http::withToken($account->access_token)
             ->baseUrl("https://{$account->subdomain}.amocrm.ru/api/v4");
         $this->account = new Models\Account($http);
-        $this->leads = new Models\Lead($http);
-        $this->contacts = new Models\Contact($http, $account->contact_phone_field_id, $account->contact_email_field_id);
-        $this->companies = new Models\Company($http, $account->contact_phone_field_id, $account->contact_email_field_id);
+        $this->leads = new Models\Lead($http, $cf);
+        $this->contacts = new Models\Contact($http, $account, $cf);
+        $this->companies = new Models\Company($http, $account, $cf);
         $this->catalogs = new Models\Catalog($http);
         $this->users = new Models\User($http);
         $this->pipelines = new Models\Pipeline($http);

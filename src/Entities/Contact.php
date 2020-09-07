@@ -16,8 +16,9 @@ class Contact extends AbstractEntity
     public $custom_fields_values = [];
     public $_embedded = [];
 
-    public function __construct($data = [], PendingRequest $http = null)
+    public function __construct($data, PendingRequest $http, $cf)
     {
+        $this->cf = $cf;
         parent::__construct($data, $http);
         $this->notes = new Note([], $http, $this->entity, $this->id);
         $this->tasks = new Task([], $http, $this->entity, $this->id);

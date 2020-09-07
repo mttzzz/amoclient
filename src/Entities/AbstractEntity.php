@@ -30,7 +30,8 @@ abstract class AbstractEntity
     public function toArray()
     {
         $item = [];
-        $except = ['http', 'entity', 'notes', '_links', 'closest_task_at', 'updated_by', 'created_by', 'fieldPhoneId', 'fieldEmailId'];
+        $except = ['http', 'cf', 'entity', 'notes', '_links', 'closest_task_at', 'updated_by', 'created_by',
+            'fieldPhoneId', 'fieldEmailId'];
         foreach ($this as $key => $value) {
             if (!in_array($key, $except)) {
                 $item[$key] = $value;

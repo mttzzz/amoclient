@@ -8,11 +8,13 @@ use Illuminate\Support\Arr;
 
 trait CustomFieldTrait
 {
+    protected $cf;
+
     public function setCF($id, $value)
     {
         $values = is_array($value) ? $value : [$value];
         foreach ($values as $key => $value) {
-            $values[$key] = ['value' => $value];
+            $values[$key] = ['value' => $this->setValue($id, $value)];
         }
 
         if (!empty($f = $this->getCF($id))) {
@@ -22,6 +24,25 @@ trait CustomFieldTrait
         }
 
         return $this;
+    }
+
+    private function setValue($id, $value)
+    {
+        if ($type = $this->cf[$id] ?? null) {
+            switch ($type) {
+                case 'textarea':
+                case 'multitext':
+                case 'url':
+                case 'text':
+                    return (string)$value;
+                case 'date_time':
+                case 'date':
+                case 'numeric':
+                case 'checkbox':
+                    return (int)$value;
+            }
+        }
+        return $value;
     }
 
     public function getCF($id)

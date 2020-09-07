@@ -14,27 +14,29 @@ class Company extends AbstractModel
     use Filter\Common, Filter\PhoneEmail;
 
     protected $entity = 'companies';
+    private $cf;
 
-    public function __construct(PendingRequest $http, $phoneId, $emailId)
+    public function __construct(PendingRequest $http, $account, $cf)
     {
-        $this->fieldPhoneId = $phoneId;
-        $this->fieldEmailId = $emailId;
+        $this->fieldPhoneId = $account->contact_phone_field_id;
+        $this->fieldEmailId = $account->contact_email_field_id;
+        $this->cf = $cf;
         parent::__construct($http);
     }
 
     public function entity($id = null)
     {
-        return new Entities\Company(['id' => $id], $this->http);
+        return new Entities\Company(['id' => $id], $this->http, $this->cf);
     }
 
     public function entityData($data)
     {
-        return new Entities\Company($data, $this->http);
+        return new Entities\Company($data, $this->http, $this->cf);
     }
 
     public function find($id)
     {
-        return new Entities\Company($this->findEntity($id), $this->http);
+        return new Entities\Company($this->findEntity($id), $this->http, $this->cf);
     }
 
     public function customFields()
