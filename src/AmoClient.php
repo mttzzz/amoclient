@@ -8,7 +8,7 @@ use mttzzz\AmoClient\Models;
 
 class AmoClient
 {
-    public $leads, $contacts, $companies, $catalogs, $account, $users, $pipelines, $tasks, $events, $ajax;
+    public $leads, $contacts, $companies, $catalogs, $account, $users, $pipelines, $tasks, $events, $ajax, $unsorted;
 
     public function __construct($key)
     {
@@ -35,5 +35,6 @@ class AmoClient
         $this->tasks = new Models\Task($http);
         $this->events = new Models\Event($http);
         $this->ajax = new Ajax($account);
+        $this->unsorted = new Models\Unsorted($http);
     }
 }
