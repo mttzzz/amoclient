@@ -54,4 +54,9 @@ trait CustomFieldTrait
     {
         return Arr::first($this->getCF($id))['values'][0]['value'] ?? null;
     }
+
+    public function getCFE($id)
+    {
+        return Arr::first($this->getCF($id))['values'][0]['enum_id'] ?? null;
+    }
 }
