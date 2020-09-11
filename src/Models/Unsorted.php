@@ -1,12 +1,11 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Models;
 
-
 use Illuminate\Http\Client\PendingRequest;
-use mttzzz\AmoClient\Entities\Unsorted\Form;
-use mttzzz\AmoClient\Entities\Unsorted\Sip;
+use Illuminate\Http\Client\RequestException;
+use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Unsorted extends AbstractModel
 {
@@ -19,12 +18,41 @@ class Unsorted extends AbstractModel
 
     public function sip()
     {
-        return new Sip($this->http);
+        return new Entities\Unsorted\Sip($this->http);
     }
 
     public function form()
     {
-        return new Form($this->http);
+        return new Entities\Unsorted\Form($this->http);
+    }
+
+    public function decline($uid, $userId = null)
+    {
+        $data = [];
+        if ($userId) {
+            $data['user_id'] = $userId;
+        }
+        try {
+            return $this->http->delete("{$this->entity}/{$uid}/decline", $data)->throw()->json();
+        } catch (RequestException $e) {
+            throw new AmoCustomException($e);
+        }
+    }
+
+    public function accept($uid, $userId = null, $statusId = null)
+    {
+        $data = [];
+        if ($userId) {
+            $data['user_id'] = $userId;
+        }
+        if ($statusId) {
+            $data['status_id'] = $statusId;
+        }
+        try {
+            return $this->http->post("{$this->entity}/{$uid}/accept", $data)->throw()->json();
+        } catch (RequestException $e) {
+            throw new AmoCustomException($e);
+        }
     }
 
     public function filterUid($Uid)

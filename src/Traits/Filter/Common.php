@@ -42,7 +42,7 @@ trait Common
 
     public function filterUpdatedAt($from, $to)
     {
-        $this->filter['updated_by'] = compact('from', 'to');
+        $this->filter['updated_at'] = compact('from', 'to');
         return $this;
     }
 

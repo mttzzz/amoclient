@@ -14,7 +14,7 @@ abstract class AbstractUnsorted
     public string $source_uid, $source_name;
     public int $pipeline_id, $created_at;
     protected $http, $entity = 'leads/unsorted';
-    protected array $_embedded = [], $metadata = [];
+    public array $_embedded = [], $metadata = [];
 
     public function __construct(PendingRequest $http = null)
     {
@@ -33,21 +33,22 @@ abstract class AbstractUnsorted
     public function toArray()
     {
         unset($this->http);
+        unset($this->entity);
         return (array)$this;
     }
 
     public function addLead(Lead $lead)
     {
-        $_embedded['leads'][] = $lead->toArray();
+        $this->_embedded['leads'][] = $lead->toArray();
     }
 
     public function addContact(Contact $contact)
     {
-        $_embedded['leads'][] = $contact->toArray();
+        $this->_embedded['contacts'][] = $contact->toArray();
     }
 
     public function addCompany(Company $company)
     {
-        $_embedded['companies'][] = $company->toArray();
+        $this->_embedded['companies'][] = $company->toArray();
     }
 }

@@ -31,7 +31,7 @@ abstract class AbstractEntity
     {
         $item = [];
         $except = ['http', 'cf', 'entity', 'notes', '_links', 'closest_task_at', 'updated_by', 'created_by',
-            'fieldPhoneId', 'fieldEmailId'];
+            'fieldPhoneId', 'fieldEmailId', 'tasks', 'links'];
         foreach ($this as $key => $value) {
             if (!in_array($key, $except)) {
                 $item[$key] = $value;
