@@ -21,4 +21,9 @@ class Pipeline extends AbstractModel
     {
         return new Entities\Pipeline(['id' => $id], $this->http);
     }
+
+    public function find($id)
+    {
+        return new Entities\Pipeline($this->findEntity($id), $this->http);
+    }
 }

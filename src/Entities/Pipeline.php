@@ -11,4 +11,9 @@ class Pipeline extends AbstractEntity
 
     protected $entity = 'leads/pipelines', $_embedded = ['statuses' => []];
     public $name, $sort = 1, $is_main = false, $is_unsorted_on = true;
+
+    public function statuses()
+    {
+        return collect($this->_embedded['statuses']);
+    }
 }
