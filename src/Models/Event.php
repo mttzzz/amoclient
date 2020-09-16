@@ -38,40 +38,40 @@ class Event extends AbstractModel
         return $this;
     }
 
-    public function lead()
+    public function lead($id = null)
     {
         $this->filter['entity'][] = 'lead';
-        return $this;
+        return $id ? $this->entityId($id) : $this;
     }
 
-    public function contact()
+    public function contact($id = null)
     {
         $this->filter['entity'][] = 'contact';
-        return $this;
+        return $id ? $this->entityId($id) : $this;
     }
 
-    public function company()
+    public function company($id = null)
     {
         $this->filter['entity'][] = 'company';
-        return $this;
+        return $id ? $this->entityId($id) : $this;
     }
 
-    public function customer()
+    public function customer($id = null)
     {
         $this->filter['entity'][] = 'customer';
-        return $this;
+        return $id ? $this->entityId($id) : $this;
     }
 
-    public function task()
+    public function task($id = null)
     {
         $this->filter['entity'][] = 'task';
-        return $this;
+        return $id ? $this->entityId($id) : $this;
     }
 
-    public function catalog($id)
+    public function catalog($id, $entityId = null)
     {
         $this->filter['entity'][] = "catalog_$id";
-        return $this;
+        return $entityId ? $this->entityId($entityId) : $this;
     }
 
     /**
