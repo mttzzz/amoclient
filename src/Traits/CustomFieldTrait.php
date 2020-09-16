@@ -47,7 +47,8 @@ trait CustomFieldTrait
 
     public function getCF($id)
     {
-        return Arr::where($this->custom_fields_values, fn($i) => $i['field_id'] == $id);
+        return empty($this->custom_fields_values) ? [] :
+            Arr::where($this->custom_fields_values, fn($i) => $i['field_id'] == $id);
     }
 
     public function getCFV($id)
