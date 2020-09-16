@@ -10,7 +10,7 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 abstract class AbstractModel
 {
-    protected $http, $entity;
+    protected $http;
     protected $with = [], $page, $limit, $query, $order = [];
     protected array $filter = [];
 

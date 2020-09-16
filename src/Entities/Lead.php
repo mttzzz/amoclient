@@ -7,7 +7,6 @@ use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
 
-
 class Lead extends AbstractEntity
 {
     use Traits\CustomFieldTrait, Traits\TagTrait, Traits\CrudEntityTrait;
@@ -25,6 +24,7 @@ class Lead extends AbstractEntity
         $this->notes = new Note([], $http, $this->entity, $this->id);
         $this->tasks = new Task([], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
+        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
     }
 
     public function getMainContactId()

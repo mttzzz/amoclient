@@ -87,7 +87,7 @@ class Event extends AbstractModel
 
     public function typeLeadAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
@@ -98,349 +98,349 @@ class Event extends AbstractModel
 
     public function typeLeadDeleted()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeLeadRestored()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeLeadStatusChanged()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeLeadLinked()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeLeadUnlinked()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeContactAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeContactDeleted()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeContactRestored()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeContactLinked()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeContactUnlinked()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCompanyAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCompanyDeleted()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCompanyRestored()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCompanyLinked()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCompanyUnlinked()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCustomerAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCustomerDeleted()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCustomerStatusCanged()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCustomerLinked()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCustomerUnlinked()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeTaskAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeTaskDeleted()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeTaskCompleted()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeTaskTypeChanged()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeTaskTextChanged()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeTaskDeadlineChanged()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeTaskResultAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeIncomingCall()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeOutgoingCall()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeIncomingChatMessage()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeOutgoingChatMessage()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeIncomingSms()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeOutgoingSms()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeEntityTagAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeEntityTagDeleted()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeEntityLinked()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeEntityUnlinked()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeSaleFieldChanged()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeNameFieldChanged()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeLtvFieldChanged()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCustomFieldValueChanged()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeEntityResponsibleChanged()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeRobotReplied()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeIntentIdentified()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeNpsRateAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeLinkFollowed()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeTransactionAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCommonNoteAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCommonNoteDeleted()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeAttachmentNoteAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeTargetingInNoteAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeTargetingOutNoteAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeGeoNoteAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeServiceNoteAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeSiteVisitNoteAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeMessageToCashierNoteAdded()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeEntityMerged()
     {
-        $this->filter['type'] = $this->setType(__FUNCTION__);
+        $this->filter['type'][] = $this->setType(__FUNCTION__);
         return $this;
     }
 
     public function typeCustomFieldByIdValueChanged($fieldId)
     {
-        $this->filter['type'] = "custom_field_{$fieldId}_value_changed";
+        $this->filter['type'][] = "custom_field_{$fieldId}_value_changed";
         return $this;
     }
 

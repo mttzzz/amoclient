@@ -4,6 +4,7 @@
 namespace mttzzz\AmoClient\Entities;
 
 use Illuminate\Http\Client\PendingRequest;
+use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
 
 class Company extends AbstractEntity
@@ -20,5 +21,6 @@ class Company extends AbstractEntity
     {
         $this->cf = $cf;
         parent::__construct($data, $http);
+        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
     }
 }

@@ -4,23 +4,23 @@
 namespace mttzzz\AmoClient\Entities;
 
 use Illuminate\Http\Client\PendingRequest;
+use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
 
 class Contact extends AbstractEntity
 {
     use Traits\CustomFieldTrait, Traits\TagTrait, Traits\PhoneTrait, Traits\EmailTrait, Traits\CrudEntityTrait;
 
-    protected $entity = 'contacts', $notes, $tasks;
+    protected $entity = 'contacts';
 
     public $id, $first_name, $last_name, $name, $responsible_user_id;
     public $custom_fields_values = [];
-    public $_embedded = [];
+    public $_embedded = [], $notes;
 
     public function __construct($data, PendingRequest $http, $cf)
     {
         $this->cf = $cf;
         parent::__construct($data, $http);
-        $this->notes = new Note([], $http, $this->entity, $this->id);
-        $this->tasks = new Task([], $http, $this->entity, $this->id);
+        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
     }
 }
