@@ -23,7 +23,7 @@ class Event extends AbstractModel
 
     public function createdAt($from, $to)
     {
-        $this->filter['created_at'] = [(int)$from, (int)$to];
+        $this->filter['created_at'] = "$from,$to";
         return $this;
     }
 
@@ -34,7 +34,7 @@ class Event extends AbstractModel
      */
     public function createdBy($createdBy)
     {
-        $this->filter['created_at'] = is_array($createdBy) ? $createdBy : (int)$createdBy;
+        $this->filter['created_by'] = is_array($createdBy) ? $createdBy : (int)$createdBy;
         return $this;
     }
 

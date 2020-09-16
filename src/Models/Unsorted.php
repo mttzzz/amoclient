@@ -93,25 +93,25 @@ class Unsorted extends AbstractModel
 
     public function orderCreatedAtAsc()
     {
-        $this->filter['order']['created_at'] = 'asc';
+        $this->order['created_at'] = 'asc';
         return $this;
     }
 
     public function orderCreatedAtDesc()
     {
-        $this->filter['order']['created_at'] = 'desc';
+        $this->order['created_at'] = 'desc';
         return $this;
     }
 
     public function orderUpdatedAtAsc()
     {
-        $this->filter['order']['updated_at'] = 'asc';
+        $this->order['updated_at'] = 'asc';
         return $this;
     }
 
     public function orderUpdatedAtDesc()
     {
-        $this->filter['order']['updated_at'] = 'desc';
+        $this->order['updated_at'] = 'desc';
         return $this;
     }
 }
