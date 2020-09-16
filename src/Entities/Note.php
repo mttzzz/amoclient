@@ -15,7 +15,7 @@ class Note extends AbstractEntity
 
     public function __construct($data, PendingRequest $http, $parentEntity, $entityId = null)
     {
-        $this->entity = $parentEntity . '/notes';
+        $this->entity = $parentEntity;
         $this->entity_id = $entityId;
         parent::__construct($data, $http);
     }

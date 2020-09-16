@@ -20,7 +20,7 @@ class Note extends AbstractModel
 
     public function entity($id = null)
     {
-        return new Entities\Note(['id' => $id], $this->http, $this->entityId);
+        return new Entities\Note(['id' => $id], $this->http, $this->entity, $this->entityId);
     }
 
     public function filterId($id)
