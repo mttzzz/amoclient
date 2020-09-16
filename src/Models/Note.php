@@ -9,7 +9,7 @@ use mttzzz\AmoClient\Entities;
 
 class Note extends AbstractModel
 {
-    protected $entityId;
+    protected $entityId, $entity;
 
     public function __construct(PendingRequest $http, $entity, $entityId)
     {
