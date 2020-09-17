@@ -20,8 +20,9 @@ abstract class AbstractEntity
     protected function setData($data)
     {
         try {
+            $intFields = ['id', 'price', 'status_id', 'responsible_user_id'];
             foreach ($data as $key => $item) {
-                $this->{$key} = ($key === 'id' && $item) ? (int)$item : $item;
+                $this->{$key} = (in_array($key, $intFields) && $item) ? (int)$item : $item;
             }
         } catch (Exception $e) {
         }
