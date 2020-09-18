@@ -10,11 +10,11 @@ trait CustomFieldTrait
 {
     protected $cf;
 
-    public function setCF($id, $value)
+    public function setCF($id, $value, $isEnumId = false)
     {
         $values = is_array($value) ? $value : [$value];
         foreach ($values as $key => $value) {
-            $values[$key] = ['value' => $this->setValue($id, $value)];
+            $values[$key] = $isEnumId ? ['enum_id' => $value] : ['value' => $this->setValue($id, $value)];
         }
 
         if (!empty($f = $this->getCF($id))) {
