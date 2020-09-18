@@ -8,7 +8,7 @@ use mttzzz\AmoClient\Models;
 
 class AmoClient
 {
-    public $leads, $contacts, $companies, $catalogs, $account, $users, $pipelines, $tasks, $events, $ajax, $unsorted;
+    public $leads, $contacts, $companies, $catalogs, $account, $users, $pipelines, $tasks, $events, $ajax, $unsorted, $calls;
 
     public function __construct($key)
     {
@@ -25,6 +25,7 @@ class AmoClient
 
         $http = Http::withToken($account->access_token)
             ->baseUrl("https://{$account->subdomain}.amocrm.ru/api/v4");
+
         $this->account = new Models\Account($http);
         $this->leads = new Models\Lead($http, $cf);
         $this->contacts = new Models\Contact($http, $account, $cf);
@@ -36,5 +37,6 @@ class AmoClient
         $this->events = new Models\Event($http);
         $this->ajax = new Ajax($account);
         $this->unsorted = new Models\Unsorted($http);
+        $this->calls = new Models\Call($http);
     }
 }

@@ -20,7 +20,7 @@ abstract class AbstractEntity
     protected function setData($data)
     {
         try {
-            $intFields = ['id', 'price', 'status_id', 'responsible_user_id'];
+            $intFields = ['id', 'price', 'status_id', 'responsible_user_id', 'duration'];
             foreach ($data as $key => $item) {
                 $this->{$key} = (in_array($key, $intFields) && $item) ? (int)$item : $item;
             }
@@ -31,13 +31,13 @@ abstract class AbstractEntity
     public function toArray()
     {
         $item = [];
-        $except = ['http', 'cf', 'entity', 'notes', '_links', 'closest_task_at', 'updated_by', 'created_by',
+        $except = ['http', 'cf', 'entity', 'notes', '_links', 'closest_task_at', 'updated_by',
             'fieldPhoneId', 'fieldEmailId', 'tasks', 'links'];
         foreach ($this as $key => $value) {
             if (!in_array($key, $except)) {
                 $item[$key] = $value;
             }
-            if (empty($item[$key]) && !in_array($key, ['is_main'])) {
+            if (empty($item[$key]) && !in_array($key, ['is_main', 'duration'])) {
                 unset($item[$key]);
             }
         }
