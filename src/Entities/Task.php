@@ -23,10 +23,12 @@ class Task extends AbstractEntity
         parent::__construct($data, $http);
     }
 
-    public function add($text, $responsible_user_id = null, $completeTill = null, $duration = null, $type = 2)
+    public function add($text, $responsible_user_id = null, $completeTill = null, $duration = null, $type = 1)
     {
         $this->text = $text;
-        $this->responsible_user_id = $responsible_user_id;
+        if ($responsible_user_id) {
+            $this->responsible_user_id = $responsible_user_id;
+        }
         $this->complete_till = $completeTill ?? time();
         $this->duration = $duration;
         $this->task_type_id = $type;
