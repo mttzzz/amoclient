@@ -11,10 +11,12 @@ trait EmailTrait
     public function emailList()
     {
         $emails = [];
-        foreach ($this->custom_fields_values as $f) {
-            if (isset($f['field_code']) && $f['field_code'] === 'EMAIL') {
-                foreach ($f['values'] as $v) {
-                    $emails[] = $v['value'];
+        if ($this->custom_fields_values) {
+            foreach ($this->custom_fields_values as $f) {
+                if (isset($f['field_code']) && $f['field_code'] === 'EMAIL') {
+                    foreach ($f['values'] as $v) {
+                        $emails[] = $v['value'];
+                    }
                 }
             }
         }

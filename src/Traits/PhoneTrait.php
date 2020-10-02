@@ -11,10 +11,12 @@ trait PhoneTrait
     public function phoneList()
     {
         $phones = [];
-        foreach ($this->custom_fields_values as $f) {
-            if (isset($f['field_code']) && $f['field_code'] === 'PHONE') {
-                foreach ($f['values'] as $v) {
-                    $phones[] = $v['value'];
+        if ($this->custom_fields_values) {
+            foreach ($this->custom_fields_values as $f) {
+                if (isset($f['field_code']) && $f['field_code'] === 'PHONE') {
+                    foreach ($f['values'] as $v) {
+                        $phones[] = $v['value'];
+                    }
                 }
             }
         }
