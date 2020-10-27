@@ -35,10 +35,10 @@ trait CustomFieldTrait
                 case 'url':
                 case 'text':
                     return (string)$value;
+                case 'numeric':
+                    return (float)$value;
                 case 'date_time':
                 case 'date':
-                case 'numeric':
-                    return (int)$value;
                 case 'checkbox':
                     return (bool)$value;
             }
