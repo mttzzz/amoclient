@@ -39,6 +39,7 @@ trait CustomFieldTrait
                     return (float)$value;
                 case 'date_time':
                 case 'date':
+                    return (int)$value;
                 case 'checkbox':
                     return (bool)$value;
             }
