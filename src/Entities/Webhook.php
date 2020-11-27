@@ -14,7 +14,10 @@ class Webhook extends AbstractEntity
     public function subscribe()
     {
         try {
-            return $this->http->post($this->entity, $this->toArray())->throw()->json();
+            return $this->http->post($this->entity, [
+                'destination' => $this->destination,
+                'settings' => $this->settings,
+            ])->throw()->json();
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
