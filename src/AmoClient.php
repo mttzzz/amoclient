@@ -8,7 +8,8 @@ use mttzzz\AmoClient\Models;
 
 class AmoClient
 {
-    public $leads, $contacts, $companies, $catalogs, $account, $users, $pipelines, $tasks, $events, $ajax, $unsorted, $calls;
+    public $leads, $contacts, $companies, $catalogs, $account, $users, $pipelines, $tasks, $events, $ajax,
+        $unsorted, $calls, $webhooks;
 
     public function __construct($key)
     {
@@ -38,5 +39,6 @@ class AmoClient
         $this->ajax = new Ajax($account);
         $this->unsorted = new Models\Unsorted($http);
         $this->calls = new Models\Call($http);
+        $this->webhooks = new Models\Webhook($http);
     }
 }

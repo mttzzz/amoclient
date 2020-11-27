@@ -37,7 +37,7 @@ abstract class AbstractEntity
             if (!in_array($key, $except)) {
                 $item[$key] = $value;
             }
-            if (empty($item[$key]) && !in_array($key, ['is_main', 'duration'])) {
+            if (empty($item[$key]) && !in_array($key, ['is_main', 'duration', 'disabled'])) {
                 unset($item[$key]);
             }
         }

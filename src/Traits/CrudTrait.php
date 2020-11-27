@@ -12,7 +12,7 @@ trait CrudTrait
     protected function findEntity($id)
     {
         try {
-            return $data = $this->http->get($this->entity . '/' . $id,
+            return $this->http->get($this->entity . '/' . $id,
                     ['with' => implode(',', $this->with)])
                     ->throw()->json() ?? [];
         } catch (RequestException $e) {
