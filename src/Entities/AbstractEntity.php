@@ -40,6 +40,11 @@ abstract class AbstractEntity
             if (empty($item[$key]) && !in_array($key, ['is_main', 'duration', 'disabled'])) {
                 unset($item[$key]);
             }
+
+            if ($key === 'disabled' && is_null($item[$key])) {
+                unset($item[$key]);
+            }
+
         }
         return $item;
     }
