@@ -30,6 +30,7 @@ abstract class AbstractModel
             }
             $data = $this->http->get($this->entity, $query)->throw()->json();
             $data = is_null($data) ? [] : $data;
+            $this->filter = [];
             return isset($data['_embedded']) ? Arr::first($data['_embedded']) : $data;
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
