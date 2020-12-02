@@ -40,6 +40,23 @@ class Lead extends AbstractEntity
         return null;
     }
 
+    public function getCompanyId()
+    {
+        return $this->_embedded['companies'][0]['id'] ?? null;
+    }
+
+    public function getContactsIds()
+    {
+        if (!isset($this->_embedded['contacts'])) {
+            throw new Exception('add withContacts() before call this function');
+        }
+        $ids = [];
+        foreach ($this->_embedded['contacts'] as $contact) {
+            $ids[] = $contact['id'];
+        }
+        return $ids;
+    }
+
     public function toArray()
     {
         $item = parent::toArray();
