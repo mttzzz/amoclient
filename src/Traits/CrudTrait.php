@@ -23,7 +23,11 @@ trait CrudTrait
     public function create(array $entities)
     {
         try {
-            return $this->http->post($this->entity, $this->prepareEntities($entities))->throw()->json();
+            if (!empty($entities)) {
+                return $this->http->post($this->entity, $this->prepareEntities($entities))->throw()->json();
+            }
+            return [];
+
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
@@ -32,7 +36,10 @@ trait CrudTrait
     public function update(array $entities)
     {
         try {
-            return $this->http->patch($this->entity, $this->prepareEntities($entities))->throw()->json();
+            if (!empty($entities)) {
+                return $this->http->patch($this->entity, $this->prepareEntities($entities))->throw()->json();
+            }
+            return [];
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
