@@ -56,13 +56,4 @@ class Lead extends AbstractEntity
         }
         return $ids;
     }
-
-    public function toArray()
-    {
-        $item = parent::toArray();
-        if (isset($item['status_id']) && !in_array((int)$item['status_id'], [142, 143])) {
-            $item['loss_reason_id'] = null;
-        }
-        return $item;
-    }
 }
