@@ -66,4 +66,9 @@ class Lead extends AbstractModel
     {
         return $this->addWith(__FUNCTION__);
     }
+
+    public function withSourceId()
+    {
+        return $this->addWith(__FUNCTION__);
+    }
 }
