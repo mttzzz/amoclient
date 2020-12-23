@@ -9,7 +9,7 @@ use mttzzz\AmoClient\Models;
 class AmoClient
 {
     public $leads, $contacts, $companies, $catalogs, $account, $users, $pipelines, $tasks, $events, $ajax,
-        $unsorted, $calls, $webhooks;
+        $unsorted, $calls, $webhooks, $shortLinks;
 
     public function __construct($key)
     {
@@ -40,5 +40,6 @@ class AmoClient
         $this->unsorted = new Models\Unsorted($http);
         $this->calls = new Models\Call($http);
         $this->webhooks = new Models\Webhook($http);
+        $this->shortLinks = new Models\ShortLink($http);
     }
 }
