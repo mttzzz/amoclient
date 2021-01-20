@@ -2,6 +2,7 @@
 
 namespace mttzzz\AmoClient;
 
+use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use mttzzz\AmoClient\Models;
@@ -13,10 +14,14 @@ class AmoClient
 
     public function __construct($key)
     {
-        $account = DB::connection('api.amocrm.pushka.biz')
+        $account = \DB::connection('api.amocrm.pushka.biz')
             ->table('accounts')
+            ->select(['accounts.id', 'subdomain', 'account_widget.access_token', 'contact_phone_field_id', 'contact_email_field_id'])
+            ->join('account_widget', 'accounts.id', '=', 'account_widget.account_id')
+            ->where('account_widget.is_token_revoked', false)
             ->where('key', $key)
             ->first();
+        if (!$account) throw new Exception('Account doesnt active widgets');
 
         $cf = DB::connection('api.amocrm.pushka.biz')
             ->table('custom_field_accounts')
