@@ -4,6 +4,8 @@ namespace mttzzz\AmoClient\Entities;
 
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
 
@@ -25,6 +27,25 @@ class Lead extends AbstractEntity
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
         $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
+    }
+
+    public function complex()
+    {
+        try {
+            return $this->http->post($this->entity . '/complex', [$this->toArray()])->throw()->json();
+        } catch (RequestException $e) {
+            throw new AmoCustomException($e);
+        }
+    }
+
+    public function setContact(Contact $contact)
+    {
+        $this->_embedded['contacts'][] = $contact->toArray();
+    }
+
+    public function setCompany(Company $company)
+    {
+        $this->_embedded['companies'][] = $company->toArray();
     }
 
     public function getMainContactId()

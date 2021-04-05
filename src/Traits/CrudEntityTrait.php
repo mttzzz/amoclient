@@ -27,6 +27,11 @@ trait CrudEntityTrait
         }
     }
 
+    public function createGetId()
+    {
+        return $this->create()['_embedded'][$this->entity][0]['id'];
+    }
+
     public function delete()
     {
         try {
