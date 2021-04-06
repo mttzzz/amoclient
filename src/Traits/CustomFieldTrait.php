@@ -12,6 +12,7 @@ trait CustomFieldTrait
 
     public function setCF($id, $value, $isEnumId = false)
     {
+
         $values = is_array($value) ? $value : [$value];
         foreach ($values as $key => $value) {
             $values[$key] = (int)$isEnumId ? ['enum_id' => $value] : ['value' => $this->setValue($id, $value)];
@@ -19,10 +20,7 @@ trait CustomFieldTrait
 
         if (!empty($f = $this->getCF($id))) {
             $this->custom_fields_values[array_key_first($f)]['values'] = $values;
-        } else {
-            $this->custom_fields_values[] = ['field_id' => (int)$id, 'values' => $values];
         }
-
         return $this;
     }
 
@@ -50,7 +48,7 @@ trait CustomFieldTrait
     public function getCF($id)
     {
         return empty($this->custom_fields_values) ? [] :
-            Arr::where($this->custom_fields_values, fn($i) => $i['field_id'] == $id);
+            Arr::where($this->custom_fields_values, fn($i) => $i['field_id'] ?? null == $id);
     }
 
     public function getCFV($id)
