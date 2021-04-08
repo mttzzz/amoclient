@@ -17,10 +17,8 @@ trait CustomFieldTrait
             $values[$key] = (int)$isEnumId ? ['enum_id' => $value] : ['value' => $this->setValue($id, $value)];
         }
 
-        if (!empty($f = $this->getCF($id))) {
-            $this->custom_fields_values[array_key_first($f)]['values'] = $values;
-        } elseif (array_key_exists($id, $this->cf)) {
-            $this->custom_fields_values[$id]['values'] = $values;
+        if (array_key_exists($id, $this->cf)) {
+            $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
         }
         return $this;
     }
