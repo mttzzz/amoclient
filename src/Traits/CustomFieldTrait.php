@@ -12,7 +12,6 @@ trait CustomFieldTrait
 
     public function setCF($id, $value, $isEnumId = false)
     {
-
         $values = is_array($value) ? $value : [$value];
         foreach ($values as $key => $value) {
             $values[$key] = (int)$isEnumId ? ['enum_id' => $value] : ['value' => $this->setValue($id, $value)];
@@ -20,6 +19,8 @@ trait CustomFieldTrait
 
         if (!empty($f = $this->getCF($id))) {
             $this->custom_fields_values[array_key_first($f)]['values'] = $values;
+        } elseif (array_key_exists($id, $this->cf)) {
+            $this->custom_fields_values[$id]['values'] = $values;
         }
         return $this;
     }
