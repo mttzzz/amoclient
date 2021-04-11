@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Traits;
 
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 trait CustomFieldTrait
 {
