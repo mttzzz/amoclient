@@ -11,7 +11,7 @@ trait CustomFieldTrait
 {
     protected $cf;
 
-    public function setCF($id, $value, $isEnumId = false)
+    public function setCF(int $id, $value, $isEnumId = false)
     {
         $values = is_array($value) ? $value : [$value];
         foreach ($values as $key => $value) {
