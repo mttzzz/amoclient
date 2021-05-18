@@ -22,4 +22,14 @@ class User extends AbstractModel
     {
         return $this->addWith(__FUNCTION__);
     }
+
+    public function withUuid()
+    {
+        return $this->addWith(__FUNCTION__);
+    }
+
+    public function withAmojoId()
+    {
+        return $this->addWith(__FUNCTION__);
+    }
 }
