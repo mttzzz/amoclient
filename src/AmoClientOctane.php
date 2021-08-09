@@ -12,7 +12,7 @@ class AmoClientOctane
     public $leads, $contacts, $companies, $catalogs, $account, $users, $pipelines, $tasks, $events, $ajax,
         $unsorted, $calls, $webhooks, $shortLinks;
 
-    public function __construct($aId, $clientId = 'a75e6c17-38f5-47f3-a922-ba20e3d22a51') //TODO перевести $clientId (00a140c1-7c52-4563-8b36-03f23754d255) на пушка коннектор
+    public function __construct($aId, $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
     {
         $account = DB::connection(env('DB_CONNECTION_AMO_CLIENT', 'mysql'))->table('accounts')
             ->select(['accounts.id', 'subdomain', 'account_widget.access_token'])
