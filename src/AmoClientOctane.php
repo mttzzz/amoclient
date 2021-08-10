@@ -24,12 +24,13 @@ class AmoClientOctane
             ->first();
 
         if (!$account) throw new Exception('Account doesnt active widgets');
-        $account->contact_phone_field_id = null;
-        $account->contact_email_field_id = null;
+        $account->contact_phone_field_id = DB::connection('octane')->table('account_custom_fields')
+                ->where('account_id', $aId)->where('code', 'PHONE')->first()->id ?? null;
+        $account->contact_email_field_id = DB::connection('octane')->table('account_custom_fields')
+                ->where('account_id', $aId)->where('code', 'EMAIL')->first()->id ?? null;
 
         $cf = DB::connection('octane')
             ->table('account_custom_fields')
-            ->select('id', 'type')
             ->where('account_id', $aId)
             ->get()->pluck('type', 'id')->toArray();
 
