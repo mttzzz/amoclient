@@ -14,7 +14,7 @@ class AmoClientOctane
 
     public function __construct($aId, $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
     {
-        $account = DB::connection(env('DB_CONNECTION_AMO_CLIENT', 'mysql'))->table('accounts')
+        $account = DB::connection('octane')->table('accounts')
             ->select(['accounts.id', 'subdomain', 'account_widget.access_token'])
             ->join('account_widget', 'accounts.id', '=', 'account_widget.account_id')
             ->join('widgets', 'widgets.id', '=', 'account_widget.widget_id')
@@ -27,7 +27,7 @@ class AmoClientOctane
         $account->contact_phone_field_id = null;
         $account->contact_email_field_id = null;
 
-        $cf = DB::connection(env('DB_CONNECTION_AMO_CLIENT', 'mysql'))
+        $cf = DB::connection('octane')
             ->table('account_custom_fields')
             ->select('id', 'type')
             ->where('account_id', $aId)
