@@ -29,18 +29,21 @@ class AmoClientOctane
         $account->contact_email_field_id = DB::connection('octane')->table('account_custom_fields')
                 ->where('account_id', $aId)->where('code', 'EMAIL')->first()->id ?? null;
 
-        $cf = DB::connection('octane')
+        $fields = DB::connection('octane')
             ->table('account_custom_fields')
             ->where('account_id', $aId)
-            ->get()->pluck('type', 'id')->toArray();
+            ->get();
+
+        $cf = $fields->pluck('type', 'id')->toArray();
+        $enums = $fields->pluck('enums', 'id')->toArray();
 
         $http = Http::withToken($account->access_token)
             ->baseUrl("https://{$account->subdomain}.amocrm.ru/api/v4");
 
         $this->account = new Models\Account($http);
-        $this->leads = new Models\Lead($http, $cf);
-        $this->contacts = new Models\Contact($http, $account, $cf);
-        $this->companies = new Models\Company($http, $account, $cf);
+        $this->leads = new Models\Lead($http, $cf, $enums);
+        $this->contacts = new Models\Contact($http, $account, $cf, $enums);
+        $this->companies = new Models\Company($http, $account, $cf, $enums);
         $this->catalogs = new Models\Catalog($http);
         $this->users = new Models\User($http);
         $this->pipelines = new Models\Pipeline($http);

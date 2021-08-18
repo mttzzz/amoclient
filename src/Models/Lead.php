@@ -14,22 +14,23 @@ class Lead extends AbstractModel
     use Filter\Common, Filter\Lead;
 
     protected $entity = 'leads';
-    private $cf;
+    private $cf, $enums;
 
-    public function __construct(PendingRequest $http, $cf)
+    public function __construct(PendingRequest $http, $cf, $enums)
     {
         $this->cf = $cf;
+        $this->enums = $enums;
         parent::__construct($http);
     }
 
     public function entity($id = null)
     {
-        return new Entities\Lead(['id' => $id], $this->http, $this->cf);
+        return new Entities\Lead(['id' => $id], $this->http, $this->cf, $this->enums);
     }
 
     public function entityData($data)
     {
-        return new Entities\Lead($data, $this->http, $this->cf);
+        return new Entities\Lead($data, $this->http, $this->cf, $this->enums);
     }
 
     public function customFields()
@@ -39,7 +40,7 @@ class Lead extends AbstractModel
 
     public function find($id)
     {
-        return new Entities\Lead($this->findEntity($id), $this->http, $this->cf);
+        return new Entities\Lead($this->findEntity($id), $this->http, $this->cf, $this->enums);
     }
 
     public function withCatalogElements()

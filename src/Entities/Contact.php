@@ -14,12 +14,13 @@ class Contact extends AbstractEntity
     protected $entity = 'contacts';
 
     public $id, $first_name, $last_name, $name, $responsible_user_id;
-    public $custom_fields_values = [];
+    public array $custom_fields_values = [];
     public $_embedded = [], $notes, $tasks, $links;
 
-    public function __construct($data, PendingRequest $http, $cf)
+    public function __construct($data, PendingRequest $http, $cf, $enums)
     {
         $this->cf = $cf;
+        $this->enums = $enums;
         parent::__construct($data, $http);
         $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);

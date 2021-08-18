@@ -9,16 +9,22 @@ use Illuminate\Support\Str;
 
 trait CustomFieldTrait
 {
-    protected $cf;
+    protected $cf, $enums;
 
-    public function setCF(int $id, $value, $isEnumId = false)
+    public function setCF(int $id, $value, bool $isEnumId = false)
     {
+
         $values = is_array($value) ? $value : [$value];
         foreach ($values as $key => $value) {
-            $values[$key] = (int)$isEnumId ? ['enum_id' => $value] : ['value' => $this->setValue($id, $value)];
+            $values[$key] = $isEnumId ? ['enum_id' => $value] : ['value' => $this->setValue($id, $value)];
         }
 
-        if (is_array($this->cf) && array_key_exists($id, $this->cf)) {
+        if (isset($this->enums[$id])) {
+            $enums = Arr::pluck(json_decode($this->enums[$id], 1), 'value', 'id');
+            if (in_array($value, $enums) || key_exists($value, $enums)) {
+                $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
+            }
+        } else if (is_array($this->cf) && array_key_exists($id, $this->cf)) {
             $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
         } elseif (Str::contains($this->entity, 'catalogs')) {
             $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
