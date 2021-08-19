@@ -42,6 +42,7 @@ class AmoClientOctane
 
         $this->account = new Models\Account($http);
         $this->leads = new Models\Lead($http, $cf, $enums);
+        $this->customers = new Models\Customer($http, $cf, $enums);
         $this->contacts = new Models\Contact($http, $account, $cf, $enums);
         $this->companies = new Models\Company($http, $account, $cf, $enums);
         $this->catalogs = new Models\Catalog($http);

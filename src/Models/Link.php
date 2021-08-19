@@ -54,6 +54,15 @@ class Link extends AbstractModel
         return $entity;
     }
 
+    public function customers($customerId)
+    {
+        $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
+        $entity->to_entity_id = (int)$customerId;
+        $entity->to_entity_type = 'customers';
+        $entity->metadata = null;
+        return $entity;
+    }
+
     public function link(array $entities)
     {
         $str = Str::beforeLast($this->entity, '/');

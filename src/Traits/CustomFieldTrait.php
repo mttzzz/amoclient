@@ -26,7 +26,7 @@ trait CustomFieldTrait
             }
         } else if (is_array($this->cf) && array_key_exists($id, $this->cf)) {
             $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
-        } elseif (Str::contains($this->entity, 'catalogs')) {
+        } elseif (Str::contains($this->entity, ['catalogs', 'customers'])) {
             $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
         }
         return $this;
