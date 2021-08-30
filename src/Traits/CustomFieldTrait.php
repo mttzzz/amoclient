@@ -4,6 +4,7 @@
 namespace mttzzz\AmoClient\Traits;
 
 
+use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
@@ -48,6 +49,9 @@ trait CustomFieldTrait
                     return (int)$value;
                 case 'checkbox':
                     return (bool)$value;
+                case 'birthday':
+                    $value = is_string($value) ? Carbon::createFromFormat("y-m-d", $value) : Carbon::createFromTimestamp($value);
+                    return $value->format('Y-m-d\\TH:i:sP');
             }
         }
         return $value;
