@@ -89,7 +89,7 @@ class Task extends AbstractModel
 
     public function filterUpdatedAt(int $from, int $to)
     {
-        $this->filter['updated_at'] = [$from, $to];
+        $this->filter['updated_at'] = ['from' => $from, 'to' => $to];
         return $this;
     }
 
