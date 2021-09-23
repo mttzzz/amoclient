@@ -55,7 +55,7 @@ trait CustomFieldTrait
                 case 'checkbox':
                     return (bool)$value;
                 case 'birthday':
-                    $value = is_string($value) ? Carbon::createFromFormat("Y-m-d", $value) : Carbon::createFromTimestamp($value);
+                    $value = is_string($value) ? Carbon::parseFromLocale($value, 'ru') : Carbon::createFromTimestamp($value);
                     return $value->format('Y-m-d\\TH:i:sP');
             }
         }
