@@ -63,7 +63,7 @@ trait CustomFieldTrait
                         return $value->format('Y-m-d\\TH:i:sP');
                     } catch (Exception $e) {
                         Telegram::log(['local' => $local ?? null, 'value' => $value, 'birthday' => 'setValue']);
-                        return null;
+                        return '2000-01-01T00:00:00+03:00';
                     }
             }
         }
