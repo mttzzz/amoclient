@@ -5,8 +5,10 @@ namespace mttzzz\AmoClient\Traits;
 
 
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use mttzzz\LaravelTelegramLog\Telegram;
 
 trait CustomFieldTrait
 {
@@ -55,10 +57,14 @@ trait CustomFieldTrait
                 case 'checkbox':
                     return (bool)$value;
                 case 'birthday':
-                    $value = is_string($value) ?
-                        Carbon::parseFromLocale($value, preg_match('/[А-Яа-яЁё]/u', $value) ? 'ru' : 'en') :
-                        Carbon::createFromTimestamp($value);
-                    return $value->format('Y-m-d\\TH:i:sP');
+                    try {
+                        $local = preg_match('/[А-Яа-яЁё]/u', $value) ? 'ru' : 'en';
+                        $value = is_string($value) ? Carbon::parseFromLocale($value, $local) : Carbon::createFromTimestamp($value);
+                        return $value->format('Y-m-d\\TH:i:sP');
+                    } catch (Exception $e) {
+                        Telegram::log(['local' => $local ?? null, 'value' => $value, 'birthday' => 'setValue']);
+                        return null;
+                    }
             }
         }
         return $value;
