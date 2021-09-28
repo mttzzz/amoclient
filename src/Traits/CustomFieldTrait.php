@@ -58,7 +58,9 @@ trait CustomFieldTrait
                     return (bool)$value;
                 case 'birthday':
                     try {
-                        $value = is_string($value) ? Carbon::parseFromLocale(strip_tags($value)) : Carbon::createFromTimestamp($value);
+                        $value = is_string($value) ?
+                            Carbon::parseFromLocale(str_replace("&nbsp;", ' ', $value)) :
+                            Carbon::createFromTimestamp($value);
                         return $value->format('Y-m-d\\TH:i:sP');
                     } catch (Exception $e) {
                         Telegram::log([
