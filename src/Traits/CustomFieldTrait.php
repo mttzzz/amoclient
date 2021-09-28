@@ -59,7 +59,7 @@ trait CustomFieldTrait
                 case 'birthday':
                     try {
                         $local = preg_match('/[А-Яа-яЁё]/u', $value) ? 'ru' : 'en';
-                        $value = is_string($value) ? Carbon::parseFromLocale($value, $local) : Carbon::createFromTimestamp($value);
+                        $value = is_string($value) ? Carbon::parseFromLocale(trim($value), $local) : Carbon::createFromTimestamp($value);
                         return $value->format('Y-m-d\\TH:i:sP');
                     } catch (Exception $e) {
                         Telegram::log([
