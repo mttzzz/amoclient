@@ -62,7 +62,12 @@ trait CustomFieldTrait
                         $value = is_string($value) ? Carbon::parseFromLocale($value, $local) : Carbon::createFromTimestamp($value);
                         return $value->format('Y-m-d\\TH:i:sP');
                     } catch (Exception $e) {
-                        Telegram::log(['local' => $local ?? null, 'value' => $value, 'birthday' => 'setValue']);
+                        Telegram::log([
+                            'local' => $local ?? null,
+                            'value' => $value,
+                            'birthday' => 'setValue',
+                            'error' => $e->getMessage()
+                        ]);
                         return '2000-01-01T00:00:00+03:00';
                     }
             }
