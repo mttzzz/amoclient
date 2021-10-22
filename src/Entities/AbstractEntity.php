@@ -21,7 +21,11 @@ abstract class AbstractEntity
     {
         try {
             $intFields = ['id', 'price', 'status_id', 'responsible_user_id', 'duration'];
-            $data['custom_fields_values'] = $data['custom_fields_values'] ?: [];
+
+            if (isset($data['custom_fields_values'])) {
+                $data['custom_fields_values'] = $data['custom_fields_values'] ?: [];
+            }
+
             foreach ($data as $key => $item) {
                 $this->{$key} = (in_array($key, $intFields) && $item) ? (int)$item : $item;
             }
