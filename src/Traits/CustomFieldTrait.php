@@ -47,8 +47,9 @@ trait CustomFieldTrait
                 case 'textarea':
                 case 'multitext':
                 case 'url':
-                case 'text':
                     return (string)$value;
+                case 'text':
+                    return Str::limit((string)$value, '255', '');
                 case 'numeric':
                     return (float)$value;
                 case 'date_time':
