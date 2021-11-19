@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Traits;
 
 
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\DB;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 trait CrudEntityTrait
@@ -49,6 +50,6 @@ trait CrudEntityTrait
             ->where('amo_user_id', $id)
             ->where('account_id', $accountId)
             ->first();
-        $this->responsible_user_id = $user?->is_active ? $id : null;
+        $this->responsible_user_id = $user && $user->is_active ? $id : null;
     }
 }
