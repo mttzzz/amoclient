@@ -41,4 +41,14 @@ trait CrudEntityTrait
             throw new AmoCustomException($e);
         }
     }
+
+    public function setResponsibleUser($accountId, $id)
+    {
+        $user = DB::connection('octane')
+            ->table('account_amo_user')
+            ->where('amo_user_id', $id)
+            ->where('account_id', $accountId)
+            ->first();
+        $this->responsible_user_id = $user?->is_active ? $id : null;
+    }
 }
