@@ -23,7 +23,7 @@ class AmoClientOctane
             ->where('widgets.client_id', $clientId)
             ->first();
 
-        if (!$account) throw new Exception('Account doesnt active widgets');
+        if (!$account) throw new Exception("Account ($aId) doesnt active widget ($clientId)");
         $account->contact_phone_field_id = DB::connection('octane')->table('account_custom_fields')
                 ->where('account_id', $aId)->where('code', 'PHONE')->first()->id ?? null;
         $account->contact_email_field_id = DB::connection('octane')->table('account_custom_fields')
