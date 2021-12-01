@@ -81,9 +81,21 @@ trait CustomFieldTrait
             Arr::where($this->custom_fields_values, fn($i) => isset($i['field_id']) && $i['field_id'] == $id);
     }
 
+    public function getCFByCode($code)
+    {
+        return empty($this->custom_fields_values) ? [] :
+            Arr::where($this->custom_fields_values, fn($i) => isset($i['field_code']) && $i['field_code'] == $code);
+    }
+
     public function getCFV($id)
     {
         return Arr::first($this->getCF($id))['values'][0]['value'] ?? null;
+    }
+
+    public function getCFVByCode($code)
+    {
+
+        return Arr::first($this->getCFByCode(Str::upper($code)))['values'][0]['value'] ?? null;
     }
 
     public function getCFE($id)

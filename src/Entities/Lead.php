@@ -13,6 +13,11 @@ class Lead extends AbstractEntity
 {
     use Traits\CustomFieldTrait, Traits\TagTrait, Traits\CrudEntityTrait;
 
+    const UTM_FIELDS = ['fbclid', 'yclid', 'referrer', 'gclid', 'gclientid', 'from', 'openstat_source', 'openstat_ad', 'openstat_campaign',
+        'openstat_service', 'utm_source', 'roistat', '_ym_counter', '_ym_uid', 'utm_referrer', 'utm_content', 'utm_term',
+        'utm_campaign', 'utm_medium'
+    ];
+
     protected $entity = 'leads';
 
     public $name, $notes, $tasks, $links;
