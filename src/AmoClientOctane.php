@@ -9,7 +9,7 @@ use mttzzz\AmoClient\Models;
 
 class AmoClientOctane
 {
-    public $leads, $contacts, $companies, $catalogs, $account, $users, $pipelines, $tasks, $events, $ajax,
+    public $leads, $contacts, $companies, $catalogs, $customers, $account, $users, $pipelines, $tasks, $events, $ajax,
         $unsorted, $calls, $webhooks, $shortLinks;
 
     public function __construct($aId, $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
@@ -23,7 +23,12 @@ class AmoClientOctane
             ->where('widgets.client_id', $clientId)
             ->first();
 
-        if (!$account) throw new Exception("Account ($aId) doesnt active widget ($clientId)");
+        if (!$account) {
+            $account = DB::connection('octane')->table('accounts')->where('id', $aId)->first();
+            $widget = DB::connection('octane')->table('widgets')->where('client_id', $clientId)->first();
+            throw new Exception("Account ($account->subdomain) doesnt active widget ($widget->name)");
+        }
+
         $account->contact_phone_field_id = DB::connection('octane')->table('account_custom_fields')
                 ->where('account_id', $aId)->where('code', 'PHONE')->first()->id ?? null;
         $account->contact_email_field_id = DB::connection('octane')->table('account_custom_fields')
