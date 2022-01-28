@@ -36,7 +36,7 @@ trait CrudEntityTrait
     public function delete()
     {
         try {
-            $this->http->delete($this->entity, ['id' => $this->id])->throw()->json();
+            return $this->http->delete($this->entity . '/' . $this->id)->throw()->json();
             return null;
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
