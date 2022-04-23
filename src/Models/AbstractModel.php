@@ -76,4 +76,13 @@ abstract class AbstractModel
             if (count($chunk) < $limit) break;
         }
     }
+    
+    public function allItems($limit = 250)
+    {
+        $result = [];
+        $this->each(function($items) use (&$result) {
+            $result = array_merge($result, $items);
+        }, $limit);
+        return $result;
+    }
 }
