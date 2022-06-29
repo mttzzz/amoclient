@@ -13,7 +13,7 @@ class Ajax
     public function __construct($account)
     {
         $this->http = Http::withToken($account->access_token)->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
-            ->baseUrl("https://{$account->subdomain}.amocrm.ru");
+            ->baseUrl("https://{$account->subdomain}.amocrm.{$account->domain}");
     }
 
     public function get(string $url, $query = [])
