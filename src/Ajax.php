@@ -12,7 +12,7 @@ class Ajax
 
     public function __construct($account)
     {
-        $this->http = Http::withToken($account->access_token)->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
+        $this->http = Http::withToken($account->access_token)->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])->retry(10, 100)
             ->baseUrl("https://{$account->subdomain}.amocrm.{$account->domain}");
     }
 
