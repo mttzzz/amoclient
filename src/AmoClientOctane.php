@@ -15,7 +15,7 @@ class AmoClientOctane
     public function __construct($aId, $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
     {
         $account = DB::connection('octane')->table('accounts')
-            ->select(['accounts.id', 'subdomain', 'account_widget.access_token'])
+            ->select(['accounts.id', 'subdomain','domain', 'account_widget.access_token'])
             ->join('account_widget', 'accounts.id', '=', 'account_widget.account_id')
             ->join('widgets', 'widgets.id', '=', 'account_widget.widget_id')
             ->where('account_widget.active', true)
@@ -43,7 +43,7 @@ class AmoClientOctane
         $enums = $fields->pluck('enums', 'id')->toArray();
 
         $http = Http::withToken($account->access_token)
-            ->baseUrl("https://{$account->subdomain}.amocrm.ru/api/v4");
+            ->baseUrl("https://{$account->subdomain}.amocrm.{$account->domain}/api/v4");
 
         $this->account = new Models\Account($http);
         $this->leads = new Models\Lead($http, $cf, $enums);
