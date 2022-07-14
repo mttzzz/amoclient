@@ -40,6 +40,11 @@ abstract class AbstractEntity
             if (!in_array($key, $except)) {
                 $item[$key] = $value;
             }
+            
+             if (CustomField::class ===  get_class($this) && $key === 'enums') {
+                $item[$key] = $value;
+            }
+            
             if (empty($item[$key]) && !in_array($key, ['is_main', 'duration', 'disabled'])) {
                 unset($item[$key]);
             }
