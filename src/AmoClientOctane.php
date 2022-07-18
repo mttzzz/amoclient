@@ -42,7 +42,7 @@ class AmoClientOctane
         $cf = $fields->pluck('type', 'id')->toArray();
         $enums = $fields->pluck('enums', 'id')->toArray();
 
-        $http = Http::withToken($account->access_token)->retry(10, 100)
+        $http = Http::withToken($account->access_token)
             ->baseUrl("https://{$account->subdomain}.amocrm.{$account->domain}/api/v4");
 
         $this->account = new Models\Account($http);
