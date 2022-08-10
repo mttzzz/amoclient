@@ -69,7 +69,7 @@ class AmoClientOctane
         $this->pipelines = new Models\Pipeline($http);
         $this->tasks = new Models\Task($http);
         $this->events = new Models\Event($http);
-        $this->ajax = new Ajax($account);
+        $this->ajax = new Ajax($account, $http);
         $this->unsorted = new Models\Unsorted($http);
         $this->calls = new Models\Call($http);
         $this->webhooks = new Models\Webhook($http);
