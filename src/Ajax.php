@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient;
 
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\PendingRequest;
 
 class Ajax
 {
