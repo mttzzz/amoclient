@@ -43,6 +43,20 @@ class AmoClientOctane
         $enums = $fields->pluck('enums', 'id')->toArray();
 
         $http = Http::withToken($account->access_token)
+            ->withMiddleware(Middleware::mapResponse(function (ResponseInterface $response) use ($account) {
+                if ($response->getStatusCode() === 204) {
+                    $data = Http::withToken($account->access_token)
+                        ->get('https://www.amocrm.ru/oauth2/account/subdomain')->throw()->json();
+
+                    DB::connection('octane')->table('accounts')
+                        ->where('id', $account->id)
+                        ->update(['subdomain' => $data['subdomain']]);
+
+                    $this->http = Http::withToken($account->access_token)
+                        ->baseUrl("https://{$data['subdomain']}.amocrm.{$account->domain}/api/v4");
+                }
+                return $response;
+            }))
             ->baseUrl("https://{$account->subdomain}.amocrm.{$account->domain}/api/v4");
 
         $this->account = new Models\Account($http);
