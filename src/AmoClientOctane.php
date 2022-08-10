@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use mttzzz\AmoClient\Models;
+use GuzzleHttp\Middleware;
 
 class AmoClientOctane
 {
