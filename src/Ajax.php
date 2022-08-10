@@ -10,9 +10,10 @@ class Ajax
 {
     private $http;
 
-    public function __construct($account)
+    public function __construct($account, PendingRequest $http)
     {
-        $this->http = Http::withToken($account->access_token)->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])->retry(10, 100)
+        $this->http = clone $http;
+        $this->http = $this->http->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
             ->baseUrl("https://{$account->subdomain}.amocrm.{$account->domain}");
     }
 
