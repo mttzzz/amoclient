@@ -12,7 +12,7 @@ use Psr\Http\Message\ResponseInterface;
 class AmoClientOctane
 {
     public $leads, $contacts, $companies, $catalogs, $customers, $account, $users, $pipelines, $tasks, $events, $ajax,
-        $unsorted, $calls, $webhooks, $shortLinks;
+        $unsorted, $calls, $webhooks, $shortLinks, $accountId;
 
     public function __construct($aId, $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
     {
@@ -61,6 +61,7 @@ class AmoClientOctane
             }))
             ->baseUrl("https://{$account->subdomain}.amocrm.{$account->domain}/api/v4");
 
+        $this->accountId = $aId;
         $this->account = new Models\Account($http);
         $this->leads = new Models\Lead($http, $cf, $enums);
         $this->customers = new Models\Customer($http, $cf, $enums);
