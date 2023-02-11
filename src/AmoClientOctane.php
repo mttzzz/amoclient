@@ -46,7 +46,7 @@ class AmoClientOctane
 
         $http = Http::withToken($account->access_token)
             ->withMiddleware(Middleware::mapResponse(function (ResponseInterface $response) use ($account) {
-                if ($response->getStatusCode() === 204) {
+                /*if ($response->getStatusCode() === 204) {
                     $data = Http::withToken($account->access_token)
                         ->get("https://www.amocrm.{$account->domain}/oauth2/account/subdomain")->throw()->json();
 
@@ -56,7 +56,7 @@ class AmoClientOctane
 
                     $this->http = Http::withToken($account->access_token)
                         ->baseUrl("https://{$data['subdomain']}.amocrm.{$account->domain}/api/v4");
-                }
+                }*/
                 return $response;
             }))
             ->baseUrl("https://{$account->subdomain}.amocrm.{$account->domain}/api/v4");
