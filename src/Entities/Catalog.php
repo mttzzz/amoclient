@@ -24,6 +24,6 @@ class Catalog extends AbstractEntity
 
     public function customFields()
     {
-        return new CustomField($this->http, $this->entity.'/'.$this->id);
+        return new Models\CustomField($this->http, $this->entity.'/'.$this->id);
     }
 }
