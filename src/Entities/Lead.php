@@ -71,6 +71,17 @@ class Lead extends AbstractEntity
     {
         return $this->_embedded['companies'][0]['id'] ?? null;
     }
+    
+    public function getCatalogElementIds($catalogId)
+    {
+        $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
+        foreach ($catalogElementIds as $key => &$catalogElementId) {
+            if ((int)$catalogElementId['metadata']['catalog_id'] === (int)$catalogId) {
+                $catalogElementId = $catalogElementId['id'];
+            } else unset($catalogElementIds[$key]);
+        }
+        return $catalogElementIds;
+    }
 
     public function getContactsIds()
     {
