@@ -99,7 +99,7 @@ class Lead extends AbstractEntity
     {
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
         foreach ($catalogElementIds as $key => $catalogElementId) {
-            if ((int)$catalogElementId['metadata']['catalog_id'] === (int)$catalogId) {
+            if ((int)$catalogElementId['metadata']['catalog_id'] === (int)$catalogId && (int)$elementId == (int)$catalogElementId['id']) {
                 return $catalogElementId['metadata']['quantity'];
             }
         }
