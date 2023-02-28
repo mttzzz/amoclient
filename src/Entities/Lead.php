@@ -82,6 +82,29 @@ class Lead extends AbstractEntity
         }
         return $catalogElementIds;
     }
+    
+    public function getCatalogQuantity($catalogId)
+    {
+        $quantity = 0;
+        $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
+        foreach ($catalogElementIds as $key => $catalogElementId) {
+            if ((int)$catalogElementId['metadata']['catalog_id'] === (int)$catalogId) {
+                $quantity += $catalogElementId['metadata']['quantity'];
+            }
+        }
+        return $quantity;
+    }
+
+    public function getCatalogElementQuantity($catalogId, $elementId)
+    {
+        $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
+        foreach ($catalogElementIds as $key => $catalogElementId) {
+            if ((int)$catalogElementId['metadata']['catalog_id'] === (int)$catalogId) {
+                return $catalogElementId['metadata']['quantity'];
+            }
+        }
+        return 0;
+    }
 
     public function getContactsIds()
     {
