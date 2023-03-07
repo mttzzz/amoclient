@@ -54,7 +54,15 @@ trait CustomFieldTrait
                     return (float)$value;
                 case 'date_time':
                 case 'date':
-                    return (int)$value;
+                    try {
+                        return Carbon::parse(is_numeric($value) ? (int)$value : $value)->timestamp;
+                    } catch (Exception $e) {
+                        Telegram::log([
+                            'value' => $value,
+                            'error' => $e->getMessage()
+                        ]);
+                        return null;
+                    };
                 case 'checkbox':
                     return (bool)$value;
                 case 'birthday':
