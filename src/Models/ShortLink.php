@@ -8,7 +8,6 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
-use mttzzz\LaravelTelegramLog\Telegram;
 
 class ShortLink extends AbstractModel
 {
@@ -33,7 +32,6 @@ class ShortLink extends AbstractModel
             return [];
 
         } catch (RequestException $e) {
-            Telegram::log($this->prepareEntities($entities));
             throw new AmoCustomException($e);
         }
     }
