@@ -7,6 +7,7 @@ namespace mttzzz\AmoClient\Traits;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use mttzzz\LaravelTelegramLog\Telegram;
 
@@ -102,12 +103,30 @@ trait CustomFieldTrait
 
     public function getCFVByCode($code)
     {
-
         return Arr::first($this->getCFByCode(Str::upper($code)))['values'][0]['value'] ?? null;
     }
 
     public function getCFE($id)
     {
         return Arr::first($this->getCF($id))['values'][0]['enum_id'] ?? null;
+    }
+
+    public function getCFCLN($id) //customField ChainedList Names
+    {
+        $names = [];
+        $f = Arr::first($this->getCF($id));
+        if ($f) {
+            foreach ($f['values'] as $value) {
+                $el = $this->http->get("catalogs/{$value['catalog_id']}/elements/{$value['catalog_element_id']}")->json();
+                $names[] = $el['name'];
+            }
+        }
+        return $names;
+    }
+
+    public function getCFVM($id)
+    {
+        $f = $this->getCF($id);
+        return count($f) ? collect(Arr::first($f)['values'])->pluck('value')->toArray() : [];
     }
 }
