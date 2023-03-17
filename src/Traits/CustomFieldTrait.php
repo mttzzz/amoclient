@@ -22,16 +22,19 @@ trait CustomFieldTrait
 
     public function setCF(int $id, $value, bool $isEnumId = false)
     {
-
         $values = is_array($value) ? $value : [$value];
         foreach ($values as $key => $value) {
             $values[$key] = $isEnumId ? ['enum_id' => $value] : ['value' => $this->setValue($id, $value)];
         }
 
         if (isset($this->enums[$id])) {
-            $enums = Arr::pluck(json_decode($this->enums[$id], 1), 'value', 'id');
-            if (in_array($value, $enums) || key_exists($value, $enums)) {
-                $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
+            if (empty($values)) {
+                $this->custom_fields_values[] = ['field_id' => $id, 'values' => null];
+            } else {
+                $enums = Arr::pluck(json_decode($this->enums[$id], 1), 'value', 'id');
+                if (in_array($value, $enums) || key_exists($value, $enums)) {
+                    $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
+                }
             }
         } else if (is_array($this->cf) && array_key_exists($id, $this->cf)) {
             $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
@@ -40,7 +43,7 @@ trait CustomFieldTrait
         }
         return $this;
     }
-
+    
     private function setValue($id, $value)
     {
         if ($type = $this->cf[$id] ?? null) {
