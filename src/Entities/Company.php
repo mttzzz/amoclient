@@ -26,4 +26,10 @@ class Company extends AbstractEntity
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
     }
+    
+    public function getLeadIds()
+    {
+        $leadIds = $this->toArray()['_embedded']['leads'] ?? [];
+        return count($leadIds) ? Arr::pluck($leadIds,'id') : [];
+    }
 }
