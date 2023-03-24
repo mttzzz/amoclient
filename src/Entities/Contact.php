@@ -6,6 +6,7 @@ namespace mttzzz\AmoClient\Entities;
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
+use Illuminate\Support\Arr;
 
 class Contact extends AbstractEntity
 {
