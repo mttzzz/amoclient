@@ -59,7 +59,10 @@ trait CustomFieldTrait
                 case 'date_time':
                 case 'date':
                     try {
-                        return Carbon::parse(is_numeric($value) ? (int)$value : $value)->timestamp;
+                        $value = strip_tags($value);
+                        return is_numeric($value) ?
+                            Carbon::createFromTimestamp($value)->timestamp :
+                            Carbon::parseFromLocale($value, 'ru')->timestamp;
                     } catch (Exception $e) {
                         Telegram::log([
                             'value' => $value,
@@ -71,9 +74,11 @@ trait CustomFieldTrait
                     return (bool)$value;
                 case 'birthday':
                     try {
-                        $value = is_string($value) ?
-                            Carbon::parseFromLocale(str_replace("&nbsp;", ' ', $value)) :
-                            Carbon::createFromTimestamp($value);
+                        $value = strip_tags($value);
+                        $value = is_string($value) && !is_numeric($value) ?
+                            Carbon::parseFromLocale(str_replace("&nbsp;", ' ', $value), 'ru') :
+                            Carbon::createFromTimestamp((int)$value);
+                        return $value->format('Y-m-d\\TH:i:sP');
                         return $value->format('Y-m-d\\TH:i:sP');
                     } catch (Exception $e) {
                         Telegram::log([
