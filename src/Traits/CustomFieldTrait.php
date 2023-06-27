@@ -50,8 +50,9 @@ trait CustomFieldTrait
             switch ($type) {
                 case 'textarea':
                 case 'multitext':
-                case 'url':
                     return (string)$value;
+                case 'url':
+                    return Str::limit((string)$value, '2000', '');
                 case 'text':
                     return Str::limit((string)$value, '255', '');
                 case 'numeric':
