@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use mttzzz\AmoClient\Models;
 use GuzzleHttp\Middleware;
+use mttzzz\LaravelTelegramLog\Telegram;
 use Psr\Http\Message\ResponseInterface;
+use Illuminate\Http\Client\PendingRequest;
 
 class AmoClientOctane
 {
@@ -17,7 +19,7 @@ class AmoClientOctane
     public function __construct($aId, $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
     {
         $account = DB::connection('octane')->table('accounts')
-            ->select(['accounts.id', 'subdomain','domain', 'account_widget.access_token'])
+            ->select(['accounts.id', 'subdomain', 'domain', 'account_widget.access_token'])
             ->join('account_widget', 'accounts.id', '=', 'account_widget.account_id')
             ->join('widgets', 'widgets.id', '=', 'account_widget.widget_id')
             ->where('account_widget.active', true)
@@ -45,6 +47,14 @@ class AmoClientOctane
         $enums = $fields->pluck('enums', 'id')->toArray();
 
         $http = Http::withToken($account->access_token)
+            ->retry(2, 100, function (Exception $exception, PendingRequest $request) use ($account) {
+                Telegram::log('ConnectionException');
+                $data = Http::withToken($account->access_token)
+                    ->withHeader('original_req_url', "https://{$account->subdomain}.amocrm.{$account->domain}/api/v4/users?limit=1")
+                    ->get('http://134.17.16.172:3000/api/v2/proxy')->json();
+                Telegram::log($data ?? 'proxyEmpty');
+                return $exception instanceof ConnectionException;
+            })
             ->withMiddleware(Middleware::mapResponse(function (ResponseInterface $response) use ($account) {
                 /*if ($response->getStatusCode() === 204) {
                     $data = Http::withToken($account->access_token)
