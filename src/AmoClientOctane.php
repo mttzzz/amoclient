@@ -3,6 +3,7 @@
 namespace mttzzz\AmoClient;
 
 use Exception;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use mttzzz\AmoClient\Models;
@@ -47,12 +48,11 @@ class AmoClientOctane
         $enums = $fields->pluck('enums', 'id')->toArray();
 
         $http = Http::withToken($account->access_token)
-            ->retry(2, 100, function (Exception $exception, PendingRequest $request) use ($account) {
-                Telegram::log('ConnectionException');
+            ->retry(5, 100, function (Exception $exception, PendingRequest $request) use ($account) {
                 $data = Http::withToken($account->access_token)
                     ->withHeader('original_req_url', "https://{$account->subdomain}.amocrm.{$account->domain}/api/v4/users?limit=1")
                     ->get('http://134.17.16.172:3000/api/v2/proxy')->json();
-                Telegram::log($data ?? 'proxyEmpty');
+                empty($data) ? Cache::increment('ConnectionExceptionProxyError') : Cache::increment('ConnectionExceptionProxySuccess');
                 return $exception instanceof ConnectionException;
             })
             ->withMiddleware(Middleware::mapResponse(function (ResponseInterface $response) use ($account) {
