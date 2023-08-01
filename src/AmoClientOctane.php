@@ -48,7 +48,7 @@ class AmoClientOctane
         $enums = $fields->pluck('enums', 'id')->toArray();
 
         $http = Http::withToken($account->access_token)
-            ->retry(5, 100, function (Exception $exception, PendingRequest $request) use ($account) {
+            ->retry(3, 2000, function (Exception $exception, PendingRequest $request) use ($account) {
                 $data = Http::withToken($account->access_token)
                     ->withHeader('original_req_url', "https://{$account->subdomain}.amocrm.{$account->domain}/api/v4/users?limit=1")
                     ->get('http://134.17.16.172:3000/api/v2/proxy')->json();
