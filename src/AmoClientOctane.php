@@ -47,12 +47,11 @@ class AmoClientOctane
         $cf = $fields->pluck('type', 'id')->toArray();
         $enums = $fields->pluck('enums', 'id')->toArray();
 
+        $baseUrl = "https://{$account->subdomain}.amocrm.{$account->domain}/api/v4";
+        $proxyUrl = 'http://134.17.16.172:3000/api/v3/proxy';
         $http = Http::withToken($account->access_token)
-            ->retry(3, 2000, function (Exception $exception, PendingRequest $request) use ($account) {
-                $data = Http::withToken($account->access_token)
-                    ->withHeader('original_req_url', "https://{$account->subdomain}.amocrm.{$account->domain}/api/v4/users?limit=1")
-                    ->get('http://134.17.16.172:3000/api/v2/proxy')->json();
-                empty($data) ? Cache::increment('ConnectionExceptionProxyError') : Cache::increment('ConnectionExceptionProxySuccess');
+            ->retry(3, 3500, function (Exception $exception, PendingRequest $request) use ($account, $baseUrl, $proxyUrl) {
+                $request->withHeader('original_req_url', $baseUrl)->baseUrl($proxyUrl);
                 return $exception instanceof ConnectionException;
             })
             ->withMiddleware(Middleware::mapResponse(function (ResponseInterface $response) use ($account) {
@@ -69,7 +68,7 @@ class AmoClientOctane
                 }*/
                 return $response;
             }))
-            ->baseUrl("https://{$account->subdomain}.amocrm.{$account->domain}/api/v4");
+            ->baseUrl($baseUrl);
 
         $this->accountId = $aId;
         $this->account = new Models\Account($http);
