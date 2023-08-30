@@ -14,7 +14,7 @@ use Illuminate\Http\Client\PendingRequest;
 
 class AmoClientOctane
 {
-    public $leads, $contacts, $companies, $catalogs, $customers, $account, $users, $pipelines, $tasks, $events, $ajax,
+    public $leads, $contacts, $companies, $sources, $catalogs, $customers, $account, $users, $pipelines, $tasks, $events, $ajax,
         $unsorted, $calls, $webhooks, $shortLinks, $accountId;
 
     public function __construct($aId, $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
@@ -50,6 +50,7 @@ class AmoClientOctane
         $baseUrl = "https://{$account->subdomain}.amocrm.{$account->domain}/api/v4";
         $proxyUrl = 'http://134.17.16.172:3000/api/v3/proxy';
         $http = Http::withToken($account->access_token)
+            ->withHeader('original_req_url', $baseUrl)
             ->retry(3, 3500, function (Exception $exception, PendingRequest $request) use ($account, $baseUrl, $proxyUrl) {
                 $request->withHeader('original_req_url', $baseUrl)->baseUrl($proxyUrl);
                 return $exception instanceof ConnectionException;
@@ -86,5 +87,6 @@ class AmoClientOctane
         $this->calls = new Models\Call($http);
         $this->webhooks = new Models\Webhook($http);
         $this->shortLinks = new Models\ShortLink($http);
+        $this->sources = new Models\Source($http);
     }
 }
