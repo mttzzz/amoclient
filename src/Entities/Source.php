@@ -12,5 +12,5 @@ class Source extends AbstractEntity
     use Traits\CrudEntityTrait;
 
     protected $entity = 'sources';
-    public $name, $pipeline_id, $extenal_id, $default, $origin_code, $services;
+    public $name, $pipeline_id, $external_id, $default, $origin_code, $services;
 }
