@@ -50,25 +50,12 @@ class AmoClientOctane
         $baseUrl = "https://{$account->subdomain}.amocrm.{$account->domain}/api/v4";
         $proxyUrl = 'http://134.17.16.172:3000/api/v3/proxy';
         $http = Http::withToken($account->access_token)
-            ->withHeader('original_req_url', $baseUrl)
-            ->retry(3, 3500, function (Exception $exception, PendingRequest $request) use ($account, $baseUrl, $proxyUrl) {
-                $request->withHeader('original_req_url', $baseUrl)->baseUrl($proxyUrl);
+            ->withHeaders(['original_req_url' => $baseUrl])
+            ->retry(3, 3500, function (Exception $exception, PendingRequest $request)
+            use ($account, $baseUrl, $proxyUrl) {
+                $request->withHeaders(['original_req_url' => $baseUrl])->baseUrl($proxyUrl);
                 return $exception instanceof ConnectionException;
             })
-            ->withMiddleware(Middleware::mapResponse(function (ResponseInterface $response) use ($account) {
-                /*if ($response->getStatusCode() === 204) {
-                    $data = Http::withToken($account->access_token)
-                        ->get("https://www.amocrm.{$account->domain}/oauth2/account/subdomain")->throw()->json();
-
-                    DB::connection('octane')->table('accounts')
-                        ->where('id', $account->id)
-                        ->update(['subdomain' => $data['subdomain']]);
-
-                    $this->http = Http::withToken($account->access_token)
-                        ->baseUrl("https://{$data['subdomain']}.amocrm.{$account->domain}/api/v4");
-                }*/
-                return $response;
-            }))
             ->baseUrl($baseUrl);
 
         $this->accountId = $aId;
