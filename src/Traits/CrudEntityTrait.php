@@ -4,6 +4,7 @@
 namespace mttzzz\AmoClient\Traits;
 
 
+use Carbon\Carbon;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\DB;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
@@ -51,5 +52,16 @@ trait CrudEntityTrait
             ->where('account_id', $accountId)
             ->first();
         $this->responsible_user_id = $user && $user->is_active ? $id : null;
+    }
+
+    public function getCreatedAt(): Carbon
+    {
+        return Carbon::parse($this->created_at);
+    }
+
+    public function getResponsibleName()
+    {
+        $user = DB::connection('octane')->table('amo_users')->find($this->responsible_user_id);
+        return $user?->name;
     }
 }
