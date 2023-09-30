@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Entities;
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\DB;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
@@ -21,7 +22,7 @@ class Lead extends AbstractEntity
     protected $entity = 'leads';
 
     public $name, $notes, $tasks, $links;
-    public $id, $price, $status_id, $responsible_user_id;
+    public $id, $price, $status_id, $responsible_user_id, $pipeline_id;
     public array $custom_fields_values = [], $_embedded = [];
 
     public function __construct($data, PendingRequest $http, $cf, $enums)
@@ -71,7 +72,22 @@ class Lead extends AbstractEntity
     {
         return $this->_embedded['companies'][0]['id'] ?? null;
     }
-    
+
+    public function getCompanyName(): string
+    {
+        $companyId = $this->getCompanyId();
+        return $companyId ? $this->http->get("companies/$companyId")->json('name') : '';
+    }
+
+    public function getPipelineName()
+    {
+        $pipeline = DB::connection('octane')->table('account_pipelines')
+            ->where('account_id', $this->account_id)
+            ->where('id', $this->pipeline_id)
+            ->first();
+        return $pipeline?->name;
+    }
+
     public function getCatalogElementIds($catalogId)
     {
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
@@ -82,7 +98,7 @@ class Lead extends AbstractEntity
         }
         return $catalogElementIds;
     }
-    
+
     public function getCatalogQuantity($catalogId)
     {
         $quantity = 0;
