@@ -3,14 +3,16 @@
 namespace mttzzz\AmoClient;
 
 use Exception;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use mttzzz\AmoClient\Models;
+use Psr\Http\Message\RequestInterface;
+use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
-use mttzzz\LaravelTelegramLog\Telegram;
-use Psr\Http\Message\ResponseInterface;
+use GuzzleHttp\Exception\ConnectException as GuzzleHttpConnectException;
+use Illuminate\Http\Client\ConnectionException as HttpClientConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+
 
 class AmoClientOctane
 {
@@ -47,15 +49,59 @@ class AmoClientOctane
         $cf = $fields->pluck('type', 'id')->toArray();
         $enums = $fields->pluck('enums', 'id')->toArray();
 
+        // Создание кастомного стека обработчиков для Guzzle
+        $stack = HandlerStack::create();
+
+        //Подлючаем спискок прокси из конфига, если конфига нет, то писваиваем массив с 1 элементом null.
+        //Это приведет к тому, что запрос будет выполнен без прокси.
+        $proxies = config('amoclient.proxies') ?? [null];
+
+        //Остальные параметры из конфига, если они есть.
+        $timeout = config('amoclient.timeout') ?? 60;
+        $connectTimeout = config('amoclient.connectTimeout') ?? 10;
+        $retries = config('amoclient.retries') ?? 2;
+        $retryDelay = config('amoclient.retryDelay') ?? 1000;
+
+        // Индекс текущего прокси
+        $currentProxyIndex = 0;
+
+        // Добавление middleware в стек
+        $stack->push(Middleware::retry(function ($retry, RequestInterface $request, $response, $exception) use (&$proxies, &$currentProxyIndex) {
+            dump("currentProxyIndex: " . $currentProxyIndex ."  currentProxy: " . json_encode($proxies[$currentProxyIndex]));
+            // Проверка на наличие GuzzleHttpConnectException и наличие доступных прокси для переключения
+            if ($exception instanceof GuzzleHttpConnectException && isset($proxies[$currentProxyIndex + 1])) {
+                // Переход к следующему прокси
+                $currentProxyIndex++;
+
+                // Если следующий прокси не null, устанавливаем его
+                if ($proxies[$currentProxyIndex] !== null) {
+                    $request->withUri($request->getUri()->withHost($proxies[$currentProxyIndex]));
+                }
+
+                return true; // Повторить попытку
+            }
+
+            return false; // Не повторять попытку для других типов ошибок или если прокси закончились
+        }, function () {
+            // Логика для определения задержки между попытками
+            return 1000; // Задержка в миллисекундах
+        }));
+
+
         $baseUrl = "https://{$account->subdomain}.amocrm.{$account->domain}/api/v4";
-        $proxyUrl = 'http://134.17.16.172:3000/api/v3/proxy';
         $http = Http::withToken($account->access_token)
-            ->withHeaders(['original_req_url' => $baseUrl])
-            ->retry(3, 3500, function (Exception $exception, PendingRequest $request)
-            use ($account, $baseUrl, $proxyUrl) {
-                $request->withHeaders(['original_req_url' => $baseUrl])->baseUrl($proxyUrl);
-                return $exception instanceof ConnectionException;
-            })
+        ->connectTimeout($connectTimeout)
+        ->timeout($timeout)
+        ->retry($retries, $retryDelay,function (Exception $exception, PendingRequest $request) use (&$currentProxyIndex, )  {
+            $currentProxyIndex = 0; // Обнуляем индекс, чтобы при каждом новом ретрае сначала пробовать без прокси и потом по очередности с указанными прокси если они есть
+
+            //ретраить будем, только если HttpClientConnectionException, остальные ошибки ретраить не будем.
+            return $exception instanceof HttpClientConnectionException;
+        })
+        ->withOptions([
+            'handler' => $stack,
+            'proxy' => $proxies[$currentProxyIndex]
+            ])
             ->baseUrl($baseUrl);
 
         $this->accountId = $aId;
