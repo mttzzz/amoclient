@@ -67,7 +67,6 @@ class AmoClientOctane
 
         // Добавление middleware в стек
         $stack->push(Middleware::retry(function ($retry, RequestInterface $request, $response, $exception) use (&$proxies, &$currentProxyIndex) {
-            dump("currentProxyIndex: " . $currentProxyIndex ."  currentProxy: " . json_encode($proxies[$currentProxyIndex]));
             // Проверка на наличие GuzzleHttpConnectException и наличие доступных прокси для переключения
             if ($exception instanceof GuzzleHttpConnectException && isset($proxies[$currentProxyIndex + 1])) {
                 // Переход к следующему прокси
