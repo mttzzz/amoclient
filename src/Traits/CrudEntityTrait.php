@@ -11,6 +11,8 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 trait CrudEntityTrait
 {
+    public $created_by, $created_at, $updated_at, $account_id;
+    
     public function update()
     {
         try {
