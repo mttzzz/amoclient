@@ -47,7 +47,7 @@ abstract class AbstractModel
 
     public function limit(int $limit)
     {
-        $limit = $limit > 250 ? 250 : $limit;
+        $limit = $limit > 150 ? 150 : $limit;
         $this->limit = $limit;
         return $this;
     }
@@ -66,7 +66,7 @@ abstract class AbstractModel
         return $entities;
     }
 
-    public function each($function, $limit = 50)
+    public function each($function, $limit = 150)
     {
         $page = 1;
         $this->limit = $limit;
@@ -77,7 +77,7 @@ abstract class AbstractModel
         }
     }
     
-    public function allItems($limit = 250)
+    public function allItems($limit = 150)
     {
         $result = [];
         $this->each(function($items) use (&$result) {
