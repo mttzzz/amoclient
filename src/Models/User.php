@@ -32,4 +32,9 @@ class User extends AbstractModel
     {
         return $this->addWith(__FUNCTION__);
     }
+
+    public function find($id)
+    {
+        return $this->http->get("$this->entity/$id")->throw()->json();
+    }
 }
