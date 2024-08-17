@@ -1,12 +1,13 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Models;
 
 use mttzzz\AmoClient\Entities;
 
 class CustomFieldGroup extends AbstractModel
 {
+    protected $entity;
+
     public function __construct($http, $parentEntity)
     {
         $this->entity = "{$parentEntity}/groups";
