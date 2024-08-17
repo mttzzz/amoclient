@@ -15,8 +15,8 @@ class Company extends AbstractEntity
     protected $entity = 'companies';
 
     public $id, $name, $responsible_user_id;
-    public array $custom_fields_values = [];
-    public array $_embedded = [], $notes, $tasks, $links;
+    public $custom_fields_values = [];
+    public $_embedded = [], $notes, $tasks, $links;
 
     public function __construct($data, PendingRequest $http, $cf, $enums)
     {
