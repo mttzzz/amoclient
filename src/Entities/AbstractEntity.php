@@ -25,6 +25,7 @@ abstract class AbstractEntity
     protected $labor_cost;
     protected $catalog_id;
     protected $_embedded = [];
+    protected $metadata = [];
 
 
     public function __construct($data = [], PendingRequest $http = null)
