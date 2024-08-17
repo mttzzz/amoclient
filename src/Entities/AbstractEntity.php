@@ -24,7 +24,7 @@ abstract class AbstractEntity
     protected $score;
     protected $labor_cost;
     protected $catalog_id;
-    protected array $_embedded;
+    protected array $_embedded = [];
     protected array $metadata;
 
 
