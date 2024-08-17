@@ -11,6 +11,22 @@ abstract class AbstractEntity
 {
     protected $http;
 
+    // Define class properties here
+    protected $custom_fields_values = [];
+    protected $group_id;
+    protected $updated_by;
+    protected $closest_task_at;
+    protected $is_deleted;
+    protected $is_unsorted;
+    protected $_links;
+    protected $loss_reason_id;
+    protected $closed_at;
+    protected $score;
+    protected $labor_cost;
+    protected $catalog_id;
+    protected $_embedded = [];
+
+
     public function __construct($data = [], PendingRequest $http = null)
     {
         $this->http = $http;
