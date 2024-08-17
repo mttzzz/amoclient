@@ -30,7 +30,7 @@ trait CustomFieldTrait
             if (empty($values)) {
                 $this->custom_fields_values[] = ['field_id' => $id, 'values' => null];
             } else {
-                $enums = Arr::pluck(json_decode($this->enums[$id], 1), 'value', 'id');
+                $enums = Arr::pluck(json_decode($this->enums[$id], true), 'value', 'id');
                 if (in_array($value, $enums) || array_key_exists($value, $enums) || in_array('WORK', $enums)) {
                     $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
                 }
@@ -52,9 +52,9 @@ trait CustomFieldTrait
                 case 'multitext':
                     return (string) $value;
                 case 'url':
-                    return Str::limit((string) $value, '2000', '');
+                    return Str::limit((string) $value, 2000, '');
                 case 'text':
-                    return Str::limit((string) $value, '255', '');
+                    return Str::limit((string) $value, 255, '');
                 case 'numeric':
                     return (float) $value;
                 case 'date_time':
@@ -81,8 +81,6 @@ trait CustomFieldTrait
                         $value = is_string($value) && ! is_numeric($value) ?
                             Carbon::parseFromLocale(str_replace('&nbsp;', ' ', $value), 'ru') :
                             Carbon::createFromTimestamp((int) $value);
-
-                        return $value->format('Y-m-d\\TH:i:sP');
 
                         return $value->format('Y-m-d\\TH:i:sP');
                     } catch (Exception $e) {

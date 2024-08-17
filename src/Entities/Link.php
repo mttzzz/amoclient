@@ -28,7 +28,7 @@ class Link extends AbstractEntity
         try {
             return $this->http->post("$str/link", [$this->toArray()])->throw()->json();
         } catch (RequestException $e) {
-            return json_decode($e->response->body(), 1) ?? [];
+            return json_decode($e->response->body(), true) ?? [];
         }
     }
 
@@ -38,7 +38,7 @@ class Link extends AbstractEntity
         try {
             return $this->http->post("$str/unlink", [$this->toArray()])->throw()->json();
         } catch (RequestException $e) {
-            return json_decode($e->response->body(), 1) ?? [];
+            return json_decode($e->response->body(), true) ?? [];
         }
     }
 }

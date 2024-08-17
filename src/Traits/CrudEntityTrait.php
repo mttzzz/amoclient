@@ -48,8 +48,6 @@ trait CrudEntityTrait
     {
         try {
             return $this->http->delete($this->entity.'/'.$this->id)->throw()->json();
-
-            return null;
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }

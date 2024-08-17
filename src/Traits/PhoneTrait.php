@@ -61,10 +61,10 @@ trait PhoneTrait
     public function phoneDelete(int $phone)
     {
         $key = key($this->phoneGet());
-        foreach ($this->custom_fields_values[$key]['values'] as $key => $value) {
-            $phoneContact = preg_replace('/[^0-9.]+/', '', $value['value']);
-            if ($phone === $phoneContact) {
-                unset($this->custom_fields_values[$key]['values'][$key]);
+        foreach ($this->custom_fields_values[$key]['values'] as $index => $value) {
+            $phoneContact = preg_replace('/[^0-9.]+/', '', $value['value']); // Убираем все, кроме цифр и точек
+            if ((string) $phone === $phoneContact) { // Приводим к строке перед сравнением
+                unset($this->custom_fields_values[$key]['values'][$index]);
             }
         }
 

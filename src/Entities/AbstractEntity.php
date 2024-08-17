@@ -63,7 +63,8 @@ abstract class AbstractEntity
         $item = [];
         $except = ['http', 'cf', 'entity', 'notes', '_links', 'closest_task_at', 'updated_by',
             'fieldPhoneId', 'fieldEmailId', 'tasks', 'links', 'enums'];
-        foreach ($this as $key => $value) {
+
+        foreach (get_object_vars($this) as $key => $value) {
             if (! in_array($key, $except)) {
                 $item[$key] = $value;
             }
@@ -79,7 +80,6 @@ abstract class AbstractEntity
             if ($key === 'disabled' && is_null($item[$key])) {
                 unset($item[$key]);
             }
-
         }
 
         return $item;

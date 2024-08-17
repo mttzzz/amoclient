@@ -71,7 +71,7 @@ class Link extends AbstractModel
         try {
             return $this->http->post("$str/link", $this->prepareEntities($entities))->throw()->json() ?? [];
         } catch (RequestException $e) {
-            return json_decode($e->response->body(), 1) ?? [];
+            return json_decode($e->response->body(), true) ?? [];
         }
     }
 
@@ -81,7 +81,7 @@ class Link extends AbstractModel
         try {
             return $this->http->post("$str/unlink", $this->prepareEntities($entities))->throw()->json() ?? [];
         } catch (RequestException $e) {
-            return json_decode($e->response->body(), 1) ?? [];
+            return json_decode($e->response->body(), true) ?? [];
         }
     }
 }
