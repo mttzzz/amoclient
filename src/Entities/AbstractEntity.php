@@ -12,7 +12,7 @@ abstract class AbstractEntity
     protected $http;
 
     // Define class properties here
-    protected array $custom_fields_values = [];
+    protected $custom_fields_values = [];
     protected $group_id;
     protected $updated_by;
     protected $closest_task_at;
@@ -24,8 +24,8 @@ abstract class AbstractEntity
     protected $score;
     protected $labor_cost;
     protected $catalog_id;
-    protected array $_embedded = [];
-    protected array $metadata;
+    protected $_embedded = [];
+    protected $metadata;
 
 
     public function __construct($data = [], PendingRequest $http = null)
