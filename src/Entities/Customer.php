@@ -15,7 +15,7 @@ class Customer extends AbstractEntity
 
     public $name, $notes, $tasks, $links;
     public $id, $periodicity, $responsible_user_id, $next_price, $next_date;
-    public array $custom_fields_values = [], array $_embedded = [];
+    public $custom_fields_values = [], $_embedded = [];
     protected $entity = 'customers';
 
     public function __construct($data, PendingRequest $http, $cf)
