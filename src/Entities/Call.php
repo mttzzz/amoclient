@@ -32,7 +32,7 @@ class Call extends AbstractEntity
 
     protected int $created_by;
 
-    protected int $updated_by;
+    protected ?int $updated_by;
 
     protected int $created_at;
 

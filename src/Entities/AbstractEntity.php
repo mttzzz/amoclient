@@ -14,9 +14,9 @@ abstract class AbstractEntity
 
     protected $group_id;
 
-    protected int $updated_by;
+    protected ?int $updated_by;
 
-    protected int $closest_task_at;
+    protected ?int $closest_task_at;
 
     protected $is_deleted;
 
@@ -26,7 +26,7 @@ abstract class AbstractEntity
 
     protected $loss_reason_id;
 
-    protected int $closed_at;
+    protected ?int $closed_at;
 
     protected $score;
 
