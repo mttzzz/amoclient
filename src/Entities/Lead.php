@@ -24,6 +24,7 @@ class Lead extends AbstractEntity
     public $name, $notes, $tasks, $links;
     public $id, $price, $status_id, $responsible_user_id, $pipeline_id;
     public $custom_fields_values = [], $_embedded = [];
+    public $group_id;
 
     public function __construct($data, PendingRequest $http, $cf, $enums)
     {
