@@ -15,8 +15,8 @@ class Contact extends AbstractEntity
     protected $entity = 'contacts';
 
     public $id, $first_name, $last_name, $name, $responsible_user_id;
-    public array $custom_fields_values = [];
-    public array $_embedded = []; 
+    public $custom_fields_values = [];
+    public $_embedded = []; 
     public $notes, $tasks, $links;
 
     public function __construct($data, PendingRequest $http, $cf, $enums)
