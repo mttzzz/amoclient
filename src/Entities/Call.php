@@ -10,33 +10,33 @@ class Call extends AbstractEntity
 {
     protected string $entity = 'calls';
 
-    protected string $direction;
+    public string $direction;
 
-    protected string $uniq;
+    public string $uniq;
 
-    protected string $source;
+    public string $source;
 
-    protected string $link;
+    public string $link;
 
-    protected string $phone;
+    public string $phone;
 
-    protected string $call_result;
+    public string $call_result;
 
-    protected string $request_id;
+    public string $request_id;
 
-    protected int $duration = 0;
+    public int $duration = 0;
 
-    protected int $call_status;
+    public int $call_status;
 
-    protected int $responsible_user_id;
+    public int $responsible_user_id;
 
-    protected int $created_by;
+    public int $created_by;
 
-    protected ?int $updated_by;
+    public ?int $updated_by;
 
-    protected int $created_at;
+    public int $created_at;
 
-    protected int $updated_at;
+    public int $updated_at;
 
     public function __construct($data, PendingRequest $http)
     {

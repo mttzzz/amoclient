@@ -9,7 +9,7 @@ class CatalogElement extends AbstractEntity
 {
     use Traits\CrudEntityTrait, Traits\CustomFieldTrait;
 
-    protected $entity;
+    protected string $entity;
 
     public $id;
 

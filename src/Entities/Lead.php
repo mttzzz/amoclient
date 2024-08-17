@@ -19,7 +19,7 @@ class Lead extends AbstractEntity
         'utm_campaign', 'utm_medium',
     ];
 
-    protected $entity = 'leads';
+    protected string $entity = 'leads';
 
     public $name;
 

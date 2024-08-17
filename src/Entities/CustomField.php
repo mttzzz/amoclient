@@ -9,7 +9,7 @@ class CustomField extends AbstractEntity
 {
     use Traits\CrudEntityTrait;
 
-    protected $entity;
+    protected string $entity;
 
     public $type;
 

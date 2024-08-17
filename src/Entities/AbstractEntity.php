@@ -10,33 +10,33 @@ abstract class AbstractEntity
     protected $http;
 
     // Define class properties here
-    protected $custom_fields_values = [];
+    public $custom_fields_values = [];
 
-    protected $group_id;
+    public $group_id;
 
-    protected ?int $updated_by;
+    public ?int $updated_by;
 
-    protected ?int $closest_task_at;
+    public ?int $closest_task_at;
 
-    protected $is_deleted;
+    public $is_deleted;
 
-    protected $is_unsorted;
+    public $is_unsorted;
 
-    protected $_links;
+    public $_links;
 
-    protected $loss_reason_id;
+    public $loss_reason_id;
 
-    protected ?int $closed_at;
+    public ?int $closed_at;
 
-    protected $score;
+    public $score;
 
-    protected $labor_cost;
+    public $labor_cost;
 
-    protected $catalog_id;
+    public $catalog_id;
 
-    protected $_embedded = [];
+    public $_embedded = [];
 
-    protected $metadata;
+    public $metadata;
 
     public function __construct($data = [], ?PendingRequest $http = null)
     {

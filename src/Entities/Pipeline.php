@@ -8,9 +8,9 @@ class Pipeline extends AbstractEntity
 {
     use Traits\CrudEntityTrait, Traits\StatusTrait;
 
-    protected $entity = 'leads/pipelines';
+    protected string $entity = 'leads/pipelines';
 
-    protected $_embedded = ['statuses' => []];
+    public $_embedded = ['statuses' => []];
 
     public $name;
 

@@ -9,7 +9,7 @@ class Task extends AbstractEntity
 {
     use Traits\CrudEntityTrait;
 
-    protected $entity = 'tasks';
+    protected string $entity = 'tasks';
 
     public $id;
 

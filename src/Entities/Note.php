@@ -10,7 +10,7 @@ class Note extends AbstractEntity
 {
     use Traits\CrudEntityTrait;
 
-    protected $entity;
+    protected string $entity;
 
     public $id;
 

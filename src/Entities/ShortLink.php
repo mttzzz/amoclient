@@ -10,9 +10,9 @@ class ShortLink extends AbstractEntity
 {
     protected string $entity = 'short_links';
 
-    protected string $url;
+    public string $url;
 
-    protected $metadata;
+    public $metadata;
 
     public function __construct(PendingRequest $http)
     {

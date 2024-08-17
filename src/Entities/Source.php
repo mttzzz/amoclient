@@ -8,7 +8,7 @@ class Source extends AbstractEntity
 {
     use Traits\CrudEntityTrait;
 
-    protected $entity = 'sources';
+    protected string $entity = 'sources';
 
     public $name;
 

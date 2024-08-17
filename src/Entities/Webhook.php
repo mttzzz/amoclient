@@ -7,15 +7,15 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Webhook extends AbstractEntity
 {
+    protected string $entity = 'webhooks';
+
+    protected $settings = [];
+
     public $disabled;
 
     public $destination;
 
     public $sort;
-
-    protected $entity = 'webhooks';
-
-    protected $settings = [];
 
     public function subscribe()
     {

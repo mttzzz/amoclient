@@ -8,13 +8,13 @@ use Illuminate\Support\Str;
 
 class Link extends AbstractEntity
 {
+    protected string $entity;
+
     public $to_entity_id;
 
     public $to_entity_type;
 
     public $metadata = [];
-
-    protected $entity;
 
     public function __construct($data, PendingRequest $http, $entity)
     {

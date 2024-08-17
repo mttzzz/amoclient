@@ -11,7 +11,7 @@ class Contact extends AbstractEntity
 {
     use Traits\CrudEntityTrait, Traits\CustomFieldTrait, Traits\EmailTrait, Traits\PhoneTrait, Traits\TagTrait;
 
-    protected $entity = 'contacts';
+    protected string $entity = 'contacts';
 
     public $id;
 
