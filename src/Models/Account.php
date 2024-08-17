@@ -1,13 +1,13 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Models;
-
 
 class Account extends AbstractModel
 {
     protected $http;
+
     protected $entity = 'account';
+
     public $with = [];
 
     public function __construct($http)

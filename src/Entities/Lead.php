@@ -12,18 +12,36 @@ use mttzzz\AmoClient\Traits;
 
 class Lead extends AbstractEntity
 {
-    use Traits\CustomFieldTrait, Traits\TagTrait, Traits\CrudEntityTrait;
+    use Traits\CrudEntityTrait, Traits\CustomFieldTrait, Traits\TagTrait;
 
     const UTM_FIELDS = ['fbclid', 'yclid', 'referrer', 'gclid', 'gclientid', 'from', 'openstat_source', 'openstat_ad', 'openstat_campaign',
         'openstat_service', 'utm_source', 'roistat', '_ym_counter', '_ym_uid', 'utm_referrer', 'utm_content', 'utm_term',
-        'utm_campaign', 'utm_medium'
+        'utm_campaign', 'utm_medium',
     ];
 
     protected $entity = 'leads';
 
-    public $name, $notes, $tasks, $links;
-    public $id, $price, $status_id, $responsible_user_id, $pipeline_id;
-    public $custom_fields_values = [], $_embedded = [];
+    public $name;
+
+    public $notes;
+
+    public $tasks;
+
+    public $links;
+
+    public $id;
+
+    public $price;
+
+    public $status_id;
+
+    public $responsible_user_id;
+
+    public $pipeline_id;
+
+    public $custom_fields_values = [];
+
+    public $_embedded = [];
 
     public function __construct($data, PendingRequest $http, $cf, $enums)
     {
@@ -39,7 +57,7 @@ class Lead extends AbstractEntity
     public function complex()
     {
         try {
-            return $this->http->post($this->entity . '/complex', [$this->toArray()])->throw()->json();
+            return $this->http->post($this->entity.'/complex', [$this->toArray()])->throw()->json();
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
@@ -57,7 +75,7 @@ class Lead extends AbstractEntity
 
     public function getMainContactId()
     {
-        if (!isset($this->_embedded['contacts'])) {
+        if (! isset($this->_embedded['contacts'])) {
             throw new Exception('add withContacts() before call this function');
         }
         foreach ($this->_embedded['contacts'] as $contact) {
@@ -65,6 +83,7 @@ class Lead extends AbstractEntity
                 return $contact['id'];
             }
         }
+
         return null;
     }
 
@@ -76,6 +95,7 @@ class Lead extends AbstractEntity
     public function getCompanyName(): string
     {
         $companyId = $this->getCompanyId();
+
         return $companyId ? $this->http->get("companies/$companyId")->json('name') : '';
     }
 
@@ -85,6 +105,7 @@ class Lead extends AbstractEntity
             ->where('account_id', $this->account_id)
             ->where('id', $this->pipeline_id)
             ->first();
+
         return $pipeline?->name;
     }
 
@@ -92,10 +113,13 @@ class Lead extends AbstractEntity
     {
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
         foreach ($catalogElementIds as $key => &$catalogElementId) {
-            if ((int)$catalogElementId['metadata']['catalog_id'] === (int)$catalogId) {
+            if ((int) $catalogElementId['metadata']['catalog_id'] === (int) $catalogId) {
                 $catalogElementId = $catalogElementId['id'];
-            } else unset($catalogElementIds[$key]);
+            } else {
+                unset($catalogElementIds[$key]);
+            }
         }
+
         return $catalogElementIds;
     }
 
@@ -104,10 +128,11 @@ class Lead extends AbstractEntity
         $quantity = 0;
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
         foreach ($catalogElementIds as $key => $catalogElementId) {
-            if ((int)$catalogElementId['metadata']['catalog_id'] === (int)$catalogId) {
+            if ((int) $catalogElementId['metadata']['catalog_id'] === (int) $catalogId) {
                 $quantity += $catalogElementId['metadata']['quantity'];
             }
         }
+
         return $quantity;
     }
 
@@ -115,22 +140,24 @@ class Lead extends AbstractEntity
     {
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
         foreach ($catalogElementIds as $key => $catalogElementId) {
-            if ((int)$catalogElementId['metadata']['catalog_id'] === (int)$catalogId && (int)$elementId == (int)$catalogElementId['id']) {
+            if ((int) $catalogElementId['metadata']['catalog_id'] === (int) $catalogId && (int) $elementId == (int) $catalogElementId['id']) {
                 return $catalogElementId['metadata']['quantity'];
             }
         }
+
         return 0;
     }
 
     public function getContactsIds()
     {
-        if (!isset($this->_embedded['contacts'])) {
+        if (! isset($this->_embedded['contacts'])) {
             throw new Exception('add withContacts() before call this function');
         }
         $ids = [];
         foreach ($this->_embedded['contacts'] as $contact) {
             $ids[] = $contact['id'];
         }
+
         return $ids;
     }
 }

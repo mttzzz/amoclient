@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Traits;
-
 
 use Illuminate\Support\Arr;
 
@@ -20,6 +18,7 @@ trait PhoneTrait
                 }
             }
         }
+
         return $phones;
     }
 
@@ -29,11 +28,12 @@ trait PhoneTrait
             $phones = Arr::where($this->custom_fields_values, function ($item) {
                 return isset($item['field_code']) && $item['field_code'] === 'PHONE';
             });
-            if (!empty($phones)) {
+            if (! empty($phones)) {
                 return $phones;
             }
         }
         $this->custom_fields_values[] = ['field_code' => 'PHONE', 'values' => []];
+
         return $this->phoneGet();
 
     }
@@ -42,6 +42,7 @@ trait PhoneTrait
     {
         $key = key($this->phoneGet());
         $this->custom_fields_values[$key]['values'][] = ['value' => $phone, 'enum_code' => 'WORK'];
+
         return $this;
     }
 
@@ -53,6 +54,7 @@ trait PhoneTrait
             $values[] = ['value' => $phone, 'enum_code' => 'WORK'];
         }
         $this->custom_fields_values[$key]['values'] = $values;
+
         return $this;
     }
 
@@ -65,6 +67,7 @@ trait PhoneTrait
                 unset($this->custom_fields_values[$key]['values'][$key]);
             }
         }
+
         return $this;
     }
 }

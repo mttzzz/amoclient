@@ -11,12 +11,23 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 abstract class AbstractUnsorted
 {
-    public string $source_uid, $source_name;
-    public int $pipeline_id, $created_at;
-    protected $http, $entity = 'leads/unsorted';
-    public array $_embedded = [], $metadata = [];
+    public string $source_uid;
 
-    public function __construct(PendingRequest $http = null)
+    public string $source_name;
+
+    public int $pipeline_id;
+
+    public int $created_at;
+
+    protected $http;
+
+    protected $entity = 'leads/unsorted';
+
+    public array $_embedded = [];
+
+    public array $metadata = [];
+
+    public function __construct(?PendingRequest $http = null)
     {
         $this->http = $http;
     }
@@ -34,7 +45,8 @@ abstract class AbstractUnsorted
     {
         unset($this->http);
         unset($this->entity);
-        return (array)$this;
+
+        return (array) $this;
     }
 
     public function addLead(Lead $lead)

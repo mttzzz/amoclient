@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Entities;
-
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -10,7 +8,12 @@ use Illuminate\Support\Str;
 
 class Link extends AbstractEntity
 {
-    public $to_entity_id, $to_entity_type, $metadata = [];
+    public $to_entity_id;
+
+    public $to_entity_type;
+
+    public $metadata = [];
+
     protected $entity;
 
     public function __construct($data, PendingRequest $http, $entity)

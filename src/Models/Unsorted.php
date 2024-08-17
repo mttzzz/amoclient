@@ -57,61 +57,71 @@ class Unsorted extends AbstractModel
 
     public function filterUid($Uid)
     {
-        $this->filter['uid'] = is_array($Uid) ? $Uid : (string)$Uid;
+        $this->filter['uid'] = is_array($Uid) ? $Uid : (string) $Uid;
+
         return $this;
     }
 
     public function filterCategorySip()
     {
         $this->filter['category'][] = 'sip';
+
         return $this;
     }
 
     public function filterCategoryMail()
     {
         $this->filter['category'][] = 'mail';
+
         return $this;
     }
 
     public function filterCategoryForms()
     {
         $this->filter['category'][] = 'forms';
+
         return $this;
     }
 
     public function filterCategoryChats()
     {
         $this->filter['category'][] = 'chats';
+
         return $this;
     }
 
     public function filterPipelineId($pipelineId)
     {
-        $this->filter['pipeline_id'] = (int)$pipelineId;
+        $this->filter['pipeline_id'] = (int) $pipelineId;
+
         return $this;
     }
 
     public function orderCreatedAtAsc()
     {
         $this->order['created_at'] = 'asc';
+
         return $this;
     }
 
     public function orderCreatedAtDesc()
     {
         $this->order['created_at'] = 'desc';
+
         return $this;
     }
 
     public function orderUpdatedAtAsc()
     {
         $this->order['updated_at'] = 'asc';
+
         return $this;
     }
 
     public function orderUpdatedAtDesc()
     {
         $this->order['updated_at'] = 'desc';
+
         return $this;
     }
 }

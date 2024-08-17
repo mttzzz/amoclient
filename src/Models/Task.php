@@ -29,79 +29,92 @@ class Task extends AbstractModel
 
     public function filterId($id)
     {
-        $this->filter['id'] = is_array($id) ? $id : (int)$id;
+        $this->filter['id'] = is_array($id) ? $id : (int) $id;
+
         return $this;
     }
 
     public function filterResponsibleUserId($id)
     {
-        $this->filter['responsible_user_id'] = is_array($id) ? $id : (int)$id;
+        $this->filter['responsible_user_id'] = is_array($id) ? $id : (int) $id;
+
         return $this;
     }
 
     public function filterIsCompletedTrue()
     {
         $this->filter['is_completed'] = true;
+
         return $this;
     }
 
     public function filterIsCompletedFalse()
     {
         $this->filter['is_completed'] = false;
+
         return $this;
     }
 
     public function filterTaskType($type)
     {
         $this->filter['task_type'] = $type;
+
         return $this;
     }
 
     public function filterLead()
     {
         $this->filter['entity_type'] = 'leads';
+
         return $this;
     }
 
     public function filterContact()
     {
         $this->filter['entity_type'] = 'contacts';
+
         return $this;
     }
 
     public function filterCompany()
     {
         $this->filter['entity_type'] = 'companies';
+
         return $this;
     }
 
     public function filterCustomer()
     {
         $this->filter['entity_type'] = 'customers';
+
         return $this;
     }
 
     public function filterEntityId($id)
     {
-        $this->filter['entity_id'] = is_array($id) ? $id : (int)$id;
+        $this->filter['entity_id'] = is_array($id) ? $id : (int) $id;
+
         return $this;
     }
 
     public function filterUpdatedAt(int $from, int $to)
     {
         $this->filter['updated_at'] = ['from' => $from, 'to' => $to];
+
         return $this;
     }
 
     public function orderByCompleteDesc()
     {
         $this->order['complete_till'] = 'desc';
+
         return $this;
     }
 
     public function orderByCompleteAsc()
     {
         $this->order['complete_till'] = 'asc';
+
         return $this;
     }
 }

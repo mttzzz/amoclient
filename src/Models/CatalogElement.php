@@ -1,6 +1,5 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
@@ -37,6 +36,7 @@ class CatalogElement extends AbstractModel
     public function filterId($id)
     {
         $this->filter['id'] = $id;
+
         return $this;
     }
 }

@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Entities;
-
 
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Traits;
@@ -10,8 +8,26 @@ use mttzzz\AmoClient\Traits;
 class CustomField extends AbstractEntity
 {
     use Traits\CrudEntityTrait;
+
     protected $entity;
-    public $type, $name, $code, $sort, $group_id, $is_api_only, $required_statuses, $remind, $enums;
+
+    public $type;
+
+    public $name;
+
+    public $code;
+
+    public $sort;
+
+    public $group_id;
+
+    public $is_api_only;
+
+    public $required_statuses;
+
+    public $remind;
+
+    public $enums;
 
     public function __construct($data, PendingRequest $http, $entity)
     {

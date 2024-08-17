@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Traits;
-
 
 use Carbon\Carbon;
 use Illuminate\Http\Client\RequestException;
@@ -11,8 +9,18 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 trait CrudEntityTrait
 {
-    public $created_by, $created_at, $updated_at, $account_id;
-    
+    public $created_by;
+
+    public $created_at;
+
+    public $updated_at;
+
+    public $account_id;
+
+    public $id;
+
+    public $responsible_user_id;
+
     public function update()
     {
         try {
@@ -39,7 +47,8 @@ trait CrudEntityTrait
     public function delete()
     {
         try {
-            return $this->http->delete($this->entity . '/' . $this->id)->throw()->json();
+            return $this->http->delete($this->entity.'/'.$this->id)->throw()->json();
+
             return null;
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
@@ -64,6 +73,7 @@ trait CrudEntityTrait
     public function getResponsibleName()
     {
         $user = DB::connection('octane')->table('amo_users')->find($this->responsible_user_id);
+
         return $user?->name;
     }
 }

@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Entities;
-
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -10,7 +8,10 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class ShortLink extends AbstractEntity
 {
-    protected string $entity = 'short_links', $url;
+    protected string $entity = 'short_links';
+
+    protected string $url;
+
     protected $metadata;
 
     public function __construct(PendingRequest $http)
@@ -30,12 +31,14 @@ class ShortLink extends AbstractEntity
     public function url(string $url): ShortLink
     {
         $this->url = $url;
+
         return $this;
     }
 
     public function setContactId(int $contactId): ShortLink
     {
         $this->metadata = ['entity_type' => 'contacts', 'entity_id' => $contactId];
+
         return $this;
     }
 }

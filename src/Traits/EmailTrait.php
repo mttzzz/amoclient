@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Traits;
-
 
 use Illuminate\Support\Arr;
 
@@ -20,6 +18,7 @@ trait EmailTrait
                 }
             }
         }
+
         return $emails;
     }
 
@@ -29,11 +28,12 @@ trait EmailTrait
             $emails = Arr::where($this->custom_fields_values, function ($item) {
                 return isset($item['field_code']) && $item['field_code'] === 'EMAIL';
             });
-            if (!empty($emails)) {
+            if (! empty($emails)) {
                 return $emails;
             }
         }
         $this->custom_fields_values[] = ['field_code' => 'EMAIL', 'values' => []];
+
         return $this->emailGet();
 
     }
@@ -42,6 +42,7 @@ trait EmailTrait
     {
         $key = key($this->emailGet());
         $this->custom_fields_values[$key]['values'][] = ['value' => $email, 'enum_code' => 'WORK'];
+
         return $this;
     }
 
@@ -53,6 +54,7 @@ trait EmailTrait
             $values[] = ['value' => $email, 'enum_code' => 'WORK'];
         }
         $this->custom_fields_values[$key]['values'] = $values;
+
         return $this;
     }
 
@@ -64,6 +66,7 @@ trait EmailTrait
                 unset($this->custom_fields_values[$key]['values'][$key]);
             }
         }
+
         return $this;
     }
 }

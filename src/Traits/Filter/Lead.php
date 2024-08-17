@@ -7,6 +7,7 @@ trait Lead
     public function filterPrice($from, $to)
     {
         $this->filter['price'] = compact('from', 'to');
+
         return $this;
     }
 
@@ -19,18 +20,21 @@ trait Lead
             }
         }
         $this->filter['statuses'] = $filter;
+
         return $this;
     }
 
     public function filterPipelines($pipelines)
     {
         $this->filter['pipeline_id'] = $pipelines;
+
         return $this;
     }
 
     public function filterClosedAt($from, $to)
     {
         $this->filter['closed_at'] = compact('from', 'to');
+
         return $this;
     }
 }

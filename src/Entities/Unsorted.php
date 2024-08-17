@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Entities;
-
 
 use Illuminate\Http\Client\PendingRequest;
 
@@ -12,6 +10,4 @@ class Unsorted extends AbstractEntity
     {
         parent::__construct($data, $http);
     }
-
-
 }

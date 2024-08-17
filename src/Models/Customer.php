@@ -6,29 +6,28 @@ use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Traits;
 
-
 class Customer extends AbstractModel
 {
     use Traits\CrudTrait;
 
     protected $entity = 'customers';
-    private $cf, $enums;
 
-    public function __construct(PendingRequest $http, $cf, $enums)
+    private $cf;
+
+    public function __construct(PendingRequest $http, $cf)
     {
         $this->cf = $cf;
-        $this->enums = $cf;
         parent::__construct($http);
     }
 
     public function entity($id = null)
     {
-        return new Entities\Customer(['id' => $id], $this->http, $this->cf, $this->enums);
+        return new Entities\Customer(['id' => $id], $this->http, $this->cf);
     }
 
     public function entityData($data)
     {
-        return new Entities\Customer($data, $this->http, $this->cf, $this->enums);
+        return new Entities\Customer($data, $this->http, $this->cf);
     }
 
     public function customFields()
@@ -38,7 +37,7 @@ class Customer extends AbstractModel
 
     public function find($id)
     {
-        return new Entities\Customer($this->findEntity($id), $this->http, $this->cf, $this->enums);
+        return new Entities\Customer($this->findEntity($id), $this->http, $this->cf);
     }
 
     public function withCatalogElements()

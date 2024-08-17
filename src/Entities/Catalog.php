@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Entities;
-
 
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Models;
@@ -13,8 +11,20 @@ class Catalog extends AbstractEntity
     use Traits\CrudEntityTrait;
 
     protected string $entity = 'catalogs';
-    public $id, $name, $type = 'regular', $sort = null, $elements;
-    public bool $can_add_elements, $can_link_multiple;
+
+    public $id;
+
+    public $name;
+
+    public $type = 'regular';
+
+    public $sort = null;
+
+    public $elements;
+
+    public bool $can_add_elements;
+
+    public bool $can_link_multiple;
 
     public function __construct($data, PendingRequest $http)
     {

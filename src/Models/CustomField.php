@@ -1,6 +1,5 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\RequestException;
@@ -10,6 +9,7 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 class CustomField extends AbstractModel
 {
     protected $entity;
+
     public $groups;
 
     public function __construct($http, $parentEntity)
@@ -27,8 +27,8 @@ class CustomField extends AbstractModel
     public function find($id)
     {
         try {
-            return $this->http->get($this->entity . '/' . $id)
-                    ->throw()->json() ?? [];
+            return $this->http->get($this->entity.'/'.$id)
+                ->throw()->json() ?? [];
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }

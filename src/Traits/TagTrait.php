@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Traits;
-
 
 trait TagTrait
 {

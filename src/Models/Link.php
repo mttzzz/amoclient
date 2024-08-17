@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Models;
-
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -15,7 +13,7 @@ class Link extends AbstractModel
 
     public function __construct(PendingRequest $http, $entity)
     {
-        $this->entity = $entity . '/links';
+        $this->entity = $entity.'/links';
         parent::__construct($http);
     }
 
@@ -27,39 +25,43 @@ class Link extends AbstractModel
     public function catalogElement($catalogElementId, $catalogId, $quantity = null)
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
-        $entity->to_entity_id = (int)$catalogElementId;
+        $entity->to_entity_id = (int) $catalogElementId;
         $entity->to_entity_type = 'catalog_elements';
-        $entity->metadata['catalog_id'] = (int)$catalogId;
+        $entity->metadata['catalog_id'] = (int) $catalogId;
         if ($quantity) {
-            $entity->metadata['quantity'] = (int)$quantity;
+            $entity->metadata['quantity'] = (int) $quantity;
         }
+
         return $entity;
     }
 
     public function contact($contactId, $mainContact = false)
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
-        $entity->to_entity_id = (int)$contactId;
+        $entity->to_entity_id = (int) $contactId;
         $entity->to_entity_type = 'contacts';
-        $entity->metadata['is_main'] = (bool)$mainContact;
+        $entity->metadata['is_main'] = (bool) $mainContact;
+
         return $entity;
     }
 
     public function companies($companyId)
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
-        $entity->to_entity_id = (int)$companyId;
+        $entity->to_entity_id = (int) $companyId;
         $entity->to_entity_type = 'companies';
         $entity->metadata = null;
+
         return $entity;
     }
 
     public function customers($customerId)
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
-        $entity->to_entity_id = (int)$customerId;
+        $entity->to_entity_id = (int) $customerId;
         $entity->to_entity_type = 'customers';
         $entity->metadata = null;
+
         return $entity;
     }
 

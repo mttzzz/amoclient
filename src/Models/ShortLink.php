@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Models;
-
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -26,9 +24,10 @@ class ShortLink extends AbstractModel
     public function create(array $entities)
     {
         try {
-            if (!empty($entities)) {
+            if (! empty($entities)) {
                 return $this->http->post($this->entity, $this->prepareEntities($entities))->throw()->json();
             }
+
             return [];
 
         } catch (RequestException $e) {

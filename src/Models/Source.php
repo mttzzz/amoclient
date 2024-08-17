@@ -1,6 +1,5 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Models;
 
 use mttzzz\AmoClient\Entities;
@@ -9,6 +8,7 @@ use mttzzz\AmoClient\Traits;
 class Source extends AbstractModel
 {
     protected $entity = 'sources';
+
     use Traits\CrudTrait;
 
     public function __construct($http)

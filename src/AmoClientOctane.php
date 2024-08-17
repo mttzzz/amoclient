@@ -3,21 +3,51 @@
 namespace mttzzz\AmoClient;
 
 use Exception;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
-use mttzzz\AmoClient\Models;
-use Psr\Http\Message\RequestInterface;
+use GuzzleHttp\Exception\ConnectException as GuzzleHttpConnectException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
-use GuzzleHttp\Exception\ConnectException as GuzzleHttpConnectException;
 use Illuminate\Http\Client\ConnectionException as HttpClientConnectionException;
 use Illuminate\Http\Client\PendingRequest;
-
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Psr\Http\Message\RequestInterface;
 
 class AmoClientOctane
 {
-    public $leads, $contacts, $companies, $sources, $catalogs, $customers, $account, $users, $pipelines, $tasks, $events, $ajax,
-        $unsorted, $calls, $webhooks, $shortLinks, $accountId;
+    public $leads;
+
+    public $contacts;
+
+    public $companies;
+
+    public $sources;
+
+    public $catalogs;
+
+    public $customers;
+
+    public $account;
+
+    public $users;
+
+    public $pipelines;
+
+    public $tasks;
+
+    public $events;
+
+    public $ajax;
+
+    public $unsorted;
+
+    public $calls;
+
+    public $webhooks;
+
+    public $shortLinks;
+
+    public $accountId;
 
     public function __construct($aId, $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
     {
@@ -30,16 +60,16 @@ class AmoClientOctane
             ->where('widgets.client_id', $clientId)
             ->first();
 
-        if (!$account) {
+        if (! $account) {
             $account = DB::connection('octane')->table('accounts')->where('id', $aId)->first();
             $widget = DB::connection('octane')->table('widgets')->where('client_id', $clientId)->first();
             throw new Exception("Account ($account->subdomain) doesnt active widget ($widget->name)");
         }
 
         $account->contact_phone_field_id = DB::connection('octane')->table('account_custom_fields')
-                ->where('account_id', $aId)->where('code', 'PHONE')->first()->id ?? null;
+            ->where('account_id', $aId)->where('code', 'PHONE')->first()->id ?? null;
         $account->contact_email_field_id = DB::connection('octane')->table('account_custom_fields')
-                ->where('account_id', $aId)->where('code', 'EMAIL')->first()->id ?? null;
+            ->where('account_id', $aId)->where('code', 'EMAIL')->first()->id ?? null;
 
         $fields = DB::connection('octane')
             ->table('account_custom_fields')
@@ -54,13 +84,13 @@ class AmoClientOctane
 
         //Подлючаем спискок прокси из конфига, если конфига нет, то писваиваем массив с 1 элементом null.
         //Это приведет к тому, что запрос будет выполнен без прокси.
-        $proxies = config('amoclient.proxies') ?? [null];
+        $proxies = Config::get('amoclient.proxies') ?? [null];
 
         //Остальные параметры из конфига, если они есть.
-        $timeout = config('amoclient.timeout') ?? 60;
-        $connectTimeout = config('amoclient.connectTimeout') ?? 10;
-        $retries = config('amoclient.retries') ?? 2;
-        $retryDelay = config('amoclient.retryDelay') ?? 1000;
+        $timeout = Config::get('amoclient.timeout') ?? 60;
+        $connectTimeout = Config::get('amoclient.connectTimeout') ?? 10;
+        $retries = Config::get('amoclient.retries') ?? 2;
+        $retryDelay = Config::get('amoclient.retryDelay') ?? 1000;
 
         // Индекс текущего прокси
         $currentProxyIndex = 0;
@@ -86,27 +116,26 @@ class AmoClientOctane
             return 1000; // Задержка в миллисекундах
         }));
 
-
         $baseUrl = "https://{$account->subdomain}.amocrm.{$account->domain}/api/v4";
         $http = Http::withToken($account->access_token)
-        ->connectTimeout($connectTimeout)
-        ->timeout($timeout)
-        ->retry($retries, $retryDelay,function (Exception $exception, PendingRequest $request) use (&$currentProxyIndex, )  {
-            $currentProxyIndex = 0; // Обнуляем индекс, чтобы при каждом новом ретрае сначала пробовать без прокси и потом по очередности с указанными прокси если они есть
+            ->connectTimeout($connectTimeout)
+            ->timeout($timeout)
+            ->retry($retries, $retryDelay, function (Exception $exception, PendingRequest $request) use (&$currentProxyIndex) {
+                $currentProxyIndex = 0; // Обнуляем индекс, чтобы при каждом новом ретрае сначала пробовать без прокси и потом по очередности с указанными прокси если они есть
 
-            //ретраить будем, только если HttpClientConnectionException, остальные ошибки ретраить не будем.
-            return $exception instanceof HttpClientConnectionException;
-        })
-        ->withOptions([
-            'handler' => $stack,
-            'proxy' => $proxies[$currentProxyIndex]
+                //ретраить будем, только если HttpClientConnectionException, остальные ошибки ретраить не будем.
+                return $exception instanceof HttpClientConnectionException;
+            })
+            ->withOptions([
+                'handler' => $stack,
+                'proxy' => $proxies[$currentProxyIndex],
             ])
             ->baseUrl($baseUrl);
 
         $this->accountId = $aId;
         $this->account = new Models\Account($http);
         $this->leads = new Models\Lead($http, $cf, $enums);
-        $this->customers = new Models\Customer($http, $cf, $enums);
+        $this->customers = new Models\Customer($http, $cf);
         $this->contacts = new Models\Contact($http, $account, $cf, $enums);
         $this->companies = new Models\Company($http, $account, $cf, $enums);
         $this->catalogs = new Models\Catalog($http);

@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Models;
-
 
 class User extends AbstractModel
 {

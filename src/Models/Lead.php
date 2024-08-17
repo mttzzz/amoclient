@@ -7,14 +7,16 @@ use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Traits;
 use mttzzz\AmoClient\Traits\Filter;
 
-
 class Lead extends AbstractModel
 {
-    use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
     use Filter\Common, Filter\Lead;
+    use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
 
     protected $entity = 'leads';
-    private $cf, $enums;
+
+    private $cf;
+
+    private $enums;
 
     public function __construct(PendingRequest $http, $cf, $enums)
     {

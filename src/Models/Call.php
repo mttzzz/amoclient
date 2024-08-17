@@ -1,8 +1,6 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Models;
-
 
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;

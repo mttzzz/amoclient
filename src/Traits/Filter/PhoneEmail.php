@@ -4,7 +4,9 @@ namespace mttzzz\AmoClient\Traits\Filter;
 
 trait PhoneEmail
 {
-    protected $fieldPhoneId, $fieldEmailId;
+    protected $fieldPhoneId;
+
+    protected $fieldEmailId;
 
     public function filterPhone($value)
     {

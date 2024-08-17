@@ -15,6 +15,7 @@ class Sip extends AbstractUnsorted
     public function addMetadata($uniq, $duration, $service_code, $link, $phone, $called_at, $from, $is_call_event_needed)
     {
         $this->metadata = compact('uniq', 'duration', 'service_code', 'link', 'phone', 'called_at', 'from', 'is_call_event_needed');
+
         return $this;
     }
 }

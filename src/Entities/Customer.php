@@ -11,11 +11,30 @@ use mttzzz\AmoClient\Traits;
 
 class Customer extends AbstractEntity
 {
-    use Traits\CustomFieldTrait, Traits\TagTrait, Traits\CrudEntityTrait;
+    use Traits\CrudEntityTrait, Traits\CustomFieldTrait, Traits\TagTrait;
 
-    public $name, $notes, $tasks, $links;
-    public $id, $periodicity, $responsible_user_id, $next_price, $next_date;
-    public $custom_fields_values = [], $_embedded = [];
+    public $name;
+
+    public $notes;
+
+    public $tasks;
+
+    public $links;
+
+    public $id;
+
+    public $periodicity;
+
+    public $responsible_user_id;
+
+    public $next_price;
+
+    public $next_date;
+
+    public $custom_fields_values = [];
+
+    public $_embedded = [];
+
     protected $entity = 'customers';
 
     public function __construct($data, PendingRequest $http, $cf)
@@ -31,7 +50,7 @@ class Customer extends AbstractEntity
     public function complex()
     {
         try {
-            return $this->http->post($this->entity . '/complex', [$this->toArray()])->throw()->json();
+            return $this->http->post($this->entity.'/complex', [$this->toArray()])->throw()->json();
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
@@ -49,7 +68,7 @@ class Customer extends AbstractEntity
 
     public function getMainContactId()
     {
-        if (!isset($this->_embedded['contacts'])) {
+        if (! isset($this->_embedded['contacts'])) {
             throw new Exception('add withContacts() before call this function');
         }
         foreach ($this->_embedded['contacts'] as $contact) {
@@ -57,6 +76,7 @@ class Customer extends AbstractEntity
                 return $contact['id'];
             }
         }
+
         return null;
     }
 
@@ -67,13 +87,14 @@ class Customer extends AbstractEntity
 
     public function getContactsIds()
     {
-        if (!isset($this->_embedded['contacts'])) {
+        if (! isset($this->_embedded['contacts'])) {
             throw new Exception('add withContacts() before call this function');
         }
         $ids = [];
         foreach ($this->_embedded['contacts'] as $contact) {
             $ids[] = $contact['id'];
         }
+
         return $ids;
     }
 }

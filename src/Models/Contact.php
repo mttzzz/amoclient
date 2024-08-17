@@ -1,6 +1,5 @@
 <?php
 
-
 namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
@@ -10,11 +9,14 @@ use mttzzz\AmoClient\Traits\Filter;
 
 class Contact extends AbstractModel
 {
-    use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
     use Filter\Common, Filter\PhoneEmail;
+    use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
 
     protected $entity = 'contacts';
-    private $cf, $enums;
+
+    private $cf;
+
+    private $enums;
 
     public function __construct(PendingRequest $http, $account, $cf, $enums)
     {
@@ -49,6 +51,7 @@ class Contact extends AbstractModel
     public function query($query)
     {
         $this->query = $query;
+
         return $this;
     }
 
