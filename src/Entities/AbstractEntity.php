@@ -12,7 +12,7 @@ abstract class AbstractEntity
     protected $http;
 
     // Define class properties here
-    protected $custom_fields_values = [];
+    protected array $custom_fields_values = [];
     protected $group_id;
     protected $updated_by;
     protected $closest_task_at;
