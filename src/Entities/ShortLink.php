@@ -11,7 +11,7 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 class ShortLink extends AbstractEntity
 {
     protected string $entity = 'short_links', $url;
-    protected array $metadata;
+    protected $metadata;
 
     public function __construct(PendingRequest $http)
     {
