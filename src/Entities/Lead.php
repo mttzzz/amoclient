@@ -39,6 +39,8 @@ class Lead extends AbstractEntity
 
     public $pipeline_id;
 
+    public $group_id;
+
     public $custom_fields_values = [];
 
     public $_embedded = [];
