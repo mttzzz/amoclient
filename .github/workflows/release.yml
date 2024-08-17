@@ -1,4 +1,4 @@
-name: "New version relese"
+name: "New version release"
 
 on:
   push:
@@ -35,7 +35,9 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Automatic fixes coding style by Laravel Pint"
+
   release:
+    needs: lint  # Этот параметр гарантирует, что джоба 'release' выполнится после 'lint'
     if: github.event.head_commit.message !='Automatic fixes coding style by Laravel Pint'
     runs-on: ubuntu-latest
     permissions:
