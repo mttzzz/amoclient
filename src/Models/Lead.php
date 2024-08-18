@@ -13,10 +13,16 @@ class Lead extends AbstractModel
     use Filter\Common, Filter\Lead;
     use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
 
+    /** @var array<int, mixed> */
     private array $cf;
 
+    /** @var array<int, mixed> */
     private array $enums;
 
+    /**
+     * @param  array<int, mixed>  $cf
+     * @param  array<int, mixed>  $enums
+     */
     public function __construct(PendingRequest $http, array $cf, array $enums)
     {
         $this->cf = $cf;
@@ -25,11 +31,14 @@ class Lead extends AbstractModel
         $this->entity = 'leads';
     }
 
-    public function entity(int|null $id = null): Entities\Lead
+    public function entity(?int $id = null): Entities\Lead
     {
         return new Entities\Lead(['id' => $id], $this->http, $this->cf, $this->enums);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function entityData(array $data): Entities\Lead
     {
         return new Entities\Lead($data, $this->http, $this->cf, $this->enums);

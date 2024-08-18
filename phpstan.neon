@@ -4,4 +4,4 @@ includes:
 parameters:
   level: 6
   paths:
-      - src/Models
+      - src

@@ -2,6 +2,7 @@
 
 namespace mttzzz\AmoClient\Entities;
 
+use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Traits;
 
 class Task extends AbstractEntity
@@ -10,47 +11,50 @@ class Task extends AbstractEntity
 
     protected string $entity = 'tasks';
 
-    public ?int $id = null;
+    public $id;
 
-    public ?int $responsible_user_id = null;
+    public $responsible_user_id;
 
-    public ?int $entity_id = null;
+    public $entity_id;
 
-    public ?string $entity_type = null;
+    public $entity_type;
 
-    public ?int $duration = null;
+    public $duration;
 
-    public ?bool $is_completed = null;
+    public $is_completed;
 
-    public ?int $task_type_id = null;
+    public $task_type_id;
 
-    public ?string $text = null;
+    public $text;
 
-    public ?string $result = null;
+    public $result;
 
-    public ?int $complete_till = null;
+    public $complete_till;
 
-    /**
-     * @param  array<string, mixed>  $data
-     */
-    public function __construct(array $data, int $entityId, string $entityType)
+    public function __construct($data, PendingRequest $http, $entityType = null, $entityId = null)
     {
-        parent::__construct($data);
-        $this->entity_id = $entityId;
         $this->entity_type = $entityType;
+        $this->entity_id = $entityId;
+        parent::__construct($data, $http);
     }
 
-    public function add(int $completeTill, int $duration, int $responsible_user_id, string $text, int $type): void
+    public function add($text, $responsible_user_id = null, $completeTill = null, $duration = null, $type = 1)
     {
-        $this->complete_till = $completeTill;
-        $this->duration = $duration;
-        $this->responsible_user_id = $responsible_user_id;
         $this->text = $text;
+        if ($responsible_user_id) {
+            $this->responsible_user_id = $responsible_user_id;
+        }
+        $this->complete_till = $completeTill ?? time();
+        $this->duration = $duration;
         $this->task_type_id = $type;
+
+        return $this->create();
     }
 
-    public function setResultText(string $text): void
+    public function setResultText($text)
     {
-        $this->result = $text;
+        $this->result['text'] = $text;
+
+        return $this;
     }
 }

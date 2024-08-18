@@ -11,20 +11,29 @@ class Customer extends AbstractModel
 {
     use Traits\CrudTrait;
 
+    /**
+     * @var array<mixed>
+     */
     private array $cf;
 
+    /**
+     * @param  array<mixed>  $cf
+     */
     public function __construct(PendingRequest $http, array $cf)
     {
-        $this->cf = $cf;
         parent::__construct($http);
         $this->entity = 'customers';
+        $this->cf = $cf;
     }
 
-    public function entity(int|null $id = null): Entities\Customer
+    public function entity(?int $id = null): Entities\Customer
     {
         return new Entities\Customer(['id' => $id], $this->http, $this->cf);
     }
 
+    /**
+     * @param  array<mixed>  $data
+     */
     public function entityData(array $data): Entities\Customer
     {
         return new Entities\Customer($data, $this->http, $this->cf);

@@ -13,6 +13,9 @@ class Event extends AbstractModel
         $this->entity = 'events';
     }
 
+    /**
+     * @param  int|array<int>  $id
+     */
     public function id(int|array $id): self
     {
         $this->filter['id'] = $id;
@@ -28,53 +31,52 @@ class Event extends AbstractModel
     }
 
     /**
-     * @param  $createdBy
-     *                    Макс 10 пользователей
-     * @return $this
+     * @param  int|array<int>  $createdBy
+     *                                     Макс 10 пользователей
      */
-    public function createdBy($createdBy): self
+    public function createdBy(int|array $createdBy): self
     {
         $this->filter['created_by'] = is_array($createdBy) ? $createdBy : (int) $createdBy;
 
         return $this;
     }
 
-    public function lead(int|null $id = null): self
+    public function lead(?int $id = null): self
     {
         $this->filter['entity'][] = 'lead';
 
         return $id ? $this->entityId($id) : $this;
     }
 
-    public function contact(int|null $id = null): self
+    public function contact(?int $id = null): self
     {
         $this->filter['entity'][] = 'contact';
 
         return $id ? $this->entityId($id) : $this;
     }
 
-    public function company(int|null $id = null): self
+    public function company(?int $id = null): self
     {
         $this->filter['entity'][] = 'company';
 
         return $id ? $this->entityId($id) : $this;
     }
 
-    public function customer(int|null $id = null): self
+    public function customer(?int $id = null): self
     {
         $this->filter['entity'][] = 'customer';
 
         return $id ? $this->entityId($id) : $this;
     }
 
-    public function task(int|null $id = null): self
+    public function task(?int $id = null): self
     {
         $this->filter['entity'][] = 'task';
 
         return $id ? $this->entityId($id) : $this;
     }
 
-    public function catalog(int $id, $entityId = null): self
+    public function catalog(int $id, ?int $entityId = null): self
     {
         $this->filter['entity'][] = "catalog_$id";
 
@@ -82,8 +84,8 @@ class Event extends AbstractModel
     }
 
     /**
-     * @param  $entityId  int|array
-     *                   Макс 10 ID
+     * @param  int|array<int>  $entityId
+     *                                    Макс 10 ID
      * @return $this
      */
     public function entityId(array|int $entityId): self
@@ -504,21 +506,21 @@ class Event extends AbstractModel
         return $this;
     }
 
-    public function typeCustomFieldByIdValueChanged($fieldId): self
+    public function typeCustomFieldByIdValueChanged(int $fieldId): self
     {
         $this->filter['type'][] = "custom_field_{$fieldId}_value_changed";
 
         return $this;
     }
 
-    public function valueAfterLeadStatuses($pipelineId, $statusId): self
+    public function valueAfterLeadStatuses(int $pipelineId, int $statusId): self
     {
         $this->filter['value_after']['leads_statuses'][] = ['pipeline_id' => $pipelineId, 'status_id' => $statusId];
 
         return $this;
     }
 
-    public function valueAfterCustomerStatuses($statusId): self
+    public function valueAfterCustomerStatuses(int $statusId): self
     {
         $this->filter['value_after']['customers_statuses'][] = ['status_id' => $statusId];
 
@@ -526,8 +528,7 @@ class Event extends AbstractModel
     }
 
     /**
-     * @param  int|array  $id
-     * @return $this
+     * @param  int|array<int>  $id
      */
     public function valueAfterResponsibleUserId(int|array $id): self
     {
@@ -537,8 +538,7 @@ class Event extends AbstractModel
     }
 
     /**
-     * @param  int|array  $value
-     * @return $this
+     * @param  int|array<int>  $value
      */
     public function valueAfterCustomFieldValues(int|array $value): self
     {
@@ -554,14 +554,14 @@ class Event extends AbstractModel
         return $this;
     }
 
-    public function valueBeforeLeadStatuses($pipelineId, $statusId): self
+    public function valueBeforeLeadStatuses(int $pipelineId, int $statusId): self
     {
         $this->filter['value_before']['leads_statuses'][] = ['pipeline_id' => $pipelineId, 'status_id' => $statusId];
 
         return $this;
     }
 
-    public function valueBeforeCustomerStatuses($statusId): self
+    public function valueBeforeCustomerStatuses(int $statusId): self
     {
         $this->filter['value_before']['customers_statuses'][] = ['status_id' => $statusId];
 
@@ -569,10 +569,9 @@ class Event extends AbstractModel
     }
 
     /**
-     * @param  int|array  $id
-     * @return $this
+     * @param  int|array<int>  $id
      */
-    public function valueBeforeResponsibleUserId(int|array $id): array
+    public function valueBeforeResponsibleUserId(int|array $id): self
     {
         $this->filter['value_before']['responsible_user_id'] = is_array($id) ? implode(',', $id) : (int) $id;
 
@@ -580,8 +579,7 @@ class Event extends AbstractModel
     }
 
     /**
-     * @param  int|array  $value
-     * @return $this
+     * @param  int|array<int>  $value
      */
     public function valueBeforeCustomFieldValues(int|array $value): self
     {

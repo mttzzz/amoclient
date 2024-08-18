@@ -4,7 +4,6 @@ namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
-use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Traits;
 use mttzzz\AmoClient\Traits\Filter;
 
@@ -23,6 +22,10 @@ class Contact extends AbstractModel
      */
     private array $enums;
 
+    /**
+     * @param  array<mixed>  $cf
+     * @param  array<mixed>  $enums
+     */
     public function __construct(PendingRequest $http, object $account, array $cf, array $enums)
     {
         $this->fieldPhoneId = $account->contact_phone_field_id;
@@ -39,15 +42,18 @@ class Contact extends AbstractModel
         return new Entities\Contact(['id' => $id], $this->http, $this->cf, $this->enums);
     }
 
+    /**
+     * @param  array<mixed>  $data
+     */
     public function entityData(array $data): Entities\Contact
     {
         return new Entities\Contact($data, $this->http, $this->cf, $this->enums);
     }
 
     /**
-     * @throws AmoCustomException
+     * @param  int  $id
      */
-    public function find($id): Entities\Contact
+    public function find($id): ?Entities\Contact
     {
         return new Entities\Contact($this->findEntity($id), $this->http, $this->cf, $this->enums);
     }
@@ -57,6 +63,9 @@ class Contact extends AbstractModel
         return new CustomField($this->http, $this->entity);
     }
 
+    /**
+     * @param  array<mixed>  $query
+     */
     public function query(string|array $query): self
     {
         $this->query = $query;
