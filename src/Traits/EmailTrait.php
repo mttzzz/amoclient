@@ -22,13 +22,13 @@ trait EmailTrait
         return $emails;
     }
 
-    private function emailGet()
+    private function emailGet(): callable|array
     {
         if ($this->custom_fields_values) {
             $emails = Arr::where($this->custom_fields_values, function ($item) {
                 return isset($item['field_code']) && $item['field_code'] === 'EMAIL';
             });
-            if (! empty($emails)) {
+            if (!empty($emails)) {
                 return $emails;
             }
         }
