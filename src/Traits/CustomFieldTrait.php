@@ -14,12 +14,12 @@ trait CustomFieldTrait
 
     protected $enums;
 
-    public function setCFByCode(string $code, $value)
+    public function setCFByCode(string $code, $value): void
     {
         $this->custom_fields_values[] = ['field_code' => $code, 'values' => [['value' => $value]]];
     }
 
-    public function setCF(int $id, $value, bool $isEnumId = false)
+    public function setCF(int $id, $value, bool $isEnumId = false): static
     {
         $values = is_array($value) ? $value : [$value];
         foreach ($values as $key => $value) {

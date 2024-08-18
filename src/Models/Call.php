@@ -7,14 +7,13 @@ use mttzzz\AmoClient\Entities;
 
 class Call extends AbstractModel
 {
-    protected $entity = 'calls';
-
     public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
+        $this->entity = 'calls';
     }
 
-    public function entity($id = null)
+    public function entity(int|null $id = null): Entities\Call
     {
         return new Entities\Call(['id' => $id], $this->http);
     }
