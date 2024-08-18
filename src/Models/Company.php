@@ -13,11 +13,11 @@ class Company extends AbstractModel
     use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
 
 
-    private $cf;
+    private array $cf;
 
-    private $enums;
+    private array $enums;
 
-    public function __construct(PendingRequest $http, $account, $cf, $enums)
+    public function __construct(PendingRequest $http, object $account, array $cf, array $enums)
     {
         $this->entity = 'companies';
         $this->fieldPhoneId = $account->contact_phone_field_id;
@@ -27,12 +27,12 @@ class Company extends AbstractModel
         parent::__construct($http);
     }
 
-    public function entity($id = null)
+    public function entity(int|null $id = null): Entities\Company
     {
         return new Entities\Company(['id' => $id], $this->http, $this->cf, $this->enums);
     }
 
-    public function entityData($data)
+    public function entityData(array $data): Entities\Company
     {
         return new Entities\Company($data, $this->http, $this->cf, $this->enums);
     }
@@ -42,34 +42,34 @@ class Company extends AbstractModel
         return new Entities\Company($this->findEntity($id), $this->http, $this->cf, $this->enums);
     }
 
-    public function customFields()
+    public function customFields(): CustomField
     {
         return new CustomField($this->http, $this->entity);
     }
 
-    public function query($query)
+    public function query($query): self
     {
         $this->query = $query;
 
         return $this;
     }
 
-    public function withContacts()
+    public function withContacts(): self
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withCatalogElements()
+    public function withCatalogElements(): self
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withLeads()
+    public function withLeads(): self
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withCustomers()
+    public function withCustomers(): self
     {
         return $this->addWith(__FUNCTION__);
     }

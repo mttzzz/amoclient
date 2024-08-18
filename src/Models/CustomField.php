@@ -2,34 +2,36 @@
 
 namespace mttzzz\AmoClient\Models;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class CustomField extends AbstractModel
 {
-    protected $entity;
-
-    public $groups;
+    public CustomFieldGroup $groups;
 
     public function __construct($http, $parentEntity)
     {
-        $this->entity = "{$parentEntity}/custom_fields";
+        $this->entity = "$parentEntity/custom_fields";
         parent::__construct($http);
         $this->groups = new CustomFieldGroup($http, $this->entity);
     }
 
-    public function entity($id = null)
+    public function entity(int|null $id = null): Entities\CustomField
     {
         return new Entities\CustomField(['id' => $id], $this->http, $this->entity);
     }
 
-    public function find($id)
+    /**
+     * @throws AmoCustomException
+     */
+    public function find(int $id): array
     {
         try {
             return $this->http->get($this->entity.'/'.$id)
                 ->throw()->json() ?? [];
-        } catch (RequestException $e) {
+        } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
         }
     }

@@ -6,15 +6,13 @@ use mttzzz\AmoClient\Entities;
 
 class CustomFieldGroup extends AbstractModel
 {
-    protected $entity;
-
     public function __construct($http, $parentEntity)
     {
-        $this->entity = "{$parentEntity}/groups";
+        $this->entity = "$parentEntity/groups";
         parent::__construct($http);
     }
 
-    public function entity($id = null)
+    public function entity($id = null): Entities\CustomFieldGroup
     {
         return new Entities\CustomFieldGroup(['id' => $id], $this->http, $this->entity);
     }
