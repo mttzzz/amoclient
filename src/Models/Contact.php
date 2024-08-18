@@ -13,8 +13,14 @@ class Contact extends AbstractModel
     use Filter\Common, Filter\PhoneEmail;
     use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
 
+    /**
+     * @var array<mixed>
+     */
     private array $cf;
 
+    /**
+     * @var array<mixed>
+     */
     private array $enums;
 
     public function __construct(PendingRequest $http, object $account, array $cf, array $enums)
@@ -28,7 +34,7 @@ class Contact extends AbstractModel
         parent::__construct($http);
     }
 
-    public function entity(int|null $id = null): Entities\Contact
+    public function entity(?int $id = null): Entities\Contact
     {
         return new Entities\Contact(['id' => $id], $this->http, $this->cf, $this->enums);
     }
@@ -63,12 +69,12 @@ class Contact extends AbstractModel
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withLeads() : self
+    public function withLeads(): self
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withCustomers() : self
+    public function withCustomers(): self
     {
         return $this->addWith(__FUNCTION__);
     }
