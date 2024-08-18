@@ -3,11 +3,12 @@
 namespace mttzzz\AmoClient\Exceptions;
 
 use Exception;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 
 class AmoCustomException extends Exception
 {
-    public function __construct(RequestException $e)
+    public function __construct(ConnectionException|RequestException $e)
     {
         $e->getCode() == 402 ?
             parent::__construct('Амо не оплачен', 402) :

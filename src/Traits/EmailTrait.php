@@ -6,7 +6,7 @@ use Illuminate\Support\Arr;
 
 trait EmailTrait
 {
-    public function emailList()
+    public function emailList(): array
     {
         $emails = [];
         if ($this->custom_fields_values) {

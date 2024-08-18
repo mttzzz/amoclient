@@ -10,9 +10,9 @@ use mttzzz\LaravelTelegramLog\Telegram;
 
 trait CustomFieldTrait
 {
-    protected $cf;
+    protected array $cf;
 
-    protected $enums;
+    protected array $enums;
 
     public function setCFByCode(string $code, $value): void
     {
@@ -78,7 +78,7 @@ trait CustomFieldTrait
                 case 'birthday':
                     try {
                         $value = strip_tags($value);
-                        $value = is_string($value) && ! is_numeric($value) ?
+                        $value = is_string($value) && !is_numeric($value) ?
                             Carbon::parseFromLocale(str_replace('&nbsp;', ' ', $value), 'ru') :
                             Carbon::createFromTimestamp((int) $value);
 
@@ -100,13 +100,13 @@ trait CustomFieldTrait
     public function getCF($id)
     {
         return empty($this->custom_fields_values) ? [] :
-            Arr::where($this->custom_fields_values, fn ($i) => isset($i['field_id']) && $i['field_id'] == $id);
+            Arr::where($this->custom_fields_values, fn($i) => isset($i['field_id']) && $i['field_id'] == $id);
     }
 
     public function getCFByCode($code)
     {
         return empty($this->custom_fields_values) ? [] :
-            Arr::where($this->custom_fields_values, fn ($i) => isset($i['field_code']) && $i['field_code'] == $code);
+            Arr::where($this->custom_fields_values, fn($i) => isset($i['field_code']) && $i['field_code'] == $code);
     }
 
     public function getCFV($id)
@@ -124,7 +124,7 @@ trait CustomFieldTrait
         return Arr::first($this->getCF($id))['values'][0]['enum_id'] ?? null;
     }
 
-    public function getCFCLN($id) //customField ChainedList Names
+    public function getCFCLN($id): array //customField ChainedList Names
     {
         $names = [];
         $f = Arr::first($this->getCF($id));
@@ -138,7 +138,7 @@ trait CustomFieldTrait
         return $names;
     }
 
-    public function getCFVM($id)
+    public function getCFVM(int $id): array
     {
         $f = $this->getCF($id);
 

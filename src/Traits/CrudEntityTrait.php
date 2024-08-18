@@ -3,6 +3,7 @@
 namespace mttzzz\AmoClient\Traits;
 
 use Carbon\Carbon;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\DB;
@@ -10,8 +11,6 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 trait CrudEntityTrait
 {
-    public ?int $created_by;
-
     public ?int $created_at;
 
     public ?int $updated_at;
@@ -22,34 +21,46 @@ trait CrudEntityTrait
 
     public int $responsible_user_id;
 
+    /**
+     * @throws AmoCustomException
+     */
     public function update(): Response
     {
         try {
             return $this->http->patch($this->entity, [$this->toArray()])->throw()->json();
-        } catch (RequestException $e) {
+        } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
         }
     }
 
+    /**
+     * @throws AmoCustomException
+     */
     public function create(): Response
     {
         try {
             return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
-        } catch (RequestException $e) {
+        } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
         }
     }
 
+    /**
+     * @throws AmoCustomException
+     */
     public function createGetId(): int
     {
         return $this->create()['_embedded'][$this->entity][0]['id'];
     }
 
+    /**
+     * @throws AmoCustomException
+     */
     public function delete(): Response
     {
         try {
             return $this->http->delete($this->entity.'/'.$this->id)->throw()->json();
-        } catch (RequestException $e) {
+        } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
         }
     }
