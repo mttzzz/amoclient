@@ -2,26 +2,26 @@
 
 namespace mttzzz\AmoClient\Models;
 
+use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Traits;
 
 class Source extends AbstractModel
 {
-    protected $entity = 'sources';
-
     use Traits\CrudTrait;
 
-    public function __construct($http)
+    public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
+        $this->entity = 'sources';
     }
 
-    public function entity($id = null)
+    public function entity(?int $id = null): Entities\Source
     {
         return new Entities\Source(['id' => $id], $this->http);
     }
 
-    public function find($id)
+    public function find(int $id): Entities\Source
     {
         return new Entities\Source($this->findEntity($id), $this->http);
     }

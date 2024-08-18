@@ -4,29 +4,29 @@ namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Unsorted extends AbstractModel
 {
-    protected $entity = 'leads/unsorted';
-
     public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
+        $this->entity = 'leads/unsorted';
     }
 
-    public function sip()
+    public function sip(): Entities\Unsorted\Sip
     {
         return new Entities\Unsorted\Sip($this->http);
     }
 
-    public function form()
+    public function form(): Entities\Unsorted\Form
     {
         return new Entities\Unsorted\Form($this->http);
     }
 
-    public function decline($uid, $userId = null)
+    public function decline(string $uid, ?int $userId = null): Response
     {
         $data = [];
         if ($userId) {
@@ -39,7 +39,7 @@ class Unsorted extends AbstractModel
         }
     }
 
-    public function accept($uid, $userId = null, $statusId = null)
+    public function accept(string $uid, ?int $userId = null, ?int $statusId = null): Response
     {
         $data = [];
         if ($userId) {
@@ -55,70 +55,77 @@ class Unsorted extends AbstractModel
         }
     }
 
-    public function filterUid($Uid)
+    /**
+     * @param  string|array<string>  $Uid
+     */
+    public function filterUid(string|array $Uid): self
     {
-        $this->filter['uid'] = is_array($Uid) ? $Uid : (string) $Uid;
+        if (is_array($Uid)) {
+            $this->filter['uid'] = $Uid;
+        } else {
+            $this->filter['uid'] = (string) $Uid;
+        }
 
         return $this;
     }
 
-    public function filterCategorySip()
+    public function filterCategorySip(): self
     {
         $this->filter['category'][] = 'sip';
 
         return $this;
     }
 
-    public function filterCategoryMail()
+    public function filterCategoryMail(): self
     {
         $this->filter['category'][] = 'mail';
 
         return $this;
     }
 
-    public function filterCategoryForms()
+    public function filterCategoryForms(): self
     {
         $this->filter['category'][] = 'forms';
 
         return $this;
     }
 
-    public function filterCategoryChats()
+    public function filterCategoryChats(): self
     {
         $this->filter['category'][] = 'chats';
 
         return $this;
     }
 
-    public function filterPipelineId($pipelineId)
+    public function filterPipelineId(int $pipelineId): self
     {
         $this->filter['pipeline_id'] = (int) $pipelineId;
 
         return $this;
     }
 
-    public function orderCreatedAtAsc()
+    public function orderCreatedAtAsc(): self
     {
         $this->order['created_at'] = 'asc';
 
         return $this;
     }
 
-    public function orderCreatedAtDesc()
+    public function orderCreatedAtDesc(): self
     {
         $this->order['created_at'] = 'desc';
 
         return $this;
     }
 
-    public function orderUpdatedAtAsc()
+    public function orderUpdatedAtAsc(): self
     {
         $this->order['updated_at'] = 'asc';
 
         return $this;
     }
 
-    public function orderUpdatedAtDesc()
+    public function orderUpdatedAtDesc(): self
     {
         $this->order['updated_at'] = 'desc';
 

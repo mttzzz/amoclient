@@ -9,20 +9,18 @@ use mttzzz\AmoClient\Entities;
 
 class Link extends AbstractModel
 {
-    protected $entity;
-
-    public function __construct(PendingRequest $http, $entity)
+    public function __construct(PendingRequest $http, string $entity)
     {
-        $this->entity = $entity.'/links';
         parent::__construct($http);
+        $this->entity = $entity.'/links';
     }
 
-    public function entity($id = null)
+    public function entity(?int $id = null): Entities\Link
     {
         return new Entities\Link(['id' => $id], $this->http, $this->entity);
     }
 
-    public function catalogElement($catalogElementId, $catalogId, $quantity = null)
+    public function catalogElement(int $catalogElementId, int $catalogId, ?int $quantity = null): Entities\Link
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
         $entity->to_entity_id = (int) $catalogElementId;
@@ -35,7 +33,7 @@ class Link extends AbstractModel
         return $entity;
     }
 
-    public function contact($contactId, $mainContact = false)
+    public function contact(int $contactId, bool $mainContact = false): Entities\Link
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
         $entity->to_entity_id = (int) $contactId;
@@ -45,7 +43,7 @@ class Link extends AbstractModel
         return $entity;
     }
 
-    public function companies($companyId)
+    public function companies(int $companyId): Entities\Link
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
         $entity->to_entity_id = (int) $companyId;
@@ -55,7 +53,7 @@ class Link extends AbstractModel
         return $entity;
     }
 
-    public function customers($customerId)
+    public function customers(int $customerId): Entities\Link
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
         $entity->to_entity_id = (int) $customerId;
@@ -65,7 +63,11 @@ class Link extends AbstractModel
         return $entity;
     }
 
-    public function link(array $entities)
+    /**
+     * @param  array<mixed>  $entities
+     * @return array<mixed>
+     */
+    public function link(array $entities): array
     {
         $str = Str::beforeLast($this->entity, '/');
         try {
@@ -75,7 +77,11 @@ class Link extends AbstractModel
         }
     }
 
-    public function unlink(array $entities)
+    /**
+     * @param  array<mixed>  $entities
+     * @return array<mixed>
+     */
+    public function unlink(array $entities): array
     {
         $str = Str::beforeLast($this->entity, '/');
         try {

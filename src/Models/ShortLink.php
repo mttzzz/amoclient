@@ -9,19 +9,22 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class ShortLink extends AbstractModel
 {
-    protected $entity = 'short_links';
-
     public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
+        $this->entity = 'short_links';
     }
 
-    public function entity()
+    public function entity(): Entities\ShortLink
     {
         return new Entities\ShortLink($this->http);
     }
 
-    public function create(array $entities)
+    /**
+     * @param  array<mixed>  $entities
+     * @return array<mixed>
+     */
+    public function create(array $entities): array
     {
         try {
             if (! empty($entities)) {

@@ -10,52 +10,51 @@ class Task extends AbstractModel
 {
     use Traits\CrudTrait;
 
-    protected $entity = 'tasks';
-
     public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
+        $this->entity = 'tasks';
     }
 
-    public function entity($id = null)
+    public function entity(?int $id = null): Entities\Task
     {
         return new Entities\Task(['id' => $id], $this->http);
     }
 
-    public function find($id)
+    public function find($id): Entities\Task
     {
         return new Entities\Task($this->findEntity($id), $this->http);
     }
 
-    public function filterId($id)
+    public function filterId(int $id): self
     {
         $this->filter['id'] = is_array($id) ? $id : (int) $id;
 
         return $this;
     }
 
-    public function filterResponsibleUserId($id)
+    public function filterResponsibleUserId(int $id): self
     {
         $this->filter['responsible_user_id'] = is_array($id) ? $id : (int) $id;
 
         return $this;
     }
 
-    public function filterIsCompletedTrue()
+    public function filterIsCompletedTrue(): self
     {
         $this->filter['is_completed'] = true;
 
         return $this;
     }
 
-    public function filterIsCompletedFalse()
+    public function filterIsCompletedFalse(): self
     {
         $this->filter['is_completed'] = false;
 
         return $this;
     }
 
-    public function filterTaskType($type)
+    public function filterTaskType(int $type): self
     {
         $this->filter['task_type'] = $type;
 

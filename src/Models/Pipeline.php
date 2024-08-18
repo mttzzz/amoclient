@@ -2,6 +2,7 @@
 
 namespace mttzzz\AmoClient\Models;
 
+use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Traits;
 
@@ -9,19 +10,18 @@ class Pipeline extends AbstractModel
 {
     use Traits\CrudTrait;
 
-    protected $entity = 'leads/pipelines';
-
-    public function __construct($http)
+    public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
+        $this->entity = 'leads/pipelines';
     }
 
-    public function entity($id = null)
+    public function entity(?int $id = null): Entities\Pipeline
     {
         return new Entities\Pipeline(['id' => $id], $this->http);
     }
 
-    public function find($id)
+    public function find(int $id): Entities\Pipeline
     {
         return new Entities\Pipeline($this->findEntity($id), $this->http);
     }
