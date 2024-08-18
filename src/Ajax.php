@@ -4,12 +4,13 @@ namespace mttzzz\AmoClient;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
+use mttzzz\AmoClient\Helpers\OctaneAccount;
 
 class Ajax
 {
     private PendingRequest $http;
 
-    public function __construct(mixed $account, PendingRequest $http)
+    public function __construct(OctaneAccount $account, PendingRequest $http)
     {
         $this->http = clone $http;
         $this->http = $this->http->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])

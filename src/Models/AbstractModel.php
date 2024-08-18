@@ -15,13 +15,13 @@ abstract class AbstractModel
     /** @var string[] */
     protected array $with = [];
 
-    protected int $page;
+    protected int $page = 1;
 
-    protected int $limit;
+    protected int $limit = 150;
 
-    protected string $query;
+    protected string $query = '';
 
-    protected string $entity;
+    protected string $entity = '';
 
     /** @var array<string, mixed> */
     protected array $order = [];

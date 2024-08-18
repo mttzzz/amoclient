@@ -29,6 +29,7 @@ use mttzzz\AmoClient\Models\Unsorted;
 use mttzzz\AmoClient\Models\User;
 use mttzzz\AmoClient\Models\Webhook;
 use Psr\Http\Message\RequestInterface;
+use stdClass;
 
 class AmoClientOctane
 {
@@ -68,8 +69,8 @@ class AmoClientOctane
 
     public function __construct(int $aId, string $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
     {
-        /** @var OctaneAccount|null $account */
-        $account = DB::connection('octane')->table('accounts')
+        /** @var stdClass|null $octaneAccountData */
+        $octaneAccountData = DB::connection('octane')->table('accounts')
             ->select(['accounts.id', 'subdomain', 'domain', 'account_widget.access_token'])
             ->join('account_widget', 'accounts.id', '=', 'account_widget.account_id')
             ->join('widgets', 'widgets.id', '=', 'account_widget.widget_id')
@@ -78,10 +79,10 @@ class AmoClientOctane
             ->where('widgets.client_id', $clientId)
             ->first();
 
-        if (! $account) {
-            /** @var OctaneAccount|null $account */
-            $account = DB::connection('octane')->table('accounts')->where('id', $aId)->first();
-            if (! $account) {
+        if (! $octaneAccountData) {
+            /** @var stdClass|null $octaneAccountData */
+            $octaneAccountData = DB::connection('octane')->table('accounts')->where('id', $aId)->first();
+            if (! $octaneAccountData) {
                 throw new Exception("Account ($aId) not found");
             }
             /** @var Widget|null $widget */
@@ -89,12 +90,14 @@ class AmoClientOctane
             if (! $widget) {
                 throw new Exception("Widget ($clientId) not found");
             }
-            throw new Exception("Account ($account->subdomain) doesn't active widget ($widget->name)");
+            throw new Exception("Account ($octaneAccountData->subdomain) doesn't active widget ($widget->name)");
         }
 
-        $account->contact_phone_field_id = DB::connection('octane')->table('account_custom_fields')
+        $octaneAccount = $this->convertToOctaneAccount($octaneAccountData);
+
+        $octaneAccount->contact_phone_field_id = DB::connection('octane')->table('account_custom_fields')
             ->where('account_id', $aId)->where('code', 'PHONE')->first()->id ?? null;
-        $account->contact_email_field_id = DB::connection('octane')->table('account_custom_fields')
+        $octaneAccount->contact_email_field_id = DB::connection('octane')->table('account_custom_fields')
             ->where('account_id', $aId)->where('code', 'EMAIL')->first()->id ?? null;
 
         $fields = DB::connection('octane')
@@ -142,8 +145,8 @@ class AmoClientOctane
             return 1000; // Задержка в миллисекундах
         }));
 
-        $baseUrl = "https://{$account->subdomain}.amocrm.{$account->domain}/api/v4";
-        $http = Http::withToken($account->access_token)
+        $baseUrl = "https://{$octaneAccount->subdomain}.amocrm.{$octaneAccount->domain}/api/v4";
+        $http = Http::withToken($octaneAccount->access_token)
             ->connectTimeout($connectTimeout)
             ->timeout($timeout)
             ->retry($retries, $retryDelay, function (Exception $exception, PendingRequest $request) use (&$currentProxyIndex) {
@@ -162,18 +165,29 @@ class AmoClientOctane
         $this->account = new Models\Account($http);
         $this->leads = new Models\Lead($http, $cf, $enums);
         $this->customers = new Models\Customer($http, $cf);
-        $this->contacts = new Models\Contact($http, $account, $cf, $enums);
-        $this->companies = new Models\Company($http, $account, $cf, $enums);
+        $this->contacts = new Models\Contact($http, $octaneAccount, $cf, $enums);
+        $this->companies = new Models\Company($http, $octaneAccount, $cf, $enums);
         $this->catalogs = new Models\Catalog($http);
         $this->users = new Models\User($http);
         $this->pipelines = new Models\Pipeline($http);
         $this->tasks = new Models\Task($http);
         $this->events = new Models\Event($http);
-        $this->ajax = new Ajax($account, $http);
+        $this->ajax = new Ajax($octaneAccount, $http);
         $this->unsorted = new Models\Unsorted($http);
         $this->calls = new Models\Call($http);
         $this->webhooks = new Models\Webhook($http);
         $this->shortLinks = new Models\ShortLink($http);
         $this->sources = new Models\Source($http);
+    }
+
+    private function convertToOctaneAccount(stdClass $data): OctaneAccount
+    {
+        $octaneAccount = new OctaneAccount;
+        $octaneAccount->id = $data->id;
+        $octaneAccount->subdomain = $data->subdomain;
+        $octaneAccount->domain = $data->domain;
+        $octaneAccount->access_token = $data->access_token;
+
+        return $octaneAccount;
     }
 }

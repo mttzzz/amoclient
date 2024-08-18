@@ -3,6 +3,8 @@
 namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Account extends AbstractModel
 {
@@ -11,6 +13,28 @@ class Account extends AbstractModel
         parent::__construct($http);
 
         $this->entity = 'account';
+    }
+
+    /**
+     * @return array<string, mixed>
+     *
+     * @throws AmoCustomException
+     */
+    public function get(): array
+    {
+        try {
+            $query = [];
+
+            if (! empty($this->with)) {
+                $query['with'] = implode(',', $this->with);
+            }
+            $data = $this->http->get($this->entity, $query)->throw()->json();
+            $data = is_null($data) ? [] : $data;
+
+            return $data;
+        } catch (RequestException $e) {
+            throw new AmoCustomException($e);
+        }
     }
 
     public function withAmojoId(): self
