@@ -7,9 +7,9 @@ use mttzzz\AmoClient\Entities;
 
 class Note extends AbstractModel
 {
-    protected int $entityId;
+    protected ?int $entityId;
 
-    public function __construct(PendingRequest $http, string $entity, int $entityId)
+    public function __construct(PendingRequest $http, string $entity, ?int $entityId)
     {
         $this->entity = $entity.'/notes';
         $this->entityId = $entityId;

@@ -58,7 +58,7 @@ abstract class AbstractEntity
     /**
      * @param  array<mixed>  $data
      **/
-    public function __construct(array $data = [], ?PendingRequest $http = null)
+    public function __construct(array $data, PendingRequest $http)
     {
         $this->http = $http;
         $this->setData($data);

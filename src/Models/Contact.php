@@ -4,6 +4,7 @@ namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Helpers\OctaneAccount;
 use mttzzz\AmoClient\Traits;
 use mttzzz\AmoClient\Traits\Filter;
 
@@ -26,7 +27,7 @@ class Contact extends AbstractModel
      * @param  array<mixed>  $cf
      * @param  array<mixed>  $enums
      */
-    public function __construct(PendingRequest $http, object $account, array $cf, array $enums)
+    public function __construct(PendingRequest $http, OctaneAccount $account, array $cf, array $enums)
     {
         $this->fieldPhoneId = $account->contact_phone_field_id;
         $this->fieldEmailId = $account->contact_email_field_id;
@@ -50,10 +51,7 @@ class Contact extends AbstractModel
         return new Entities\Contact($data, $this->http, $this->cf, $this->enums);
     }
 
-    /**
-     * @param  int  $id
-     */
-    public function find($id): ?Entities\Contact
+    public function find(int $id): ?Entities\Contact
     {
         return new Entities\Contact($this->findEntity($id), $this->http, $this->cf, $this->enums);
     }
@@ -63,10 +61,7 @@ class Contact extends AbstractModel
         return new CustomField($this->http, $this->entity);
     }
 
-    /**
-     * @param  array<mixed>  $query
-     */
-    public function query(string|array $query): self
+    public function query(string $query): self
     {
         $this->query = $query;
 

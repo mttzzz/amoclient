@@ -10,6 +10,29 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
 
+class OctanePipeline
+{
+    public int $id;
+
+    public string $name;
+
+    public int $sort;
+
+    public int $is_main;
+
+    public int $is_unsorted_on;
+
+    public int $account_id;
+
+    public int $created_by;
+
+    public int $updated_by;
+
+    public string $created_at;
+
+    public string $updated_at;
+}
+
 class Lead extends AbstractEntity
 {
     use Traits\CrudEntityTrait, Traits\CustomFieldTrait, Traits\TagTrait;
@@ -111,12 +134,13 @@ class Lead extends AbstractEntity
 
     public function getPipelineName(): string
     {
+        /** @var OctanePipeline|null $pipeline */
         $pipeline = DB::connection('octane')->table('account_pipelines')
             ->where('account_id', $this->account_id)
             ->where('id', $this->pipeline_id)
             ->first();
 
-        return $pipeline?->name;
+        return $pipeline ? $pipeline->name : '';
     }
 
     /**

@@ -20,7 +20,7 @@ abstract class AbstractUnsorted
 
     public int $created_at;
 
-    protected ?PendingRequest $http;
+    protected PendingRequest $http;
 
     protected string $entity = 'leads/unsorted';
 
@@ -34,7 +34,7 @@ abstract class AbstractUnsorted
      */
     public array $metadata = [];
 
-    public function __construct(?PendingRequest $http = null)
+    public function __construct(PendingRequest $http)
     {
         $this->http = $http;
     }

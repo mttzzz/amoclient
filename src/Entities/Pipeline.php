@@ -12,7 +12,7 @@ class Pipeline extends AbstractEntity
     protected string $entity = 'leads/pipelines';
 
     /**
-     * @var array<array<string, mixed>>
+     * @var array<mixed>
      */
     public array $_embedded = ['statuses' => []];
 
@@ -29,8 +29,11 @@ class Pipeline extends AbstractEntity
      */
     public function statuses(): Collection
     {
+        /** @var array<int, array<string, mixed>> $statusesArray */
+        $statusesArray = $this->_embedded['statuses'];
+
         /** @var Collection<int, array<string, mixed>> $statuses */
-        $statuses = collect($this->_embedded['statuses']);
+        $statuses = collect($statusesArray);
 
         return $statuses;
     }

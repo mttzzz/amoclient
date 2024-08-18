@@ -85,8 +85,12 @@ trait CrudEntityTrait
 
     public function getResponsibleName(): ?string
     {
+        if ($this->responsible_user_id === null) {
+            return null;
+        }
+
         $user = DB::connection('octane')->table('amo_users')->find($this->responsible_user_id);
 
-        return $user?->name;
+        return $user->name;
     }
 }

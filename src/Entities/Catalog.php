@@ -27,7 +27,9 @@ class Catalog extends AbstractEntity
     {
         parent::__construct($data, $http);
         $this->entity = 'catalogs';
-        $this->elements = new Models\CatalogElement($http, $this->id);
+        if ($this->id !== null) {
+            $this->elements = new Models\CatalogElement($http, $this->id);
+        }
     }
 
     public function customFields(): Models\CustomField

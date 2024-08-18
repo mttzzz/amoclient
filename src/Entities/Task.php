@@ -9,15 +9,15 @@ class Task extends AbstractEntity
 {
     use Traits\CrudEntityTrait;
 
-    public int $entity_id;
+    public ?int $entity_id;
 
     public string $entity_type;
 
-    public int $duration;
+    public ?int $duration;
 
     public bool $is_completed;
 
-    public int $task_type_id;
+    public ?int $task_type_id;
 
     public string $text;
 
@@ -26,7 +26,7 @@ class Task extends AbstractEntity
      */
     public array $result;
 
-    public int $complete_till;
+    public ?int $complete_till;
 
     /**
      * @param  array<mixed>  $data

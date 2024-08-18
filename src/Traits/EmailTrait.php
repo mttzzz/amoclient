@@ -26,9 +26,9 @@ trait EmailTrait
     }
 
     /**
-     * @return callable|array<mixed>
+     * @return array<mixed>
      */
-    private function emailGet(): callable|array
+    private function emailGet(): array
     {
         if ($this->custom_fields_values) {
             $emails = Arr::where($this->custom_fields_values, function ($item) {
@@ -41,7 +41,6 @@ trait EmailTrait
         $this->custom_fields_values[] = ['field_code' => 'EMAIL', 'values' => []];
 
         return $this->emailGet();
-
     }
 
     public function emailAdd(string $email): self

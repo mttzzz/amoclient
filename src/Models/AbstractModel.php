@@ -89,8 +89,8 @@ abstract class AbstractModel
     }
 
     /**
-     * @param  array<int, object>  $entities
-     * @return array<int, array<string, mixed>>
+     * @param  array<mixed>  $entities
+     * @return array<mixed>
      */
     protected function prepareEntities(array $entities): array
     {

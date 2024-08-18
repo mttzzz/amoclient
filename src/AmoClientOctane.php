@@ -11,6 +11,8 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use mttzzz\AmoClient\Helpers\OctaneAccount;
+use mttzzz\AmoClient\Helpers\Widget;
 use mttzzz\AmoClient\Models\Account;
 use mttzzz\AmoClient\Models\Call;
 use mttzzz\AmoClient\Models\Catalog;
@@ -66,6 +68,7 @@ class AmoClientOctane
 
     public function __construct(int $aId, string $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
     {
+        /** @var OctaneAccount|null $account */
         $account = DB::connection('octane')->table('accounts')
             ->select(['accounts.id', 'subdomain', 'domain', 'account_widget.access_token'])
             ->join('account_widget', 'accounts.id', '=', 'account_widget.account_id')
@@ -76,9 +79,17 @@ class AmoClientOctane
             ->first();
 
         if (! $account) {
+            /** @var OctaneAccount|null $account */
             $account = DB::connection('octane')->table('accounts')->where('id', $aId)->first();
+            if (! $account) {
+                throw new Exception("Account ($aId) not found");
+            }
+            /** @var Widget|null $widget */
             $widget = DB::connection('octane')->table('widgets')->where('client_id', $clientId)->first();
-            throw new Exception("Account ($account->subdomain) doesnt active widget ($widget->name)");
+            if (! $widget) {
+                throw new Exception("Widget ($clientId) not found");
+            }
+            throw new Exception("Account ($account->subdomain) doesn't active widget ($widget->name)");
         }
 
         $account->contact_phone_field_id = DB::connection('octane')->table('account_custom_fields')
@@ -94,10 +105,10 @@ class AmoClientOctane
         $cf = $fields->pluck('type', 'id')->toArray();
         $enums = $fields->pluck('enums', 'id')->toArray();
 
-        // Создание кастомного стека обработчиков для Guzzle
+        // Создание стека обработчиков для Guzzle
         $stack = HandlerStack::create();
 
-        //Подлючаем спискок прокси из конфига, если конфига нет, то писваиваем массив с 1 элементом null.
+        //Подключаем список прокси из конфига, если конфига нет, то присваиванием массив с 1 элементом null.
         //Это приведет к тому, что запрос будет выполнен без прокси.
         $proxies = Config::get('amoclient.proxies') ?? [null];
 

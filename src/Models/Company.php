@@ -4,6 +4,7 @@ namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Helpers\OctaneAccount;
 use mttzzz\AmoClient\Traits;
 use mttzzz\AmoClient\Traits\Filter;
 
@@ -26,7 +27,7 @@ class Company extends AbstractModel
      * @param  array<mixed>  $cf
      * @param  array<mixed>  $enums
      */
-    public function __construct(PendingRequest $http, object $account, array $cf, array $enums)
+    public function __construct(PendingRequest $http, OctaneAccount $account, array $cf, array $enums)
     {
         parent::__construct($http);
         $this->entity = 'companies';
@@ -59,10 +60,7 @@ class Company extends AbstractModel
         return new CustomField($this->http, $this->entity);
     }
 
-    /**
-     * @param  string|array<mixed>  $query
-     */
-    public function query(string|array $query): self
+    public function query(string $query): self
     {
         $this->query = $query;
 
