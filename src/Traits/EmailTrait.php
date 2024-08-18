@@ -38,7 +38,7 @@ trait EmailTrait
 
     }
 
-    public function emailAdd($email)
+    public function emailAdd($email): self
     {
         $key = key($this->emailGet());
         $this->custom_fields_values[$key]['values'][] = ['value' => $email, 'enum_code' => 'WORK'];
@@ -46,7 +46,7 @@ trait EmailTrait
         return $this;
     }
 
-    public function emailSet(array $emails)
+    public function emailSet(array $emails): self
     {
         $key = key($this->emailGet());
         $values = [];
@@ -58,7 +58,7 @@ trait EmailTrait
         return $this;
     }
 
-    public function emailDelete(string $email)
+    public function emailDelete(string $email): self
     {
         $key = key($this->emailGet());
         foreach ($this->custom_fields_values[$key]['values'] as $key => $value) {
