@@ -68,12 +68,14 @@ trait CrudEntityTrait
 
     public function setResponsibleUser(int $accountId, int $id): void
     {
-        $user = DB::connection('octane')
+        $isExist = DB::connection('octane')
             ->table('account_amo_user')
             ->where('amo_user_id', $id)
+            ->where('is_active', true)
             ->where('account_id', $accountId)
-            ->first();
-        $this->responsible_user_id = $user && $user->is_active ? $id : null;
+            ->exists();
+
+        $this->responsible_user_id = $isExist ? $id : null;
     }
 
     public function getCreatedAt(): Carbon
