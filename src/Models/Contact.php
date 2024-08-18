@@ -57,7 +57,7 @@ class Contact extends AbstractModel
         return new CustomField($this->http, $this->entity);
     }
 
-    public function query($query): self
+    public function query(string|array $query): self
     {
         $this->query = $query;
 

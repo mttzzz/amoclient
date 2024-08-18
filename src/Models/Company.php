@@ -27,7 +27,7 @@ class Company extends AbstractModel
         parent::__construct($http);
     }
 
-    public function entity(int|null $id = null): Entities\Company
+    public function entity(?int $id = null): Entities\Company
     {
         return new Entities\Company(['id' => $id], $this->http, $this->cf, $this->enums);
     }
@@ -37,7 +37,7 @@ class Company extends AbstractModel
         return new Entities\Company($data, $this->http, $this->cf, $this->enums);
     }
 
-    public function find($id)
+    public function find(int $id)
     {
         return new Entities\Company($this->findEntity($id), $this->http, $this->cf, $this->enums);
     }
@@ -47,7 +47,7 @@ class Company extends AbstractModel
         return new CustomField($this->http, $this->entity);
     }
 
-    public function query($query): self
+    public function query(string|array $query): self
     {
         $this->query = $query;
 

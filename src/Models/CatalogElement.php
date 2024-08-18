@@ -17,12 +17,12 @@ class CatalogElement extends AbstractModel
         parent::__construct($http);
     }
 
-    public function entity($id = null): Entities\CatalogElement
+    public function entity(?int $id = null): Entities\CatalogElement
     {
         return new Entities\CatalogElement(['id' => $id], $this->http, $this->entity);
     }
 
-    public function entityData($data): Entities\CatalogElement
+    public function entityData(array $data): Entities\CatalogElement
     {
         return new Entities\CatalogElement($data, $this->http, $this->entity);
     }
