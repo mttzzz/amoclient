@@ -10,8 +10,6 @@ class CatalogElement extends AbstractModel
 {
     use Traits\CrudTrait, Traits\QueryTrait;
 
-    protected $entity;
-
     public function __construct(PendingRequest $http, $catalogId)
     {
         $this->entity = "catalogs/{$catalogId}/elements";

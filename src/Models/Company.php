@@ -12,7 +12,6 @@ class Company extends AbstractModel
     use Filter\Common, Filter\PhoneEmail;
     use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
 
-    protected $entity = 'companies';
 
     private $cf;
 
@@ -20,6 +19,7 @@ class Company extends AbstractModel
 
     public function __construct(PendingRequest $http, $account, $cf, $enums)
     {
+        $this->entity = 'companies';
         $this->fieldPhoneId = $account->contact_phone_field_id;
         $this->fieldEmailId = $account->contact_email_field_id;
         $this->cf = $cf;
