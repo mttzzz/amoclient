@@ -10,15 +10,66 @@ class Source extends AbstractEntity
 
     protected string $entity = 'sources';
 
-    public $name;
+    public ?string $name = null;
 
-    public $pipeline_id;
+    public ?int $pipeline_id = null;
 
-    public $external_id;
+    public ?string $external_id = null;
 
-    public $default;
+    public bool $default = false;
 
-    public $origin_code;
+    public ?string $origin_code = null;
 
-    public $services;
+    /**
+     * @var Service[]
+     */
+    public array $services = [];
+}
+
+class Service
+{
+    public string $type;
+
+    public ?ServiceParams $params = null;
+
+    /**
+     * @var ServicePage[]
+     */
+    public array $pages = [];
+
+    /**
+     * @param  ServicePage[]  $pages
+     */
+    public function __construct(string $type, ?ServiceParams $params = null, array $pages = [])
+    {
+        $this->type = $type;
+        $this->params = $params;
+        $this->pages = $pages;
+    }
+}
+
+class ServiceParams
+{
+    public ?bool $waba = null;
+
+    public function __construct(?bool $waba = null)
+    {
+        $this->waba = $waba;
+    }
+}
+
+class ServicePage
+{
+    public string $name;
+
+    public string $id;
+
+    public string $link;
+
+    public function __construct(string $name, string $id, string $link)
+    {
+        $this->name = $name;
+        $this->id = $id;
+        $this->link = $link;
+    }
 }

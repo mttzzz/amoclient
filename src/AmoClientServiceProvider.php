@@ -6,25 +6,28 @@ use Illuminate\Support\ServiceProvider;
 
 class AmoClientServiceProvider extends ServiceProvider
 {
-    public function boot()
+    public function boot(): void
     {
         if ($this->app->runningInConsole()) {
             $this->bootForConsole();
         }
     }
 
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/amoclient.php', 'amoclient');
 
     }
 
-    public function provides()
+    /**
+     * @return array<int, string>
+     */
+    public function provides(): array
     {
         return ['amoclient'];
     }
 
-    protected function bootForConsole()
+    protected function bootForConsole(): void
     {
         // Publishing the configuration file.
         $this->publishes([

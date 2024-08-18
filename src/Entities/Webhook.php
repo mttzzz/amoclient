@@ -3,21 +3,25 @@
 namespace mttzzz\AmoClient\Entities;
 
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Webhook extends AbstractEntity
 {
     protected string $entity = 'webhooks';
 
-    protected $settings = [];
+    /**
+     * @var string[] // Указываем, что массив содержит строки
+     */
+    protected array $settings = [];
 
-    public $disabled;
+    public bool $disabled;
 
-    public $destination;
+    public string $destination;
 
-    public $sort;
+    public int $sort;
 
-    public function subscribe()
+    public function subscribe(): Response
     {
         try {
             return $this->http->post($this->entity, [
@@ -29,7 +33,7 @@ class Webhook extends AbstractEntity
         }
     }
 
-    public function unSubscribe()
+    public function unSubscribe(): Response
     {
         try {
             return $this->http->delete($this->entity, ['destination' => $this->destination])->throw();
@@ -38,196 +42,196 @@ class Webhook extends AbstractEntity
         }
     }
 
-    public function responsibleLead()
+    public function responsibleLead(): self
     {
         $this->settings[] = 'responsible_lead';
 
         return $this;
     }
 
-    public function responsibleContact()
+    public function responsibleContact(): self
     {
         $this->settings[] = 'responsible_contact';
 
         return $this;
     }
 
-    public function responsibleCompany()
+    public function responsibleCompany(): self
     {
         $this->settings[] = 'responsible_company';
 
         return $this;
     }
 
-    public function responsibleCustomer()
+    public function responsibleCustomer(): self
     {
         $this->settings[] = 'responsible_customer';
 
         return $this;
     }
 
-    public function responsibleTask()
+    public function responsibleTask(): self
     {
         $this->settings[] = 'responsible_task';
 
         return $this;
     }
 
-    public function restoreLead()
+    public function restoreLead(): self
     {
         $this->settings[] = 'restore_lead';
 
         return $this;
     }
 
-    public function restoreContact()
+    public function restoreContact(): self
     {
         $this->settings[] = 'restore_contact';
 
         return $this;
     }
 
-    public function restoreCompany()
+    public function restoreCompany(): self
     {
         $this->settings[] = 'restore_company';
 
         return $this;
     }
 
-    public function addLead()
+    public function addLead(): self
     {
         $this->settings[] = 'add_lead';
 
         return $this;
     }
 
-    public function addContact()
+    public function addContact(): self
     {
         $this->settings[] = 'add_contact';
 
         return $this;
     }
 
-    public function addCompany()
+    public function addCompany(): self
     {
         $this->settings[] = 'add_company';
 
         return $this;
     }
 
-    public function addCustomer()
+    public function addCustomer(): self
     {
         $this->settings[] = 'add_customer';
 
         return $this;
     }
 
-    public function addTask()
+    public function addTask(): self
     {
         $this->settings[] = 'add_task';
 
         return $this;
     }
 
-    public function updateLead()
+    public function updateLead(): self
     {
         $this->settings[] = 'update_lead';
 
         return $this;
     }
 
-    public function updateContact()
+    public function updateContact(): self
     {
         $this->settings[] = 'update_contact';
 
         return $this;
     }
 
-    public function updateCompany()
+    public function updateCompany(): self
     {
         $this->settings[] = 'update_company';
 
         return $this;
     }
 
-    public function updateCustomer()
+    public function updateCustomer(): self
     {
         $this->settings[] = 'update_customer';
 
         return $this;
     }
 
-    public function updateTask()
+    public function updateTask(): self
     {
         $this->settings[] = 'update_task';
 
         return $this;
     }
 
-    public function deleteLead()
+    public function deleteLead(): self
     {
         $this->settings[] = 'delete_lead';
 
         return $this;
     }
 
-    public function deleteContact()
+    public function deleteContact(): self
     {
         $this->settings[] = 'delete_contact';
 
         return $this;
     }
 
-    public function deleteCompany()
+    public function deleteCompany(): self
     {
         $this->settings[] = 'delete_company';
 
         return $this;
     }
 
-    public function deleteCustomer()
+    public function deleteCustomer(): self
     {
         $this->settings[] = 'delete_customer';
 
         return $this;
     }
 
-    public function deleteTask()
+    public function deleteTask(): self
     {
         $this->settings[] = 'delete_task';
 
         return $this;
     }
 
-    public function statusLead()
+    public function statusLead(): self
     {
         $this->settings[] = 'status_lead';
 
         return $this;
     }
 
-    public function noteLead()
+    public function noteLead(): self
     {
         $this->settings[] = 'note_lead';
 
         return $this;
     }
 
-    public function noteContact()
+    public function noteContact(): self
     {
         $this->settings[] = 'note_contact';
 
         return $this;
     }
 
-    public function noteCompany()
+    public function noteCompany(): self
     {
         $this->settings[] = 'note_company';
 
         return $this;
     }
 
-    public function noteCustomer()
+    public function noteCustomer(): self
     {
         $this->settings[] = 'note_customer';
 

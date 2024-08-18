@@ -4,7 +4,7 @@ namespace mttzzz\AmoClient\Traits;
 
 trait QueryTrait
 {
-    public function query($query)
+    public function query(string $query): self
     {
         $this->query = $query;
 

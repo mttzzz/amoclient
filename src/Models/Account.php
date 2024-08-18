@@ -2,50 +2,48 @@
 
 namespace mttzzz\AmoClient\Models;
 
+use Illuminate\Http\Client\PendingRequest;
+
 class Account extends AbstractModel
 {
-    protected $http;
-
-    protected $entity = 'account';
-
-    public $with = [];
-
-    public function __construct($http)
+    public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
+
+        $this->entity = 'account';
     }
 
-    public function withAmojoId()
+    public function withAmojoId(): self
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withAmojoRights()
+    public function withAmojoRights(): self
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withUsersGroups()
+    public function withUsersGroups(): self
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withTaskTypes()
+    public function withTaskTypes(): self
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withVersion()
+    public function withVersion(): self
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withEntityNames()
+    public function withEntityNames(): self
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withDatetimeSettings()
+    public function withDatetimeSettings(): self
     {
         return $this->addWith(__FUNCTION__);
     }

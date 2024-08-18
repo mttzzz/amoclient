@@ -4,24 +4,25 @@ namespace mttzzz\AmoClient\Traits;
 
 use Carbon\Carbon;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\DB;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 trait CrudEntityTrait
 {
-    public $created_by;
+    public ?int $created_by;
 
-    public $created_at;
+    public ?int $created_at;
 
-    public $updated_at;
+    public ?int $updated_at;
 
-    public $account_id;
+    public int $account_id;
 
-    public $id;
+    public int $id;
 
-    public $responsible_user_id;
+    public int $responsible_user_id;
 
-    public function update()
+    public function update(): Response
     {
         try {
             return $this->http->patch($this->entity, [$this->toArray()])->throw()->json();
@@ -30,7 +31,7 @@ trait CrudEntityTrait
         }
     }
 
-    public function create()
+    public function create(): Response
     {
         try {
             return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
@@ -39,12 +40,12 @@ trait CrudEntityTrait
         }
     }
 
-    public function createGetId()
+    public function createGetId(): int
     {
         return $this->create()['_embedded'][$this->entity][0]['id'];
     }
 
-    public function delete()
+    public function delete(): Response
     {
         try {
             return $this->http->delete($this->entity.'/'.$this->id)->throw()->json();
@@ -53,7 +54,7 @@ trait CrudEntityTrait
         }
     }
 
-    public function setResponsibleUser($accountId, $id)
+    public function setResponsibleUser($accountId, $id): void
     {
         $user = DB::connection('octane')
             ->table('account_amo_user')
@@ -68,7 +69,7 @@ trait CrudEntityTrait
         return Carbon::parse($this->created_at);
     }
 
-    public function getResponsibleName()
+    public function getResponsibleName(): ?string
     {
         $user = DB::connection('octane')->table('amo_users')->find($this->responsible_user_id);
 

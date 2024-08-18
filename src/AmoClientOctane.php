@@ -11,45 +11,60 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use mttzzz\AmoClient\Models\Account;
+use mttzzz\AmoClient\Models\Call;
+use mttzzz\AmoClient\Models\Catalog;
+use mttzzz\AmoClient\Models\Company;
+use mttzzz\AmoClient\Models\Contact;
+use mttzzz\AmoClient\Models\Customer;
+use mttzzz\AmoClient\Models\Event;
+use mttzzz\AmoClient\Models\Lead;
+use mttzzz\AmoClient\Models\Pipeline;
+use mttzzz\AmoClient\Models\ShortLink;
+use mttzzz\AmoClient\Models\Source;
+use mttzzz\AmoClient\Models\Task;
+use mttzzz\AmoClient\Models\Unsorted;
+use mttzzz\AmoClient\Models\User;
+use mttzzz\AmoClient\Models\Webhook;
 use Psr\Http\Message\RequestInterface;
 
 class AmoClientOctane
 {
-    public $leads;
+    public Lead $leads;
 
-    public $contacts;
+    public Contact $contacts;
 
-    public $companies;
+    public Company $companies;
 
-    public $sources;
+    public Source $sources;
 
-    public $catalogs;
+    public Catalog $catalogs;
 
-    public $customers;
+    public Customer $customers;
 
-    public $account;
+    public Account $account;
 
-    public $users;
+    public User $users;
 
-    public $pipelines;
+    public Pipeline $pipelines;
 
-    public $tasks;
+    public Task $tasks;
 
-    public $events;
+    public Event $events;
 
-    public $ajax;
+    public Ajax $ajax;
 
-    public $unsorted;
+    public Unsorted $unsorted;
 
-    public $calls;
+    public Call $calls;
 
-    public $webhooks;
+    public Webhook $webhooks;
 
-    public $shortLinks;
+    public ShortLink $shortLinks;
 
-    public $accountId;
+    public int $accountId;
 
-    public function __construct($aId, $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
+    public function __construct(int $aId, string $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
     {
         $account = DB::connection('octane')->table('accounts')
             ->select(['accounts.id', 'subdomain', 'domain', 'account_widget.access_token'])

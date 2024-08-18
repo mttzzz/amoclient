@@ -6,7 +6,10 @@ use Illuminate\Http\Client\PendingRequest;
 
 class Unsorted extends AbstractEntity
 {
-    public function __construct($data, PendingRequest $http)
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function __construct(array $data, PendingRequest $http)
     {
         parent::__construct($data, $http);
     }

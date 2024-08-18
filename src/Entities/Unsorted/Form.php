@@ -24,9 +24,11 @@ class Form extends AbstractUnsorted
         $this->entity .= '/forms';
     }
 
-    public function addMetadata($source_uid, $source_name,
-        $form_id, $form_name, $form_page, $ip, $form_sent_at, $referer,
-        $pipeline_id = null, $created_at = null)
+    public function addMetadata(
+        string $source_uid, string $source_name,
+        string $form_id, string $form_name, string $form_page,
+        string $ip, int $form_sent_at, string $referer,
+        ?int $pipeline_id = null, ?int $created_at = null): self
     {
         $this->source_uid = $source_uid;
         $this->source_name = $source_name;

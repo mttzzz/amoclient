@@ -7,7 +7,7 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 trait CrudTrait
 {
-    protected function findEntity($id)
+    protected function findEntity($id): array
     {
         try {
             return $this->http->get($this->entity.'/'.$id,
@@ -18,7 +18,7 @@ trait CrudTrait
         }
     }
 
-    public function create(array $entities)
+    public function create(array $entities): array
     {
         try {
             if (! empty($entities)) {
@@ -32,7 +32,7 @@ trait CrudTrait
         }
     }
 
-    public function update(array $entities)
+    public function update(array $entities): array
     {
         try {
             if (! empty($entities)) {

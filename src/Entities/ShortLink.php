@@ -12,6 +12,9 @@ class ShortLink extends AbstractEntity
 
     public string $url;
 
+    /**
+     * @var array<string, mixed>
+     */
     public $metadata;
 
     public function __construct(PendingRequest $http)
@@ -19,6 +22,11 @@ class ShortLink extends AbstractEntity
         parent::__construct([], $http);
     }
 
+    /**
+     * @return array<string, mixed>
+     *
+     * @throws AmoCustomException
+     */
     public function create(): array
     {
         try {

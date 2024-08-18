@@ -6,7 +6,12 @@ use Illuminate\Support\Arr;
 
 trait PhoneTrait
 {
-    public function phoneList()
+    /**
+     * Get a list of phone numbers.
+     *
+     * @return string[] // Указываем, что массив содержит строки
+     */
+    public function phoneList(): array
     {
         $phones = [];
         if ($this->custom_fields_values) {
@@ -22,7 +27,12 @@ trait PhoneTrait
         return $phones;
     }
 
-    private function phoneGet()
+    /**
+     * Get phone field data.
+     *
+     * @return array<int, array<string, mixed>> // Указываем, что возвращается массив, содержащий массивы с ключами строками и значениями различных типов
+     */
+    private function phoneGet(): array
     {
         if ($this->custom_fields_values) {
             $phones = Arr::where($this->custom_fields_values, function ($item) {
@@ -35,10 +45,12 @@ trait PhoneTrait
         $this->custom_fields_values[] = ['field_code' => 'PHONE', 'values' => []];
 
         return $this->phoneGet();
-
     }
 
-    public function phoneAdd($phone)
+    /**
+     * Add a phone number.
+     */
+    public function phoneAdd(string $phone): self
     {
         $key = key($this->phoneGet());
         $this->custom_fields_values[$key]['values'][] = ['value' => $phone, 'enum_code' => 'WORK'];
@@ -46,7 +58,12 @@ trait PhoneTrait
         return $this;
     }
 
-    public function phoneSet(array $phones)
+    /**
+     * Set multiple phone numbers.
+     *
+     * @param  string[]  $phones
+     */
+    public function phoneSet(array $phones): self
     {
         $key = key($this->phoneGet());
         $values = [];
@@ -58,12 +75,15 @@ trait PhoneTrait
         return $this;
     }
 
-    public function phoneDelete(int $phone)
+    /**
+     * Delete a phone number.
+     */
+    public function phoneDelete(int $phone): self
     {
         $key = key($this->phoneGet());
         foreach ($this->custom_fields_values[$key]['values'] as $index => $value) {
-            $phoneContact = preg_replace('/[^0-9.]+/', '', $value['value']); // Убираем все, кроме цифр и точек
-            if ((string) $phone === $phoneContact) { // Приводим к строке перед сравнением
+            $phoneContact = preg_replace('/[^0-9.]+/', '', $value['value']);
+            if ((string) $phone === $phoneContact) {
                 unset($this->custom_fields_values[$key]['values'][$index]);
             }
         }
