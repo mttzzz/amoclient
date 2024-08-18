@@ -4,6 +4,7 @@ namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Traits;
 use mttzzz\AmoClient\Traits\Filter;
 
@@ -12,65 +13,67 @@ class Lead extends AbstractModel
     use Filter\Common, Filter\Lead;
     use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
 
-    protected $entity = 'leads';
+    private array $cf;
 
-    private $cf;
+    private array $enums;
 
-    private $enums;
-
-    public function __construct(PendingRequest $http, $cf, $enums)
+    public function __construct(PendingRequest $http, array $cf, array $enums)
     {
         $this->cf = $cf;
         $this->enums = $enums;
         parent::__construct($http);
+        $this->entity = 'leads';
     }
 
-    public function entity($id = null)
+    public function entity(int|null $id = null): Entities\Lead
     {
         return new Entities\Lead(['id' => $id], $this->http, $this->cf, $this->enums);
     }
 
-    public function entityData($data)
+    public function entityData(array $data): Entities\Lead
     {
         return new Entities\Lead($data, $this->http, $this->cf, $this->enums);
     }
 
-    public function customFields()
+    public function customFields(): CustomField
     {
         return new CustomField($this->http, $this->entity);
     }
 
-    public function find($id)
+    /**
+     * @throws AmoCustomException
+     */
+    public function find(int $id): Entities\Lead
     {
         return new Entities\Lead($this->findEntity($id), $this->http, $this->cf, $this->enums);
     }
 
-    public function withCatalogElements()
+    public function withCatalogElements(): static
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withIsPriceModifiedByRobot()
+    public function withIsPriceModifiedByRobot(): static
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withLossReason()
+    public function withLossReason(): static
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withContacts()
+    public function withContacts(): static
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withOnlyDeleted()
+    public function withOnlyDeleted(): static
     {
         return $this->addWith(__FUNCTION__);
     }
 
-    public function withSourceId()
+    public function withSourceId(): static
     {
         return $this->addWith(__FUNCTION__);
     }
