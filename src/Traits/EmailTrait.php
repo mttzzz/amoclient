@@ -6,6 +6,9 @@ use Illuminate\Support\Arr;
 
 trait EmailTrait
 {
+    /**
+     * @return array<string>
+     */
     public function emailList(): array
     {
         $emails = [];
@@ -22,13 +25,16 @@ trait EmailTrait
         return $emails;
     }
 
+    /**
+     * @return callable|array<mixed>
+     */
     private function emailGet(): callable|array
     {
         if ($this->custom_fields_values) {
             $emails = Arr::where($this->custom_fields_values, function ($item) {
                 return isset($item['field_code']) && $item['field_code'] === 'EMAIL';
             });
-            if (!empty($emails)) {
+            if (! empty($emails)) {
                 return $emails;
             }
         }
@@ -38,7 +44,7 @@ trait EmailTrait
 
     }
 
-    public function emailAdd($email): self
+    public function emailAdd(string $email): self
     {
         $key = key($this->emailGet());
         $this->custom_fields_values[$key]['values'][] = ['value' => $email, 'enum_code' => 'WORK'];
@@ -46,6 +52,9 @@ trait EmailTrait
         return $this;
     }
 
+    /**
+     * @param  array<string>  $emails
+     */
     public function emailSet(array $emails): self
     {
         $key = key($this->emailGet());

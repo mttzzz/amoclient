@@ -11,6 +11,9 @@ trait Lead
         return $this;
     }
 
+    /**
+     * @param  array<array<int>>  $data
+     */
     public function filterStatuses(array $data): self
     {
         $filter = [];
@@ -24,7 +27,10 @@ trait Lead
         return $this;
     }
 
-    public function filterPipelines($pipelines): self
+    /**
+     * @param  array<mixed>  $pipelines
+     */
+    public function filterPipelines(array $pipelines): self
     {
         $this->filter['pipeline_id'] = $pipelines;
 

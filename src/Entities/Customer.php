@@ -13,41 +13,48 @@ class Customer extends AbstractEntity
 {
     use Traits\CrudEntityTrait, Traits\CustomFieldTrait, Traits\TagTrait;
 
-    public $name;
+    public string $name;
 
-    public $notes;
+    public Models\Note $notes;
 
-    public $tasks;
+    public Task $tasks;
 
-    public $links;
+    public Models\Link $links;
 
-    public $id;
+    public int $periodicity;
 
-    public $periodicity;
+    public int $next_price;
 
-    public $responsible_user_id;
+    public int $next_date;
 
-    public $next_price;
+    /**
+     * @var array<mixed>
+     */
+    public array $custom_fields_values = [];
 
-    public $next_date;
+    /**
+     * @var array<mixed>
+     */
+    public array $_embedded = [];
 
-    public $custom_fields_values = [];
-
-    public $_embedded = [];
-
-    protected $entity = 'customers';
-
-    public function __construct($data, PendingRequest $http, $cf)
+    /**
+     * @param  array<mixed>  $data
+     * @param  array<mixed>  $cf
+     */
+    public function __construct(array $data, PendingRequest $http, array $cf)
     {
-        $this->cf = $cf;
         parent::__construct($data, $http);
-        $this->notes = new Note([], $http, $this->entity, $this->id);
+        $this->entity = 'customers';
+        $this->cf = $cf;
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
         $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
     }
 
-    public function complex()
+    /**
+     * @return array<mixed>
+     */
+    public function complex(): array
     {
         try {
             return $this->http->post($this->entity.'/complex', [$this->toArray()])->throw()->json();
@@ -56,17 +63,17 @@ class Customer extends AbstractEntity
         }
     }
 
-    public function setContact(Contact $contact)
+    public function setContact(Contact $contact): void
     {
         $this->_embedded['contacts'][] = $contact->toArray();
     }
 
-    public function setCompany(Company $company)
+    public function setCompany(Company $company): void
     {
         $this->_embedded['companies'][] = $company->toArray();
     }
 
-    public function getMainContactId()
+    public function getMainContactId(): ?int
     {
         if (! isset($this->_embedded['contacts'])) {
             throw new Exception('add withContacts() before call this function');
@@ -80,12 +87,15 @@ class Customer extends AbstractEntity
         return null;
     }
 
-    public function getCompanyId()
+    public function getCompanyId(): ?int
     {
         return $this->_embedded['companies'][0]['id'] ?? null;
     }
 
-    public function getContactsIds()
+    /**
+     * @return array<int>
+     */
+    public function getContactsIds(): array
     {
         if (! isset($this->_embedded['contacts'])) {
             throw new Exception('add withContacts() before call this function');

@@ -5,7 +5,6 @@ namespace mttzzz\AmoClient\Traits;
 use Carbon\Carbon;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\DB;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
@@ -17,14 +16,12 @@ trait CrudEntityTrait
 
     public int $account_id;
 
-    public int $id;
-
-    public int $responsible_user_id;
-
     /**
+     * @return array<mixed>
+     *
      * @throws AmoCustomException
      */
-    public function update(): Response
+    public function update(): array
     {
         try {
             return $this->http->patch($this->entity, [$this->toArray()])->throw()->json();
@@ -34,9 +31,11 @@ trait CrudEntityTrait
     }
 
     /**
+     * @return array<mixed>
+     *
      * @throws AmoCustomException
      */
-    public function create(): Response
+    public function create(): array
     {
         try {
             return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
@@ -54,9 +53,11 @@ trait CrudEntityTrait
     }
 
     /**
+     * @return array<mixed>
+     *
      * @throws AmoCustomException
      */
-    public function delete(): Response
+    public function delete(): array
     {
         try {
             return $this->http->delete($this->entity.'/'.$this->id)->throw()->json();
@@ -65,7 +66,7 @@ trait CrudEntityTrait
         }
     }
 
-    public function setResponsibleUser($accountId, $id): void
+    public function setResponsibleUser(int $accountId, int $id): void
     {
         $user = DB::connection('octane')
             ->table('account_amo_user')

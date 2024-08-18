@@ -17,7 +17,7 @@ class Catalog extends AbstractModel
         $this->entity = 'catalogs';
     }
 
-    public function entity(int|null $id = null): Entities\Catalog
+    public function entity(?int $id = null): Entities\Catalog
     {
         return new Entities\Catalog(['id' => $id], $this->http);
     }

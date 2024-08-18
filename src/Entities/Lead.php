@@ -19,44 +19,52 @@ class Lead extends AbstractEntity
         'utm_campaign', 'utm_medium',
     ];
 
-    protected string $entity = 'leads';
+    public string $name;
 
-    public $name;
+    public Models\Note $notes;
 
-    public $notes;
+    public Task $tasks;
 
-    public $tasks;
+    public Models\Link $links;
 
-    public $links;
+    public int $price;
 
-    public $id;
+    public int $status_id;
 
-    public $price;
+    public int $pipeline_id;
 
-    public $status_id;
+    public int $group_id;
 
-    public $responsible_user_id;
+    /**
+     * @var array<mixed>
+     */
+    public array $custom_fields_values = [];
 
-    public $pipeline_id;
+    /**
+     * @var array<mixed>
+     */
+    public array $_embedded = [];
 
-    public $group_id;
-
-    public $custom_fields_values = [];
-
-    public $_embedded = [];
-
-    public function __construct($data, PendingRequest $http, $cf, $enums)
+    /**
+     * @param  array<mixed>  $data
+     * @param  array<mixed>  $cf
+     * @param  array<mixed>  $enums
+     */
+    public function __construct($data, PendingRequest $http, array $cf, array $enums)
     {
+        parent::__construct($data, $http);
+        $this->entity = 'leads';
         $this->cf = $cf;
         $this->enums = $enums;
-        parent::__construct($data, $http);
-        $this->notes = new Note([], $http, $this->entity, $this->id);
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
         $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
     }
 
-    public function complex()
+    /**
+     * @return array<mixed>
+     */
+    public function complex(): array
     {
         try {
             return $this->http->post($this->entity.'/complex', [$this->toArray()])->throw()->json();
@@ -65,17 +73,17 @@ class Lead extends AbstractEntity
         }
     }
 
-    public function setContact(Contact $contact)
+    public function setContact(Contact $contact): void
     {
         $this->_embedded['contacts'][] = $contact->toArray();
     }
 
-    public function setCompany(Company $company)
+    public function setCompany(Company $company): void
     {
         $this->_embedded['companies'][] = $company->toArray();
     }
 
-    public function getMainContactId()
+    public function getMainContactId(): ?int
     {
         if (! isset($this->_embedded['contacts'])) {
             throw new Exception('add withContacts() before call this function');
@@ -89,7 +97,7 @@ class Lead extends AbstractEntity
         return null;
     }
 
-    public function getCompanyId()
+    public function getCompanyId(): ?int
     {
         return $this->_embedded['companies'][0]['id'] ?? null;
     }
@@ -101,7 +109,7 @@ class Lead extends AbstractEntity
         return $companyId ? $this->http->get("companies/$companyId")->json('name') : '';
     }
 
-    public function getPipelineName()
+    public function getPipelineName(): string
     {
         $pipeline = DB::connection('octane')->table('account_pipelines')
             ->where('account_id', $this->account_id)
@@ -111,7 +119,10 @@ class Lead extends AbstractEntity
         return $pipeline?->name;
     }
 
-    public function getCatalogElementIds($catalogId)
+    /**
+     * @return array<int>
+     */
+    public function getCatalogElementIds(int $catalogId): array
     {
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
         foreach ($catalogElementIds as $key => &$catalogElementId) {
@@ -125,7 +136,7 @@ class Lead extends AbstractEntity
         return $catalogElementIds;
     }
 
-    public function getCatalogQuantity($catalogId)
+    public function getCatalogQuantity(int $catalogId): int
     {
         $quantity = 0;
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
@@ -138,7 +149,7 @@ class Lead extends AbstractEntity
         return $quantity;
     }
 
-    public function getCatalogElementQuantity($catalogId, $elementId)
+    public function getCatalogElementQuantity(int $catalogId, int $elementId): int
     {
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
         foreach ($catalogElementIds as $key => $catalogElementId) {
@@ -150,7 +161,10 @@ class Lead extends AbstractEntity
         return 0;
     }
 
-    public function getContactsIds()
+    /**
+     * @return array<int>
+     */
+    public function getContactsIds(): array
     {
         if (! isset($this->_embedded['contacts'])) {
             throw new Exception('add withContacts() before call this function');

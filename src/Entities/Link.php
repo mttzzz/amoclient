@@ -8,21 +8,28 @@ use Illuminate\Support\Str;
 
 class Link extends AbstractEntity
 {
-    protected string $entity;
+    public int $to_entity_id;
 
-    public $to_entity_id;
+    public string $to_entity_type;
 
-    public $to_entity_type;
+    /**
+     * @var array<mixed>
+     */
+    public array $metadata = [];
 
-    public $metadata = [];
-
-    public function __construct($data, PendingRequest $http, $entity)
+    /**
+     * @param  array<mixed>  $data
+     */
+    public function __construct(array $data, PendingRequest $http, string $entity)
     {
         $this->entity = $entity;
         parent::__construct($data, $http);
     }
 
-    public function link()
+    /**
+     * @return array<mixed>
+     */
+    public function link(): array
     {
         $str = Str::beforeLast($this->entity, '/');
         try {
@@ -32,7 +39,10 @@ class Link extends AbstractEntity
         }
     }
 
-    public function unlink()
+    /**
+     * @return array<mixed>
+     */
+    public function unlink(): array
     {
         $str = Str::beforeLast($this->entity, '/');
         try {

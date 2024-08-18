@@ -48,7 +48,7 @@ class Link extends AbstractModel
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
         $entity->to_entity_id = (int) $companyId;
         $entity->to_entity_type = 'companies';
-        $entity->metadata = null;
+        $entity->metadata = [];
 
         return $entity;
     }
@@ -58,7 +58,7 @@ class Link extends AbstractModel
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
         $entity->to_entity_id = (int) $customerId;
         $entity->to_entity_type = 'customers';
-        $entity->metadata = null;
+        $entity->metadata = [];
 
         return $entity;
     }

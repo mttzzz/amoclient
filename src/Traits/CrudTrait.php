@@ -9,6 +9,8 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 trait CrudTrait
 {
     /**
+     * @return array<mixed>
+     *
      * @throws AmoCustomException
      */
     protected function findEntity(int $id): array
@@ -23,12 +25,15 @@ trait CrudTrait
     }
 
     /**
+     * @param  array<mixed>  $entities
+     * @return array<mixed>
+     *
      * @throws AmoCustomException
      */
     public function create(array $entities): array
     {
         try {
-            if (!empty($entities)) {
+            if (! empty($entities)) {
                 return $this->http->post($this->entity, $this->prepareEntities($entities))->throw()->json();
             }
 
@@ -40,12 +45,15 @@ trait CrudTrait
     }
 
     /**
+     * @param  array<mixed>  $entities
+     * @return array<mixed>
+     *
      * @throws AmoCustomException
      */
     public function update(array $entities): array
     {
         try {
-            if (!empty($entities)) {
+            if (! empty($entities)) {
                 return $this->http->patch($this->entity, $this->prepareEntities($entities))->throw()->json();
             }
 

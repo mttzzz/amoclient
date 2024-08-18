@@ -10,16 +10,26 @@ use mttzzz\LaravelTelegramLog\Telegram;
 
 trait CustomFieldTrait
 {
+    /**
+     * @var array<mixed>
+     */
     protected array $cf;
 
+    /**
+     * @var array<mixed>
+     */
     protected array $enums;
 
-    public function setCFByCode(string $code, $value): void
+    public function setCFByCode(string $code, string $value): void
     {
         $this->custom_fields_values[] = ['field_code' => $code, 'values' => [['value' => $value]]];
     }
 
-    public function setCF(int $id, $value, bool $isEnumId = false): static
+    /**
+     * @param  string|array<string>  $value
+     * @return $this
+     */
+    public function setCF(int $id, string|array $value, bool $isEnumId = false): static
     {
         $values = is_array($value) ? $value : [$value];
         foreach ($values as $key => $value) {
@@ -44,7 +54,8 @@ trait CustomFieldTrait
         return $this;
     }
 
-    private function setValue($id, $value)
+    //TODO: refactor ИЗБАВИТЬСЯ ОТ MIXED
+    private function setValue(int $id, mixed $value): mixed
     {
         if ($type = $this->cf[$id] ?? null) {
             switch ($type) {
@@ -78,7 +89,7 @@ trait CustomFieldTrait
                 case 'birthday':
                     try {
                         $value = strip_tags($value);
-                        $value = is_string($value) && !is_numeric($value) ?
+                        $value = is_string($value) && ! is_numeric($value) ?
                             Carbon::parseFromLocale(str_replace('&nbsp;', ' ', $value), 'ru') :
                             Carbon::createFromTimestamp((int) $value);
 
@@ -97,34 +108,43 @@ trait CustomFieldTrait
         return $value;
     }
 
-    public function getCF($id)
+    /**
+     * @return array<array<string, mixed>>
+     */
+    public function getCF(int $id): array
     {
         return empty($this->custom_fields_values) ? [] :
-            Arr::where($this->custom_fields_values, fn($i) => isset($i['field_id']) && $i['field_id'] == $id);
+            Arr::where($this->custom_fields_values, fn ($i) => isset($i['field_id']) && $i['field_id'] == $id);
     }
 
-    public function getCFByCode($code)
+    /**
+     * @return array<array<string, mixed>>
+     */
+    public function getCFByCode(string $code): array
     {
         return empty($this->custom_fields_values) ? [] :
-            Arr::where($this->custom_fields_values, fn($i) => isset($i['field_code']) && $i['field_code'] == $code);
+            Arr::where($this->custom_fields_values, fn ($i) => isset($i['field_code']) && $i['field_code'] == $code);
     }
 
-    public function getCFV($id)
+    public function getCFV(int $id): mixed
     {
         return Arr::first($this->getCF($id))['values'][0]['value'] ?? null;
     }
 
-    public function getCFVByCode($code)
+    public function getCFVByCode(string $code): mixed
     {
         return Arr::first($this->getCFByCode(Str::upper($code)))['values'][0]['value'] ?? null;
     }
 
-    public function getCFE($id)
+    public function getCFE(int $id): ?int
     {
         return Arr::first($this->getCF($id))['values'][0]['enum_id'] ?? null;
     }
 
-    public function getCFCLN($id): array //customField ChainedList Names
+    /**
+     * @return array<string>
+     */
+    public function getCFCLN(int $id): array
     {
         $names = [];
         $f = Arr::first($this->getCF($id));
@@ -138,10 +158,15 @@ trait CustomFieldTrait
         return $names;
     }
 
+    /**
+     * @return array<string> // If the function returns an array of strings
+     */
     public function getCFVM(int $id): array
     {
         $f = $this->getCF($id);
+        /** @var array<int, array<string, mixed>> $values */
+        $values = Arr::first($f)['values'] ?? [];
 
-        return count($f) ? collect(Arr::first($f)['values'])->pluck('value')->toArray() : [];
+        return count($f) ? collect($values)->pluck('value')->toArray() : [];
     }
 }

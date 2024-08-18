@@ -13,15 +13,15 @@ class Lead extends AbstractModel
     use Filter\Common, Filter\Lead;
     use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
 
-    /** @var array<int, mixed> */
+    /** @var array<mixed> */
     private array $cf;
 
-    /** @var array<int, mixed> */
+    /** @var array<mixed> */
     private array $enums;
 
     /**
-     * @param  array<int, mixed>  $cf
-     * @param  array<int, mixed>  $enums
+     * @param  array<mixed>  $cf
+     * @param  array<mixed>  $enums
      */
     public function __construct(PendingRequest $http, array $cf, array $enums)
     {

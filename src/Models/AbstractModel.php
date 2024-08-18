@@ -19,8 +19,7 @@ abstract class AbstractModel
 
     protected int $limit;
 
-    /** @var array<string, mixed> */
-    protected $query;
+    protected string $query;
 
     protected string $entity;
 

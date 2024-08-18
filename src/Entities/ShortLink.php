@@ -8,18 +8,12 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class ShortLink extends AbstractEntity
 {
-    protected string $entity = 'short_links';
-
     public string $url;
-
-    /**
-     * @var array<string, mixed>
-     */
-    public $metadata;
 
     public function __construct(PendingRequest $http)
     {
         parent::__construct([], $http);
+        $this->entity = 'short_links';
     }
 
     /**
@@ -36,14 +30,14 @@ class ShortLink extends AbstractEntity
         }
     }
 
-    public function url(string $url): ShortLink
+    public function url(string $url): self
     {
         $this->url = $url;
 
         return $this;
     }
 
-    public function setContactId(int $contactId): ShortLink
+    public function setContactId(int $contactId): self
     {
         $this->metadata = ['entity_type' => 'contacts', 'entity_id' => $contactId];
 
