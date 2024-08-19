@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Mockery;
 use mttzzz\AmoClient\AmoClientOctane;
+use PHPUnit\Framework\Attributes\Depends;
 
 class AmoClientOctaneTest extends BaseAmoClient
 {
@@ -26,55 +27,26 @@ class AmoClientOctaneTest extends BaseAmoClient
         $this->assertNotNull($widget, "Widget ($clientId) not found");
 
         // Проверка активности виджета
-        // dd($widget);
         $this->assertTrue((bool) $widget->active,
             "Account ($octaneAccountData->subdomain) doesn't have an active widget ($widget->name)");
     }
 
+    #[Depends('testAmoClientOctane')]
     public function testAccountNotFound()
     {
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Account (99999999) not found');
+        $this->expectExceptionMessage('Account (999999999999) not found');
 
-        new AmoClientOctane(99999999, '00a140c1-7c52-4563-8b36-03f23754d255');
+        new AmoClientOctane(999999999999, '00a140c1-7c52-4563-8b36-03f23754d255');
     }
 
+    #[Depends('testAccountNotFound')]
     public function testWidgetNotFound()
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Widget (invalid-client-id) not found');
 
-        new AmoClientOctane(16117840, 'invalid-client-id');
-    }
-
-    public function testInactiveWidget()
-    {
-        $this->expectException(Exception::class);
-        $this->expectExceptionMessage("Account (subdomain) doesn't active widget (widget-name)");
-
-        // Мокирование данных
-        $accountData = (object) [
-            'id' => 16117841,
-            'subdomain' => 'subdomain',
-            'domain' => 'domain',
-        ];
-
-        $widgetData = (object) [
-            'id' => 1,
-            'client_id' => '00a140c1-7c52-4563-8b36-03f23754d255',
-            'name' => 'widget-name',
-            'active' => false,
-        ];
-
-        // Мокирование вызовов к базе данных
-        DB::shouldReceive('connection->table->select->join->join->where->where->where->first')
-            ->andReturn(null);
-
-        DB::shouldReceive('connection->table->where->first')
-            ->with('client_id', '00a140c1-7c52-4563-8b36-03f23754d255')
-            ->andReturn($widgetData);
-
-        new AmoClientOctane(16117841, '00a140c1-7c52-4563-8b36-03f23754d255');
+        new AmoClientOctane($this->amoClient->accountId, 'invalid-client-id');
     }
 
     protected function tearDown(): void

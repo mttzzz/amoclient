@@ -11,7 +11,7 @@ abstract class AbstractEntity
 
     protected string $entity;
 
-    public ?int $id;
+    public ?int $id = null;
 
     public int $responsible_user_id = 0;
 

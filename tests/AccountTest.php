@@ -2,6 +2,11 @@
 
 namespace mttzzz\AmoClient\Tests;
 
+use GuzzleHttp\Psr7\Response as GuzzleResponse;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
+use mttzzz\AmoClient\Models\Account;
+
 class AccountTest extends BaseAmoClient
 {
     public function testAccountGet()
@@ -73,5 +78,24 @@ class AccountTest extends BaseAmoClient
         $account = $this->amoClient->account->withDatetimeSettings()->get();
         $this->assertArrayHasKey('_embedded', $account);
         $this->assertArrayHasKey('datetime_settings', $account['_embedded']);
+    }
+
+    public function testAccountRequestException()
+    {
+        $this->expectException(RequestException::class);
+
+        // Создаем объект GuzzleResponse
+        $guzzleResponse = new GuzzleResponse(500, [], 'Test exception');
+        // Оборачиваем его в объект Illuminate\Http\Client\Response
+        $response = new Response($guzzleResponse);
+
+        // Мокирование метода get, чтобы он выбрасывал исключение
+        $accountMock = $this->createMock(Account::class);
+        $accountMock->method('get')->will($this->throwException(new RequestException($response)));
+
+        $this->amoClient->account = $accountMock;
+
+        // Выполнение реального вызова
+        $this->amoClient->account->get();
     }
 }

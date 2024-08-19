@@ -92,7 +92,7 @@ class AmoClientOctane
             if (! $widget) {
                 throw new Exception("Widget ($clientId) not found");
             }
-            throw new Exception("Account ($octaneAccountData->subdomain) doesn't active widget ($widget->name)");
+            throw new Exception("Widget ($widget->name) doesn't installed in account ($octaneAccountData->subdomain)");
         }
 
         $octaneAccount = $this->convertToOctaneAccount($octaneAccountData);
