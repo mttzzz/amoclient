@@ -2,7 +2,7 @@
 
 namespace mttzzz\AmoClient\Tests;
 
-class ModelAccountTest extends BaseAmoClient
+class AccountTest extends BaseAmoClient
 {
     public function testAccountGet()
     {
@@ -29,7 +29,6 @@ class ModelAccountTest extends BaseAmoClient
     public function testAccountWithAmojoId()
     {
         $account = $this->amoClient->account->withAmojoId()->get();
-        $this->assertNotEmpty($account);
         $this->assertArrayHasKey('amojo_id', $account);
     }
 
@@ -39,7 +38,6 @@ class ModelAccountTest extends BaseAmoClient
 
         $this->assertArrayHasKey('_embedded', $account);
         $this->assertArrayHasKey('amojo_rights', $account['_embedded']);
-        $this->assertNotEmpty($account);
     }
 
     public function testAccountWithUsersGroups()
@@ -48,7 +46,6 @@ class ModelAccountTest extends BaseAmoClient
 
         $this->assertArrayHasKey('_embedded', $account);
         $this->assertArrayHasKey('users_groups', $account['_embedded']);
-        $this->assertNotEmpty($account);
     }
 
     public function testAccountWithTaskTypes()
@@ -56,21 +53,18 @@ class ModelAccountTest extends BaseAmoClient
         $account = $this->amoClient->account->withTaskTypes()->get();
         $this->assertArrayHasKey('_embedded', $account);
         $this->assertArrayHasKey('task_types', $account['_embedded']);
-        $this->assertNotEmpty($account);
     }
 
     public function testAccountWithVersion()
     {
         $account = $this->amoClient->account->withVersion()->get();
         $this->assertArrayHasKey('version', $account);
-        $this->assertNotEmpty($account);
     }
 
     public function testAccountWithEntityNames()
     {
         $account = $this->amoClient->account->withEntityNames()->get();
         $this->assertArrayHasKey('entity_names', $account);
-        $this->assertNotEmpty($account);
     }
 
     public function testAccountWithDatetimeSettings()
@@ -78,6 +72,5 @@ class ModelAccountTest extends BaseAmoClient
         $account = $this->amoClient->account->withDatetimeSettings()->get();
         $this->assertArrayHasKey('_embedded', $account);
         $this->assertArrayHasKey('datetime_settings', $account['_embedded']);
-        $this->assertNotEmpty($account);
     }
 }

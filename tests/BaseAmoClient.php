@@ -8,7 +8,7 @@ use Orchestra\Testbench\TestCase;
 
 abstract class BaseAmoClient extends TestCase
 {
-    protected $amoClient;
+    protected AmoClientOctane $amoClient;
 
     protected function setUp(): void
     {

@@ -3,3 +3,5 @@ vendor
 .vscode
 .env
 .phpunit.result.cache
+.phpunit.cache
+coverage

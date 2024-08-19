@@ -40,7 +40,10 @@ class Call extends AbstractEntity
         $this->entity = 'calls';
     }
 
-    public function create(): Call
+    /**
+     * @return array<mixed>
+     */
+    public function create(): array
     {
         try {
             return $this->http->post($this->entity, [$this->toArray()])->throw()->json();

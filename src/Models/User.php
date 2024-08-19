@@ -3,7 +3,6 @@
 namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Http\Client\Response;
 
 class User extends AbstractModel
 {
@@ -33,7 +32,10 @@ class User extends AbstractModel
         return $this->addWith(__FUNCTION__);
     }
 
-    public function find(int $id): Response
+    /**
+     * @return array<mixed>
+     */
+    public function find(int $id): array
     {
         return $this->http->get("$this->entity/$id")->throw()->json();
     }
