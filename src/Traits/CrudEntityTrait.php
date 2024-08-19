@@ -75,7 +75,7 @@ trait CrudEntityTrait
             ->where('account_id', $accountId)
             ->exists();
 
-        $this->responsible_user_id = $isExist ? $id : null;
+        $this->responsible_user_id = $isExist ? $id : 0;
     }
 
     public function getCreatedAt(): Carbon
@@ -85,7 +85,7 @@ trait CrudEntityTrait
 
     public function getResponsibleName(): ?string
     {
-        if ($this->responsible_user_id === null) {
+        if ($this->responsible_user_id === 0) {
             return null;
         }
 

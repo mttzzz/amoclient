@@ -3,7 +3,6 @@
 namespace mttzzz\AmoClient;
 
 use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Http\Client\Response;
 use mttzzz\AmoClient\Helpers\OctaneAccount;
 
 class Ajax
@@ -18,41 +17,46 @@ class Ajax
     }
 
     /**
-     * @param  array<string, mixed>  $query
+     * @param  array<mixed>  $query
+     * @return array<mixed>
      */
-    public function get(string $url, array $query = []): Response
+    public function get(string $url, array $query = []): array
     {
         return $this->http->get($url, $query)->throw()->json();
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<mixed>  $data
+     * @return array<mixed>
      */
-    public function postJson(string $url, array $data = []): Response
+    public function postJson(string $url, array $data = []): array
     {
         return $this->http->asJson()->post($url, $data)->throw()->json();
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<mixed>  $data
+     * @return array<mixed>
      */
-    public function postForm(string $url, array $data = []): Response
+    public function postForm(string $url, array $data = []): array
     {
         return $this->http->asForm()->post($url, $data)->throw()->json();
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<mixed>  $data
+     * @return array<mixed>
      */
-    public function patch(string $url, array $data = []): Response
+    public function patch(string $url, array $data = []): array
     {
         return $this->http->patch($url, $data)->throw()->json();
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<mixed>  $data
+     * @return array<mixed>
      */
-    public function delete(string $url, array $data = []): Response
+    public function delete(string $url, array $data = []): array
     {
         return $this->http->delete($url, $data)->throw()->json();
     }

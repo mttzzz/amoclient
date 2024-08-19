@@ -10,6 +10,7 @@ class AccountTest extends BaseAmoClient
 
         // Проверка, что ответ не пустой
         $this->assertNotEmpty($account);
+        $this->assertIsArray($account);
     }
 
     public function testAccountContainsKeys()

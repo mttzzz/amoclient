@@ -67,7 +67,9 @@ class AmoClientOctane
 
     public int $accountId;
 
-    public function __construct(int $aId, string $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
+    public string $clientId = '00a140c1-7c52-4563-8b36-03f23754d255';
+
+    public function __construct(int $aId, string $clientId)
     {
         /** @var stdClass|null $octaneAccountData */
         $octaneAccountData = DB::connection('octane')->table('accounts')

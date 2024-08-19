@@ -13,7 +13,7 @@ abstract class AbstractEntity
 
     public ?int $id;
 
-    public ?int $responsible_user_id;
+    public int $responsible_user_id = 0;
 
     /**
      * @var array<mixed>
@@ -87,6 +87,7 @@ abstract class AbstractEntity
     public function toArray(): array
     {
         $item = [];
+
         $except = ['http', 'cf', 'entity', 'notes', '_links', 'closest_task_at', 'updated_by',
             'fieldPhoneId', 'fieldEmailId', 'tasks', 'links', 'enums'];
 
@@ -99,7 +100,7 @@ abstract class AbstractEntity
                 $item[$key] = $value;
             }
 
-            if (empty($item[$key]) && ! in_array($key, ['is_main', 'duration', 'disabled'])) {
+            if (empty($item[$key]) && ! in_array($key, ['is_main', 'duration', 'disabled', 'can_link_multiple'])) {
                 unset($item[$key]);
             }
 

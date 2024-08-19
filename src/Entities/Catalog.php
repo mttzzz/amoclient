@@ -21,7 +21,7 @@ class Catalog extends AbstractEntity
 
     public bool $can_add_elements;
 
-    public bool $can_link_multiple;
+    public string $test;
 
     public function __construct($data, PendingRequest $http)
     {
