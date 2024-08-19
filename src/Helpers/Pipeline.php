@@ -2,7 +2,7 @@
 
 namespace mttzzz\AmoClient\Helpers;
 
-class Widget
+class Pipeline
 {
     public int $id;
 
