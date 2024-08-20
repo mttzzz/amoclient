@@ -31,6 +31,7 @@ trait EmailTrait
     private function emailGet(): array
     {
         if ($this->custom_fields_values) {
+
             $emails = Arr::where($this->custom_fields_values, function ($item) {
                 return isset($item['field_code']) && $item['field_code'] === 'EMAIL';
             });
@@ -69,9 +70,9 @@ trait EmailTrait
     public function emailDelete(string $email): self
     {
         $key = key($this->emailGet());
-        foreach ($this->custom_fields_values[$key]['values'] as $key => $value) {
+        foreach ($this->custom_fields_values[$key]['values'] as $index => $value) {
             if ($email === $value['value']) {
-                unset($this->custom_fields_values[$key]['values'][$key]);
+                unset($this->custom_fields_values[$key]['values'][$index]);
             }
         }
 

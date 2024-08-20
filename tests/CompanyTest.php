@@ -2,6 +2,7 @@
 
 namespace mttzzz\AmoClient\Tests;
 
+use Carbon\Carbon;
 use mttzzz\AmoClient\Entities\Company;
 use PHPUnit\Framework\Attributes\Depends;
 
@@ -25,7 +26,7 @@ class CompanyTest extends BaseAmoClient
 
     public function testCompanyEntity()
     {
-        $this->assertInstanceOf(company::class, $this->company);
+        $this->assertInstanceOf(Company::class, $this->company);
         $this->assertEquals($this->data['name'], $this->company->name);
     }
 
@@ -52,12 +53,14 @@ class CompanyTest extends BaseAmoClient
         $newName = 'Test Company 2';
         $this->company->id = $companyId;
         $this->company->name = $newName;
-        $this->company->phoneAdd('11111111111');
-        $this->company->phoneAdd('22222222222');
-        $this->company->emailAdd('test@blalba.com');
-        $this->company->emailAdd('test2@blalba.com');
-        $this->company->setCF(449501, '123123123');
-        $this->company->setCFByCode('ADDRESS', '123123123');
+        $this->company->phoneSet(['11111111111', '22222222222']);
+        $this->company->phoneAdd('3333333333');
+        $this->company->phoneAdd('4444444444');
+        $this->company->emailSet(['11111111111@example.com', '22222222222@example.com']);
+        $this->company->emailAdd('3333333333@example.com');
+        $this->company->emailAdd('4444444444@example.com');
+        $this->company->setCF(449501, '111111111111');
+        $this->company->setCFByCode('ADDRESS', '222222222222222');
 
         $response = $this->company->update();
 
@@ -66,63 +69,99 @@ class CompanyTest extends BaseAmoClient
         $this->assertArrayHasKey('companies', $response['_embedded']);
         $this->assertIsArray($response['_embedded']['companies']);
         $this->assertEquals(1, count($response['_embedded']['companies']));
-        $updated = $response['_embedded']['companies'][0];
+        $company = $this->amoClient->companies->find($response['_embedded']['companies'][0]['id']);
 
-        $this->assertEquals($companyId, $updated['id']);
-        $this->assertEquals($newName, $updated['name']);
+        $this->assertInstanceOf(Carbon::class, $company->getCreatedAt());
 
-        $expectedFields = [
-            'name' => $newName,
-            'phones' => ['11111111111', '22222222222'],
-            'emails' => ['test@blalba.com', 'test2@blalba.com'],
-            'custom_fields' => [
-                449501 => '123123123',
-                'ADDRESS' => '123123123',
-            ],
-        ];
-
-        return ['companyId' => $companyId, 'expectedFields' => $expectedFields];
-    }
-
-    #[Depends('testCompanyUpdate')]
-    public function testCompanyFind(array $data)
-    {
-        $companyId = $data['companyId'];
-        $expectedFields = $data['expectedFields'];
-
-        $company = $this->amoClient->companies->find($companyId);
-        $this->assertNotNull($company);
         $this->assertEquals($companyId, $company->id);
-        $this->assertEquals($expectedFields['name'], $company->name);
+        $this->assertEquals($newName, $company->name);
+        $this->assertEquals('111111111111', $company->getCFV(449501));
+        $this->assertEquals('222222222222222', $company->getCFVByCode('ADDRESS'));
 
         $phones = $company->phoneList();
-
-        foreach ($expectedFields['phones'] as $expectedPhone) {
-            $this->assertContains($expectedPhone, $phones);
-        }
+        $this->assertContains('11111111111', $phones);
+        $this->assertContains('22222222222', $phones);
+        $this->assertContains('3333333333', $phones);
+        $this->assertContains('4444444444', $phones);
 
         $emails = $company->emailList();
-        foreach ($expectedFields['emails'] as $expectedEmail) {
-            $this->assertContains($expectedEmail, $emails);
-        }
+        $this->assertContains('11111111111@example.com', $emails);
+        $this->assertContains('22222222222@example.com', $emails);
+        $this->assertContains('3333333333@example.com', $emails);
+        $this->assertContains('4444444444@example.com', $emails);
 
-        foreach ($expectedFields['custom_fields'] as $fieldId => $expectedValue) {
-            if (is_numeric($fieldId)) {
-                $this->assertEquals($expectedValue, $company->getCFV($fieldId));
-            } else {
-                $this->assertEquals($expectedValue, $company->getCFVByCode($fieldId));
-            }
-        }
+        $this->company->phoneDelete('3333333333');
+        $this->company->emailDelete('3333333333@example.com');
+
+        $response2 = $this->company->update();
+
+        $this->assertIsArray($response2);
+        $this->assertArrayHasKey('_embedded', $response2);
+        $this->assertArrayHasKey('companies', $response2['_embedded']);
+        $this->assertIsArray($response2['_embedded']['companies']);
+        $this->assertEquals(1, count($response2['_embedded']['companies']));
+        $company2 = $this->amoClient->companies->find($response2['_embedded']['companies'][0]['id']);
+
+        $phones2 = $company2->phoneList();
+
+        $this->assertContains('11111111111', $phones2);
+        $this->assertContains('22222222222', $phones2);
+        $this->assertNotContains('3333333333', $phones2);
+        $this->assertContains('4444444444', $phones2);
+
+        $emails2 = $company2->emailList();
+        $this->assertContains('11111111111@example.com', $emails2);
+        $this->assertContains('22222222222@example.com', $emails2);
+        $this->assertNotContains('3333333333@example.com', $emails2);
+        $this->assertContains('4444444444@example.com', $emails2);
 
         return $companyId;
     }
 
-    #[Depends('testCompanyFind')]
+    #[Depends('testCompanyUpdate')]
     public function testCompanyDelete(int $companyId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/companies/multiple/delete/', ['ID' => [$companyId]]);
         $this->assertIsArray($response);
         $this->assertArrayHasKey('status', $response);
         $this->assertEquals('success', $response['status']);
+    }
+
+    public function testCompanyCreateGetId()
+    {
+        $id = $this->company->createGetId();
+        $this->assertIsInt($id);
+
+        $response = $this->amoClient->ajax->postForm('/ajax/companies/multiple/delete/', ['ID' => [$id]]);
+        $this->assertIsArray($response);
+        $this->assertArrayHasKey('status', $response);
+        $this->assertEquals('success', $response['status']);
+    }
+
+    public function testCompanyNotFound()
+    {
+        $response = $this->amoClient->companies->find(112322222222222222);
+        $this->assertInstanceOf(Company::class, $this->company);
+        $this->assertIsArray($response->toArray());
+        $this->assertEmpty($response->toArray());
+    }
+
+    public function testCompanySetResponsibleUser()
+    {
+        $this->company->setResponsibleUser($this->amoClient->accountId, 1693819);
+        $this->assertEquals($this->company->responsible_user_id, 1693819);
+    }
+
+    public function testCompanyGetResponsibleName()
+    {
+        $this->company->setResponsibleUser($this->amoClient->accountId, 1693819);
+        $this->assertEquals('Кирилл Егоров', $this->company->getResponsibleName());
+
+        $this->company->setResponsibleUser($this->amoClient->accountId, 0);
+        $this->assertNull($this->company->getResponsibleName());
+
+        $this->company->setResponsibleUser($this->amoClient->accountId, 456734556734563456);
+        $this->assertNull($this->company->getResponsibleName());
+
     }
 }

@@ -32,6 +32,7 @@ trait CustomFieldTrait
     public function setCF(int $id, string|array $value, bool $isEnumId = false): static
     {
         $values = is_array($value) ? $value : [$value];
+
         foreach ($values as $key => $value) {
             $values[$key] = $isEnumId ? ['enum_id' => $value] : ['value' => $this->setValue($id, $value)];
         }

@@ -13,9 +13,9 @@ class Catalog extends AbstractEntity
 
     public string $name;
 
-    public string $type = 'regular';
+    public string $type;
 
-    public ?int $sort = null;
+    public ?int $sort;
 
     public CatalogElement $elements;
 

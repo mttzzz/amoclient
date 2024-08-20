@@ -3,6 +3,7 @@
 namespace mttzzz\AmoClient\Tests;
 
 use mttzzz\AmoClient\Entities\Call;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class CallTest extends BaseAmoClient
 {
@@ -33,6 +34,14 @@ class CallTest extends BaseAmoClient
         $this->assertIsArray($createdCalls['_embedded']['calls']);
         $this->assertEquals(1, count($createdCalls['_embedded']['calls']));
         $this->assertArrayHasKey('id', $createdCalls['_embedded']['calls'][0]);
+
+    }
+
+    public function testCallCreateException()
+    {
+        $call = $this->amoClient->calls->entity();
+        $this->expectException(AmoCustomException::class);
+        $call->create();
 
     }
 }

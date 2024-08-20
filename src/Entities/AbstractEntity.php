@@ -35,11 +35,11 @@ abstract class AbstractEntity
      **/
     public array $_links;
 
-    public int $loss_reason_id;
+    public ?int $loss_reason_id;
 
     public ?int $closed_at;
 
-    public int $score;
+    public ?int $score;
 
     public int $labor_cost;
 
