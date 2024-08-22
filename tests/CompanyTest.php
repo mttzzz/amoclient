@@ -22,6 +22,8 @@ class CompanyTest extends BaseAmoClient
 
         $this->company = $this->amoClient->companies->entity();
         $this->company->name = $this->data['name'];
+
+        $this->amoClient->companies->entityData($this->data);
     }
 
     public function testCompanyEntity()
@@ -118,7 +120,57 @@ class CompanyTest extends BaseAmoClient
         return $companyId;
     }
 
+    #[Depends('testCompanyCreate')]
+    public function testCompanyGetLeadIds(int $companyId)
+    {
+        $this->company->id = $companyId;
+        $leadIds = $this->company->getLeadIds();
+        $this->assertIsArray($leadIds);
+
+        return $companyId;
+    }
+
+    #[Depends('testCompanyCreate')]
+    public function testCompanyCustomFields(int $companyId)
+    {
+        $customFields = $this->amoClient->companies->customFields()->get();
+        $this->assertIsArray($customFields);
+        $this->assertNotEmpty($customFields);
+
+        return $companyId;
+    }
+
+    #[Depends('testCompanyCreate')]
+    public function testCompanyQuery(int $companyId)
+    {
+        $query = $this->amoClient->companies->query('Test Company')
+            ->withContacts()
+            ->withCustomers()
+            ->withContacts()
+            ->withCatalogElements()
+            ->withLeads()
+            ->get();
+
+        $this->assertIsArray($query);
+        $this->assertNotEmpty($query);
+
+        $this->assertArrayHasKey('_embedded', $query[0]);
+        $this->assertArrayHasKey('customers', $query[0]['_embedded']);
+        $this->assertArrayHasKey('contacts', $query[0]['_embedded']);
+        $this->assertArrayHasKey('leads', $query[0]['_embedded']);
+        $this->assertArrayHasKey('catalog_elements', $query[0]['_embedded']);
+
+        $query2 = $this->amoClient->companies->query('asdfasdfasdfasdf')->get();
+        $this->assertIsArray($query2);
+        $this->assertEmpty($query2);
+
+        return $companyId;
+
+    }
+
     #[Depends('testCompanyUpdate')]
+    #[Depends('testCompanyQuery')]
+    #[Depends('testCompanyCustomFields')]
     public function testCompanyDelete(int $companyId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/companies/multiple/delete/', ['ID' => [$companyId]]);

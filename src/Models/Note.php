@@ -65,6 +65,7 @@ class Note extends AbstractModel
 
     public function orderUpdatedAtAsc(): self
     {
+        $this->order = []; //обнуляем сортировку, потому как может быть только 1
         $this->order['updated_at'] = 'asc';
 
         return $this;
@@ -72,6 +73,7 @@ class Note extends AbstractModel
 
     public function orderUpdatedAtDesc(): self
     {
+        $this->order = []; //обнуляем сортировку, потому как может быть только 1
         $this->order['updated_at'] = 'desc';
 
         return $this;
@@ -79,6 +81,7 @@ class Note extends AbstractModel
 
     public function orderIdAsc(): self
     {
+        $this->order = []; //обнуляем сортировку, потому как может быть только 1
         $this->order['id'] = 'asc';
 
         return $this;
@@ -86,6 +89,7 @@ class Note extends AbstractModel
 
     public function orderIdDesc(): self
     {
+        $this->order = []; //обнуляем сортировку, потому как может быть только 1
         $this->order['id'] = 'desc';
 
         return $this;

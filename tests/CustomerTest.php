@@ -26,6 +26,8 @@ class CustomerTest extends BaseAmoClient
         $this->customer->name = $this->data['name'];
         $this->customer->next_date = $this->data['next_date'];
 
+        $this->amoClient->customers->entityData($this->data);
+
     }
 
     public function testCustomerEntity()
@@ -80,6 +82,36 @@ class CustomerTest extends BaseAmoClient
         return $customerId;
     }
 
+    #[Depends('testCustomerCreate')]
+    public function testCustomerCustomFields(int $customerId)
+    {
+        $customFields = $this->amoClient->customers->customFields()->get();
+        $this->assertIsArray($customFields);
+        $this->assertNotEmpty($customFields);
+    }
+
+    #[Depends('testCustomerCreate')]
+    public function testCustomerWith(int $customerId)
+    {
+        $query = $this->amoClient->customers
+            ->withContacts()
+            ->withCompanies()
+            ->withCatalogElements()
+            ->get();
+
+        $this->assertIsArray($query);
+        $this->assertNotEmpty($query);
+
+        $this->assertArrayHasKey('_embedded', $query[0]);
+        $this->assertArrayHasKey('contacts', $query[0]['_embedded']);
+        $this->assertArrayHasKey('companies', $query[0]['_embedded']);
+        $this->assertArrayHasKey('catalog_elements', $query[0]['_embedded']);
+
+        return $customerId;
+    }
+
+    #[Depends('testCustomerWith')]
+    #[Depends('testCustomerCustomFields')]
     #[Depends('testCustomerUpdate')]
     public function testCustomerDelete(int $customerId)
     {

@@ -22,6 +22,7 @@ class LeadTest extends BaseAmoClient
 
         $this->lead = $this->amoClient->leads->entity();
         $this->lead->name = $this->data['name'];
+        $this->lead = $this->amoClient->leads->entityData($this->data);
     }
 
     public function testLeadEntity()
@@ -75,7 +76,51 @@ class LeadTest extends BaseAmoClient
         return $leadId;
     }
 
+    #[Depends('testLeadCreate')]
+    public function testLeadCustomFields(int $leadId)
+    {
+        $customFields = $this->amoClient->leads->customFields()->get();
+        $this->assertIsArray($customFields);
+        $this->assertNotEmpty($customFields);
+
+        return $leadId;
+    }
+
+    #[Depends('testLeadCreate')]
+    public function testLeadQuery(int $leadId)
+    {
+        $query = $this->amoClient->leads->query('Test Lead')
+            ->withContacts()
+            ->withCatalogElements()
+            ->withLossReason()
+            ->withIsPriceModifiedByRobot()
+            ->withSourceId()
+            ->get();
+
+        $this->assertIsArray($query);
+        $this->assertNotEmpty($query);
+
+        $this->assertArrayHasKey('_embedded', $query[0]);
+        $this->assertArrayHasKey('contacts', $query[0]['_embedded']);
+        $this->assertArrayHasKey('catalog_elements', $query[0]['_embedded']);
+        $this->assertArrayHasKey('loss_reason', $query[0]['_embedded']);
+        $this->assertArrayHasKey('is_price_modified_by_robot', $query[0]);
+        $this->assertArrayHasKey('source_id', $query[0]);
+
+        $query2 = $this->amoClient->leads->query('asdfasdfasdfasdf')->get();
+        $this->assertIsArray($query2);
+        $this->assertEmpty($query2);
+
+        $query3 = $this->amoClient->leads->query('Test Lead')->withOnlyDeleted()->get();
+        $this->assertIsArray($query3);
+        $this->assertEmpty($query3);
+
+        return $leadId;
+    }
+
     #[Depends('testLeadUpdate')]
+    #[Depends('testLeadCustomFields')]
+    #[Depends('testLeadQuery')]
     public function testLeadDelete(int $leadId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);

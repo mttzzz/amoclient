@@ -4,6 +4,7 @@ namespace mttzzz\AmoClient\Tests;
 
 use mttzzz\AmoClient\Entities\Catalog;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
+use mttzzz\AmoClient\Models\CustomField;
 use PHPUnit\Framework\Attributes\Depends;
 
 class CatalogTest extends BaseAmoClient
@@ -53,6 +54,12 @@ class CatalogTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $response['_embedded']['catalogs'][0]);
 
         $created = $response['_embedded']['catalogs'][0];
+        $this->catalog->id = $created['id'];
+        $catalogEntityWithId = $this->amoClient->catalogs->entity($created['id']);
+        $this->assertInstanceOf(Catalog::class, $catalogEntityWithId);
+
+        $catalogCustomFields = $catalogEntityWithId->customFields();
+        $this->assertInstanceOf(CustomField::class, $catalogCustomFields);
 
         return $created['id'];
     }

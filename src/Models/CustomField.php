@@ -25,9 +25,11 @@ class CustomField extends AbstractModel
     }
 
     /**
+     * @return array<mixed>
+     *
      * @throws AmoCustomException
      */
-    public function find(int $id): ?Entities\CustomField
+    public function find(int $id): array
     {
         try {
             return $this->http->get($this->entity.'/'.$id)

@@ -22,6 +22,8 @@ class ContactTest extends BaseAmoClient
 
         $this->contact = $this->amoClient->contacts->entity();
         $this->contact->name = $this->data['name'];
+
+        $this->amoClient->contacts->entityData($this->data);
     }
 
     public function testContactEntity()
@@ -118,7 +120,53 @@ class ContactTest extends BaseAmoClient
         return $contactId;
     }
 
+    #[Depends('testContactCreate')]
+    public function testContactGetLeadIds(int $companyId)
+    {
+        $this->contact->id = $companyId;
+        $leadIds = $this->contact->getLeadIds();
+        $this->assertIsArray($leadIds);
+
+        return $companyId;
+    }
+
+    #[Depends('testContactCreate')]
+    public function testContactCustomFields(int $contactId)
+    {
+        $customFields = $this->amoClient->contacts->customFields()->get();
+        $this->assertIsArray($customFields);
+        $this->assertNotEmpty($customFields);
+
+        return $contactId;
+    }
+
+    #[Depends('testContactCreate')]
+    public function testContactQuery(int $contactId)
+    {
+        $query = $this->amoClient->contacts->query('Test Contact')
+            ->withLeads()
+            ->withCustomers()
+            ->withCatalogElements()
+            ->get();
+
+        $this->assertIsArray($query);
+        $this->assertNotEmpty($query);
+
+        $this->assertArrayHasKey('_embedded', $query[0]);
+        $this->assertArrayHasKey('companies', $query[0]['_embedded']);
+        $this->assertArrayHasKey('customers', $query[0]['_embedded']);
+        $this->assertArrayHasKey('catalog_elements', $query[0]['_embedded']);
+
+        $query2 = $this->amoClient->contacts->query('asdfasdfasdfasdf')->get();
+        $this->assertIsArray($query2);
+        $this->assertEmpty($query2);
+
+        return $contactId;
+    }
+
     #[Depends('testContactUpdate')]
+    #[Depends('testContactCustomFields')]
+    #[Depends('testContactQuery')]
     public function testContactDelete(int $contactId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$contactId]]);

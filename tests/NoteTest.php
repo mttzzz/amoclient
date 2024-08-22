@@ -58,6 +58,15 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
+        $filtered = $lead->notes->filterCommon()->filterId($created['id'])->get();
+        $this->assertIsArray($filtered);
+        $this->assertArrayHasKey('id', $filtered[0]);
+        $this->assertEquals($created['id'], $filtered[0]['id']);
+
+        $filtered2 = $this->amoClient->leads->entity($leadId)->notes->filterEmail()->get();
+        $this->assertIsArray($filtered2);
+        $this->assertEmpty($filtered2);
+
         return $created['id'];
     }
 
@@ -76,6 +85,11 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
+        $filtered = $lead->notes->filterCallIn($created['id'])->get();
+        $this->assertIsArray($filtered);
+        $this->assertArrayHasKey('id', $filtered[0]);
+        $this->assertEquals($created['id'], $filtered[0]['id']);
+
         return $created['id'];
     }
 
@@ -93,6 +107,11 @@ class NoteTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $response['_embedded']['notes'][0]);
 
         $created = $response['_embedded']['notes'][0];
+
+        $filtered = $lead->notes->filterCallOut($created['id'])->get();
+        $this->assertIsArray($filtered);
+        $this->assertArrayHasKey('id', $filtered[0]);
+        $this->assertEquals($created['id'], $filtered[0]['id']);
 
         return $created['id'];
     }
@@ -188,6 +207,14 @@ class NoteTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
+    #[Depends('testNoteCommonCreate')]
+    #[Depends('testNoteCallInCreate')]
+    #[Depends('testNoteCallOutCreate')]
+    #[Depends('testNoteServiceMessageCreate')]
+    #[Depends('testNoteMessageCashierCreate')]
+    #[Depends('testNoteInvoicePaidCreate')]
+    #[Depends('testNoteGeolocationCreate')]
+    #[Depends('testNoteSmsInCreate')]
     public function testNoteSmsOutCreate(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -201,6 +228,61 @@ class NoteTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $response['_embedded']['notes'][0]);
 
         $created = $response['_embedded']['notes'][0];
+
+        $filtered2 = $lead->notes->filterUpdatedAt(time() - 1000, time() + 1000)->get();
+        $this->assertIsArray($filtered2);
+        $this->assertArrayHasKey('id', $filtered2[0]);
+
+        $filtered3 = $lead->notes->filterUpdatedAt(time() - 1000, time() - 900)->get();
+        $this->assertIsArray($filtered3);
+        $this->assertEmpty($filtered3);
+
+        $filtered4 = $lead->notes->filterUpdatedAt(time() - 1000, time() + 1000)->orderIdAsc()->get();
+        // Проверка, что массив не пустой
+        $this->assertNotEmpty($filtered4);
+
+        // Проверка, что массив отсортирован по id в порядке возрастания
+        $ids = array_column($filtered4, 'id');
+        $sortedIds = $ids;
+        sort($sortedIds);
+
+        $this->assertEquals($sortedIds, $ids);
+
+        $filtered5 = $lead->notes->filterUpdatedAt(time() - 1000, time() + 1000)->orderIdDesc()->get();
+
+        // Проверка, что массив не пустой
+        $this->assertNotEmpty($filtered5);
+
+        // Проверка, что массив отсортирован по id в порядке убывания
+        $ids = array_column($filtered5, 'id');
+        $sortedIds = $ids;
+        rsort($sortedIds);
+
+        $this->assertEquals($sortedIds, $ids);
+
+        $filtered6 = $lead->notes->orderUpdatedAtAsc()->get();
+        // Проверка, что массив не пустой
+        $this->assertNotEmpty($filtered6);
+
+        // Проверка, что массив отсортирован по updated_at в порядке возрастания
+        $updatedAtsAsc = array_column($filtered6, 'updated_at');
+        $sortedUpdatedAtsAsc = $updatedAtsAsc;
+        sort($sortedUpdatedAtsAsc, SORT_NUMERIC);
+
+        $this->assertEquals($sortedUpdatedAtsAsc, $updatedAtsAsc);
+
+        $filtered7 = $lead->notes->orderUpdatedAtDesc()->get();
+
+        // Проверка, что массив не пустой
+        $this->assertNotEmpty($filtered7);
+
+        // Проверка, что массив отсортирован по updated_at в порядке убывания
+        $updatedAtsDesc = array_column($filtered7, 'updated_at');
+
+        $sortedUpdatedAtsDesc = $updatedAtsDesc;
+        rsort($sortedUpdatedAtsDesc, SORT_NUMERIC);
+
+        $this->assertEquals($sortedUpdatedAtsDesc, $updatedAtsDesc);
 
         return $created['id'];
     }
