@@ -8,11 +8,14 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Account extends AbstractModel
 {
-    public function __construct(PendingRequest $http)
+    public int $id;
+
+    public function __construct(PendingRequest $http, int $id)
     {
         parent::__construct($http);
 
         $this->entity = 'account';
+        $this->id = $id;
     }
 
     /**

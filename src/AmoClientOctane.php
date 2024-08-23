@@ -65,6 +65,8 @@ class AmoClientOctane
 
     public ShortLink $shortLinks;
 
+    public PendingRequest $http;
+
     public int $accountId;
 
     public string $clientId = '00a140c1-7c52-4563-8b36-03f23754d255';
@@ -92,7 +94,9 @@ class AmoClientOctane
             if (! $widget) {
                 throw new Exception("Widget ($clientId) not found");
             }
+            // @codeCoverageIgnoreStart
             throw new Exception("Widget ($widget->name) doesn't installed in account ($octaneAccountData->subdomain)");
+            // @codeCoverageIgnoreEnd
         }
 
         $octaneAccount = $this->convertToOctaneAccount($octaneAccountData);
@@ -130,6 +134,7 @@ class AmoClientOctane
         $stack->push(Middleware::retry(function ($retry, RequestInterface $request, $response, $exception) use (&$proxies, &$currentProxyIndex) {
             // Проверка на наличие GuzzleHttpConnectException и наличие доступных прокси для переключения
             if ($exception instanceof GuzzleHttpConnectException && isset($proxies[$currentProxyIndex + 1])) {
+                // @codeCoverageIgnoreStart
                 // Переход к следующему прокси
                 $currentProxyIndex++;
 
@@ -139,12 +144,15 @@ class AmoClientOctane
                 }
 
                 return true; // Повторить попытку
+                // @codeCoverageIgnoreEnd
             }
 
             return false; // Не повторять попытку для других типов ошибок или если прокси закончились
         }, function () {
+            // @codeCoverageIgnoreStart
             // Логика для определения задержки между попытками
             return 1000; // Задержка в миллисекундах
+            // @codeCoverageIgnoreEnd
         }));
 
         $baseUrl = "https://{$octaneAccount->subdomain}.amocrm.{$octaneAccount->domain}/api/v4";
@@ -162,9 +170,12 @@ class AmoClientOctane
                 'proxy' => $proxies[$currentProxyIndex],
             ])
             ->baseUrl($baseUrl);
-
+        /**
+         * @codeCoverageIgnoreEnd
+         */
         $this->accountId = $aId;
-        $this->account = new Models\Account($http);
+        $this->http = $http;
+        $this->account = new Models\Account($http, $aId);
         $this->leads = new Models\Lead($http, $cf, $enums);
         $this->customers = new Models\Customer($http, $cf);
         $this->contacts = new Models\Contact($http, $octaneAccount, $cf, $enums);

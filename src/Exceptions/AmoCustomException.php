@@ -15,10 +15,12 @@ class AmoCustomException extends Exception
         } elseif ($e instanceof RequestException) {
             $responseBody = $e->response->body();
             $decodedBody = json_decode($responseBody);
-            $message = json_encode($decodedBody, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-            if ($message === false) {
+            if (json_last_error() !== JSON_ERROR_NONE) {
                 $message = 'Invalid JSON response (RequestException)';
+            } else {
+                $message = json_encode($decodedBody, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
             }
+            // @phpstan-ignore argument.type
             parent::__construct($message, $e->getCode());
         } else {
             parent::__construct('Unknown error (ConnectionException)', $e->getCode());

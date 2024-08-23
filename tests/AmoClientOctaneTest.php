@@ -6,8 +6,10 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Mockery;
 use mttzzz\AmoClient\AmoClientOctane;
+use PHPUnit\Framework\Attributes\CoversMethod;
 use PHPUnit\Framework\Attributes\Depends;
 
+#[CoversMethod(AmoClientOctane::class, '__construct')]
 class AmoClientOctaneTest extends BaseAmoClient
 {
     public function testAmoClientOctane()

@@ -3,8 +3,10 @@
 namespace mttzzz\AmoClient\Tests;
 
 use GuzzleHttp\Psr7\Response as GuzzleResponse;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Models\Account;
 
 class AccountTest extends BaseAmoClient
@@ -16,6 +18,28 @@ class AccountTest extends BaseAmoClient
         // Проверка, что ответ не пустой
         $this->assertNotEmpty($account);
         $this->assertIsArray($account);
+    }
+
+    public function testAccountGetException()
+    {
+        // Создаем мок для PendingRequest
+        /** @var \Illuminate\Http\Client\PendingRequest|\PHPUnit\Framework\MockObject\MockObject $httpMock */
+        $httpMock = $this->createMock(PendingRequest::class);
+
+        // Создаем реальный объект Response с необходимыми данными
+        $response = new \Illuminate\Http\Client\Response(new \GuzzleHttp\Psr7\Response(500, [], 'Internal Server Error'));
+
+        // Настраиваем мок так, чтобы метод get выбрасывал RequestException с реальным объектом Response
+        $httpMock->method('get')->will($this->throwException(new RequestException($response)));
+
+        // Создаем экземпляр класса, который мы тестируем, и подставляем мок
+        $account = new Account($httpMock, $this->amoClient->accountId);
+
+        // Ожидаем, что будет выброшено AmoCustomException
+        $this->expectException(AmoCustomException::class);
+
+        // Вызываем метод get, который должен выбросить исключение
+        $account->get();
     }
 
     public function testAccountContainsKeys()

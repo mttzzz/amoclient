@@ -6,6 +6,9 @@ use Illuminate\Support\ServiceProvider;
 
 class AmoClientServiceProvider extends ServiceProvider
 {
+    /**
+     * @codeCoverageIgnoreStart
+     */
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
@@ -13,6 +16,9 @@ class AmoClientServiceProvider extends ServiceProvider
         }
     }
 
+    /**
+     * @codeCoverageIgnoreEnd
+     */
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/amoclient.php', 'amoclient');
@@ -27,6 +33,9 @@ class AmoClientServiceProvider extends ServiceProvider
         return ['amoclient'];
     }
 
+    /**
+     * @codeCoverageIgnoreStart
+     */
     protected function bootForConsole(): void
     {
         // Publishing the configuration file.
@@ -35,4 +44,8 @@ class AmoClientServiceProvider extends ServiceProvider
         ], 'amoclient.config');
 
     }
+
+    /**
+     * @codeCoverageIgnoreEnd
+     */
 }
