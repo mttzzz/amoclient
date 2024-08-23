@@ -26,7 +26,7 @@ abstract class AbstractEntity
 
     public ?int $closest_task_at;
 
-    public bool $is_deleted;
+    public ?bool $is_deleted;
 
     public bool $is_unsorted;
 

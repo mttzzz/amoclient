@@ -13,12 +13,12 @@ trait CustomFieldTrait
     /**
      * @var array<mixed>
      */
-    protected array $cf;
+    protected array $cf = [];
 
     /**
      * @var array<mixed>
      */
-    protected array $enums;
+    protected array $enums = [];
 
     public function setCFByCode(string $code, string $value): void
     {

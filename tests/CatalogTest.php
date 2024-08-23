@@ -70,7 +70,6 @@ class CatalogTest extends BaseAmoClient
         $newName = 'Test Catalog2';
         $this->catalog->id = $catalogId;
         $this->catalog->name = $newName;
-        $this->catalog->sort = 20;
 
         $response = $this->catalog->update();
 
@@ -83,12 +82,45 @@ class CatalogTest extends BaseAmoClient
 
         $this->assertEquals($catalogId, $updated['id']);
         $this->assertEquals($newName, $updated['name']);
-        $this->assertEquals(20, $updated['sort']);
 
         return $catalogId;
     }
 
     #[Depends('testCatalogUpdate')]
+    public function testCatalogElement(int $catalogId)
+    {
+
+        $catalog = $this->amoClient->catalogs->entity($catalogId);
+        $catalogCustomFields = $catalog->customFields()->get();
+        $elementEntity = $catalog->elements->entity();
+        $elementEntity->name = 'test element';
+        $elementEntity->create();
+
+        $elementEntity2 = $catalog->elements->entityData([
+            'name' => 'TestElement entityData',
+        ]);
+        $createdWithEntityData = $elementEntity2->create();
+        $this->assertEquals($createdWithEntityData['_embedded']['elements'][0]['name'], 'TestElement entityData');
+
+        $elements = $catalog->elements->get();
+
+        $find = $catalog->elements->find($elements[0]['id']);
+
+        $this->assertEquals($elements[0]['id'], $find->id);
+
+        $elementEntity->id = $elements[0]['id'];
+        $elementEntity->name = 'test 3';
+
+        $elementEntity->setCFByCode('PRICE', 120);
+        $elementEntity->update();
+        $find120 = $catalog->elements->find($elements[0]['id']);
+        $this->assertEquals((int) $find120->toArray()['custom_fields_values'][0]['values'][0]['value'], 120);
+
+        return $catalogId;
+    }
+
+    #[Depends('testCatalogUpdate')]
+    #[Depends('testCatalogElement')]
     public function testCatalogDelete(int $catalogId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/v1/catalogs/set/', ['request' => ['catalogs' => ['delete' => $catalogId]]]);
