@@ -41,7 +41,7 @@ abstract class AbstractEntity
 
     public ?int $score;
 
-    public int $labor_cost;
+    public ?int $labor_cost;
 
     public int $catalog_id;
 
