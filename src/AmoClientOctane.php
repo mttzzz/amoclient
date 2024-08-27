@@ -71,8 +71,13 @@ class AmoClientOctane
 
     public string $clientId = '00a140c1-7c52-4563-8b36-03f23754d255';
 
-    public function __construct(int $aId, string $clientId)
+    public function __construct(int $aId, ?string $clientId = null)
     {
+
+        if ($clientId) {
+            $this->clientId = $clientId;
+        }
+
         /** @var stdClass|null $octaneAccountData */
         $octaneAccountData = DB::connection('octane')->table('accounts')
             ->select(['accounts.id', 'subdomain', 'domain', 'account_widget.access_token'])
@@ -80,7 +85,7 @@ class AmoClientOctane
             ->join('widgets', 'widgets.id', '=', 'account_widget.widget_id')
             ->where('account_widget.active', true)
             ->where('accounts.id', $aId)
-            ->where('widgets.client_id', $clientId)
+            ->where('widgets.client_id', $this->clientId)
             ->first();
 
         if (! $octaneAccountData) {
@@ -90,9 +95,9 @@ class AmoClientOctane
                 throw new Exception("Account ($aId) not found");
             }
             /** @var Widget|null $widget */
-            $widget = DB::connection('octane')->table('widgets')->where('client_id', $clientId)->first();
+            $widget = DB::connection('octane')->table('widgets')->where('client_id', $this->clientId)->first();
             if (! $widget) {
-                throw new Exception("Widget ($clientId) not found");
+                throw new Exception("Widget ($this->clientId) not found");
             }
             // @codeCoverageIgnoreStart
             throw new Exception("Widget ($widget->name) doesn't installed in account ($octaneAccountData->subdomain)");
