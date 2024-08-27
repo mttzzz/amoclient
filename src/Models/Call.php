@@ -13,7 +13,7 @@ class Call extends AbstractModel
         $this->entity = 'calls';
     }
 
-    public function entity(int|null $id = null): Entities\Call
+    public function entity(?int $id = null): Entities\Call
     {
         return new Entities\Call(['id' => $id], $this->http);
     }

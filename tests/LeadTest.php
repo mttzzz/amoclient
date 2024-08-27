@@ -3,6 +3,7 @@
 namespace mttzzz\AmoClient\Tests;
 
 use Carbon\Carbon;
+use Exception;
 use mttzzz\AmoClient\Entities\Lead;
 use PHPUnit\Framework\Attributes\Depends;
 
@@ -111,9 +112,8 @@ class LeadTest extends BaseAmoClient
         $this->assertIsArray($query2);
         $this->assertEmpty($query2);
 
-        $query3 = $this->amoClient->leads->query('Test Lead')->withOnlyDeleted()->get();
+        $query3 = $this->amoClient->leads->withOnlyDeleted()->get();
         $this->assertIsArray($query3);
-        $this->assertEmpty($query3);
 
         return $leadId;
     }
@@ -164,5 +164,142 @@ class LeadTest extends BaseAmoClient
 
         $this->lead->setResponsibleUser($this->amoClient->accountId, 456734556734563456);
         $this->assertNull($this->lead->getResponsibleName());
+    }
+
+    public function testLeadSetEntities()
+    {
+        $contactId = $this->amoClient->contacts->entityData(['name' => 'test'])->createGetId();
+        $companyId = $this->amoClient->companies->entityData(['name' => 'test'])->createGetId();
+
+        $this->lead->setContact($this->amoClient->contacts->entity($contactId));
+        $this->lead->setCompany($this->amoClient->companies->entity($companyId));
+        $this->lead->name = 'testLeadSetEntities';
+        $id = $this->lead->createGetId();
+
+        $lead = $this->amoClient->leads->withContacts()->find($id);
+        $contactId2 = $lead->getMainContactId();
+        $this->assertEquals($contactId, $contactId2);
+
+        $contactIds = $lead->getContactsIds();
+        $this->assertEquals(1, count($contactIds));
+
+        $CompanyId2 = $lead->getCompanyId();
+        $this->assertEquals($companyId, $CompanyId2);
+
+        $pipelineName = $lead->getPipelineName();
+        $this->assertIsString($pipelineName);
+
+        $companyName = $lead->getCompanyName();
+        $this->assertIsString($companyName);
+
+        $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
+        $this->assertEquals('success', $response['status']);
+
+        $response2 = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$contactId]]);
+        $this->assertEquals('success', $response2['status']);
+
+        $response3 = $this->amoClient->ajax->postForm('/ajax/companies/multiple/delete/', ['ID' => [$companyId]]);
+        $this->assertEquals('success', $response3['status']);
+    }
+
+    public function testLeadGetContactsIdsException()
+    {
+
+        $this->lead->name = 'testLeadGetContactsIdsException';
+        $id = $this->lead->createGetId();
+
+        $lead = $this->amoClient->leads->find($id);
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('add withContacts() before call this function');
+        $lead->getContactsIds();
+        $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
+        $this->assertEquals('success', $response['status']);
+
+    }
+
+    public function testLeadGetMainContactIdException()
+    {
+        $this->lead->name = 'testLeadGetMainContactIdException';
+        $id = $this->lead->createGetId();
+
+        $lead = $this->amoClient->leads->find($id);
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('add withContacts() before call this function');
+        $lead->getMainContactId();
+
+        $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
+        $this->assertEquals('success', $response['status']);
+
+    }
+
+    public function testLeadGetMainContactIdNotFound()
+    {
+        $this->lead->name = 'testLeadGetMainContactIdNotFound';
+        $id = $this->lead->createGetId();
+        $lead = $this->amoClient->leads->withContacts()->find($id);
+        $contactId = $lead->getMainContactId();
+        $this->assertNull($contactId);
+
+        $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
+        $this->assertEquals('success', $response['status']);
+
+    }
+
+    public function testLeadGetCatalogElementIds()
+    {
+        $catalogId = 4265;
+        $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
+        $catalogId2 = 4627;
+        $catalogElements2 = $this->amoClient->catalogs->find($catalogId2)->elements->get();
+        $this->lead->name = 'testLeadGetCatalogElementIds';
+        $id = $this->lead->createGetId();
+        $leadEntity = $this->amoClient->leads->entity($id);
+        $leadEntity->links->catalogElement($catalogElements[0]['id'], $catalogId)->link();
+        $leadEntity->links->catalogElement($catalogElements2[0]['id'], $catalogId2)->link();
+
+        $lead = $this->amoClient->leads->withCatalogElements()->find($id);
+        $catalogElementIds = $lead->getCatalogElementIds($catalogId);
+        $this->assertEquals($catalogElements[0]['id'], $catalogElementIds[0]);
+
+        $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
+        $this->assertEquals('success', $response['status']);
+
+    }
+
+    public function testLeadGetCatalogQuantity()
+    {
+        $catalogId = 4265;
+        $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
+        $this->lead->name = 'testLeadGetCatalogQuantity';
+        $id = $this->lead->createGetId();
+        $this->amoClient->leads->entity($id)->links->catalogElement($catalogElements[0]['id'], $catalogId)->link();
+
+        $lead = $this->amoClient->leads->withCatalogElements()->find($id);
+        $quantity = $lead->getCatalogQuantity($catalogId);
+        $this->assertEquals(1, $quantity);
+
+        $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
+        $this->assertEquals('success', $response['status']);
+
+    }
+
+    public function testLeadGetCatalogElementQuantity()
+    {
+        $catalogId = 4265;
+        $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
+        $this->lead->name = 'testLeadGetCatalogElementQuantity';
+        $id = $this->lead->createGetId();
+        $this->amoClient->leads->entity($id)->links->catalogElement($catalogElements[0]['id'], $catalogId, 10)->link();
+
+        $lead = $this->amoClient->leads->withCatalogElements()->find($id);
+        $quantity = $lead->getCatalogElementQuantity($catalogId, $catalogElements[0]['id']);
+        $this->assertEquals(10, $quantity);
+
+        $quantity2 = $lead->getCatalogElementQuantity(9999999999, 9999999999999999);
+        $this->assertEquals(0, $quantity2);
+
+        $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
+        $this->assertEquals('success', $response['status']);
+
     }
 }

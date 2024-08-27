@@ -47,7 +47,7 @@ class AmoCustomExceptionTest extends TestCase
     public function testInvalidJsonResponse()
     {
         // Создаем GuzzleResponse с некорректным JSON
-        $guzzleResponse = new GuzzleResponse(200, [], 'Invalid JSON');
+        $guzzleResponse = new GuzzleResponse(500, [], 'Invalid JSON');
 
         // Создаем Response на основе GuzzleResponse
         $response = new Response($guzzleResponse);
@@ -56,10 +56,11 @@ class AmoCustomExceptionTest extends TestCase
         $requestException = new RequestException($response);
 
         // Создаем AmoCustomException с RequestException
-        $exception = new AmoCustomException($requestException);
+        $amoCustomException = new AmoCustomException($requestException);
 
         // Проверяем, что сообщение исключения соответствует ожидаемому
-        $this->assertEquals('Invalid JSON response (RequestException)', $exception->getMessage());
+        $this->assertEquals("HTTP request returned status code 500:\nInvalid JSON\n", $amoCustomException->getMessage());
+        $this->assertEquals(500, $amoCustomException->getCode());
     }
 
     public function testAmoCustomExceptionWithInvalidJson()
@@ -77,7 +78,7 @@ class AmoCustomExceptionTest extends TestCase
         $amoCustomException = new AmoCustomException($requestException);
 
         // Проверяем, что сообщение исключения соответствует ожидаемому
-        $this->assertEquals('Invalid JSON response (RequestException)', $amoCustomException->getMessage());
+        $this->assertEquals("HTTP request returned status code 500:\nInvalid JSON\n", $amoCustomException->getMessage());
         $this->assertEquals(500, $amoCustomException->getCode());
     }
 
@@ -122,7 +123,7 @@ class AmoCustomExceptionTest extends TestCase
         $amoCustomException = new AmoCustomException($requestException);
 
         // Проверяем, что сообщение исключения соответствует ожидаемому
-        $this->assertEquals('Invalid JSON response (RequestException)', $amoCustomException->getMessage());
+        $this->assertEquals('HTTP request returned status code 500', $amoCustomException->getMessage());
         $this->assertEquals(500, $amoCustomException->getCode());
     }
 }

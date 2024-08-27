@@ -16,7 +16,11 @@ class AmoCustomException extends Exception
             $responseBody = $e->response->body();
             $decodedBody = json_decode($responseBody);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                $message = 'Invalid JSON response (RequestException)';
+                if ($e->getMessage()) {
+                    $message = $e->getMessage();
+                } else {
+                    $message = 'Invalid JSON response (RequestException)';
+                }
             } else {
                 $message = json_encode($decodedBody, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
             }
