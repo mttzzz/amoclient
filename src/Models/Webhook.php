@@ -18,7 +18,7 @@ class Webhook extends AbstractModel
         return new Entities\Webhook(['destination' => $destination], $this->http);
     }
 
-    public function find(?string $destination = null): Entities\Webhook
+    public function find(string $destination): Entities\Webhook
     {
         $data = $this->http->get($this->entity, ['filter' => ['destination' => $destination]])->throw()->json() ?? [];
         if (isset($data['_embedded']['webhooks'][0])) {

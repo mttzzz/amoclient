@@ -4,7 +4,6 @@ namespace mttzzz\AmoClient\Entities\Unsorted;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Http\Client\Response;
 use mttzzz\AmoClient\Entities\Company;
 use mttzzz\AmoClient\Entities\Contact;
 use mttzzz\AmoClient\Entities\Lead;
@@ -42,9 +41,11 @@ abstract class AbstractUnsorted
     /**
      * Create a new unsorted entity.
      *
+     * @return array<mixed>
+     *
      * @throws AmoCustomException
      */
-    public function create(): Response
+    public function create(): array
     {
         try {
             return $this->http->post($this->entity, [$this->toArray()])->throw()->json();

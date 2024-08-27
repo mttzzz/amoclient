@@ -35,10 +35,7 @@ class Webhook extends AbstractEntity
         }
     }
 
-    /**
-     * @return array<mixed>
-     */
-    public function unSubscribe(): array
+    public function unSubscribe(): null
     {
         try {
             return $this->http->delete($this->entity, ['destination' => $this->destination])->throw()->json();

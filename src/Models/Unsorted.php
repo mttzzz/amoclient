@@ -4,7 +4,6 @@ namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Http\Client\Response;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
@@ -26,7 +25,10 @@ class Unsorted extends AbstractModel
         return new Entities\Unsorted\Form($this->http);
     }
 
-    public function decline(string $uid, ?int $userId = null): Response
+    /**
+     * @return array<mixed>
+     */
+    public function decline(string $uid, ?int $userId = null): array
     {
         $data = [];
         if ($userId) {
@@ -39,7 +41,10 @@ class Unsorted extends AbstractModel
         }
     }
 
-    public function accept(string $uid, ?int $userId = null, ?int $statusId = null): Response
+    /**
+     * @return array<mixed>
+     */
+    public function accept(string $uid, ?int $userId = null, ?int $statusId = null): array
     {
         $data = [];
         if ($userId) {

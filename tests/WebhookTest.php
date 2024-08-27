@@ -4,7 +4,7 @@ namespace mttzzz\AmoClient\Tests;
 
 class WebhookTest extends BaseAmoClient
 {
-    public function testUsersGet()
+    public function testWebhook()
     {
         $destination = 'https://webhook.site/a895608c-8b4a-453e-8359-4ed5d42bb454';
         $entity = $this->amoClient->webhooks->entity($destination);
@@ -38,9 +38,11 @@ class WebhookTest extends BaseAmoClient
         $entity->noteCustomer();
         $entity->subscribe();
         $find = $this->amoClient->webhooks->find($destination);
-        dump($find);
+        $this->assertEquals($find->destination, $destination);
         $unsubscribe = $entity->unSubscribe();
-        dump($unsubscribe);
+        $this->assertNull($unsubscribe);
 
+        $empty = $this->amoClient->webhooks->find('asdasdasdd');
+        $this->assertEmpty($empty->toArray());
     }
 }

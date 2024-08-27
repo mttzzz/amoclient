@@ -170,8 +170,6 @@ class ContactTest extends BaseAmoClient
     public function testContactDelete(int $contactId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$contactId]]);
-        $this->assertIsArray($response);
-        $this->assertArrayHasKey('status', $response);
         $this->assertEquals('success', $response['status']);
     }
 
@@ -181,8 +179,6 @@ class ContactTest extends BaseAmoClient
         $this->assertIsInt($id);
 
         $response = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$id]]);
-        $this->assertIsArray($response);
-        $this->assertArrayHasKey('status', $response);
         $this->assertEquals('success', $response['status']);
     }
 
