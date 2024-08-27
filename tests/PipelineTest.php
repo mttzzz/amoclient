@@ -65,18 +65,8 @@ class PipelineTest extends BaseAmoClient
         $pipeline = $this->amoClient->pipelines->entity($pipelineId);
         $newName = 'Test Pipeline2';
         $pipeline->name = $newName;
-        // $response = $pipeline->update();
-
-        // $this->assertIsArray($response);
-        // $this->assertArrayHasKey('_embedded', $response);
-        // $this->assertArrayHasKey('pipelines', $response['_embedded']);
-        // $this->assertIsArray($response['_embedded']['pipelines']);
-        // $this->assertEquals(1, count($response['_embedded']['pipelines']));
-        // $updated = $response['_embedded']['pipelines'][0];
-
-        // $this->assertEquals($newName, $updated['name']);
-        // TODO: не работает изменение воронки, отдается не документированный код HTTP request returned status code 405
-        $this->assertTrue(true);
+        $response = $pipeline->update();
+        $this->assertEquals($newName, $response['name']);
 
         return $pipelineId;
     }

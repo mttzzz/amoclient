@@ -2,7 +2,10 @@
 
 namespace mttzzz\AmoClient\Entities;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Collection;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Traits;
 
 class Pipeline extends AbstractEntity
@@ -18,7 +21,7 @@ class Pipeline extends AbstractEntity
 
     public string $name;
 
-    public int $sort = 1;
+    public int $sort = 5000;
 
     public bool $is_main = false;
 
@@ -41,5 +44,19 @@ class Pipeline extends AbstractEntity
         $statuses = collect($statusesArray);
 
         return $statuses;
+    }
+
+    /**
+     * @return array<mixed>
+     *
+     * @throws AmoCustomException
+     */
+    public function update(): array
+    {
+        try {
+            return $this->http->patch("$this->entity/$this->id", $this->toArray())->throw()->json();
+        } catch (ConnectionException|RequestException $e) {
+            throw new AmoCustomException($e);
+        }
     }
 }

@@ -3,7 +3,6 @@
 namespace mttzzz\AmoClient\Entities;
 
 use Illuminate\Http\Client\RequestException;
-use Illuminate\Http\Client\Response;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Webhook extends AbstractEntity
@@ -21,7 +20,10 @@ class Webhook extends AbstractEntity
 
     public int $sort;
 
-    public function subscribe(): Response
+    /**
+     * @return array<mixed>
+     */
+    public function subscribe(): array
     {
         try {
             return $this->http->post($this->entity, [
@@ -33,10 +35,13 @@ class Webhook extends AbstractEntity
         }
     }
 
-    public function unSubscribe(): Response
+    /**
+     * @return array<mixed>
+     */
+    public function unSubscribe(): array
     {
         try {
-            return $this->http->delete($this->entity, ['destination' => $this->destination])->throw();
+            return $this->http->delete($this->entity, ['destination' => $this->destination])->throw()->json();
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
