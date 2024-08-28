@@ -25,8 +25,10 @@ class ShortLink extends AbstractEntity
     {
         try {
             return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
+            // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
+            // @codeCoverageIgnoreEnd
         }
     }
 

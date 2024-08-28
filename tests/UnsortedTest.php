@@ -2,9 +2,12 @@
 
 namespace mttzzz\AmoClient\Tests;
 
+use mttzzz\AmoClient\Models\Unsorted;
+use PHPUnit\Framework\Attributes\Depends;
+
 class UnsortedTest extends BaseAmoClient
 {
-    public function testSip()
+    public function testCreateSipEntity()
     {
         $sipEntity = $this->amoClient->unsorted->sip();
         $sipEntity->source_name = 'sipEntity';
@@ -12,19 +15,146 @@ class UnsortedTest extends BaseAmoClient
         $sipEntity->addMetadata(rand(), rand(0, 100), 'asterisk', 'https://ya.ru', '2222222222', 0, '444444444', false);
         $created = $sipEntity->create();
         $this->assertArrayHasKey('uid', $created['_embedded']['unsorted'][0]);
+
+        return $created;
+    }
+
+    #[Depends('testCreateSipEntity')]
+    public function testFilterUid($created)
+    {
+        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
+        $filterUid = $this->amoClient->unsorted->filterUid($created['_embedded']['unsorted'][0]['uid'])->get();
+        $this->assertEquals($created['_embedded']['unsorted'][0]['uid'], $filterUid[0]['uid']);
+    }
+
+    #[Depends('testCreateSipEntity')]
+    public function testFilterUidArray($created)
+    {
+        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
+        $filterUidArray = $this->amoClient->unsorted->filterUid(['111', '222'])->get();
+        $this->assertEmpty($filterUidArray);
+    }
+
+    #[Depends('testCreateSipEntity')]
+    public function testFilterCategorySip($created)
+    {
+        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
+        $filterCategorySip = $this->amoClient->unsorted->filterCategorySip()->get();
+        $this->assertEquals($created['_embedded']['unsorted'][0]['uid'], $filterCategorySip[0]['uid']);
+    }
+
+    public function testFilterCategoryMail()
+    {
+        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
+        $filterCategoryMail = $this->amoClient->unsorted->filterCategoryMail()->get();
+        $this->assertEmpty($filterCategoryMail);
+    }
+
+    public function testFilterCategoryChats()
+    {
+        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
+        $filterCategoryChats = $this->amoClient->unsorted->filterCategoryChats()->get();
+        $this->assertEmpty($filterCategoryChats);
+    }
+
+    #[Depends('testCreateSipEntity')]
+    public function testFilterPipelineId($created)
+    {
+        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
+        $filterPipelineId = $this->amoClient->unsorted->filterPipelineId(742990)->get();
+        $this->assertEquals($created['_embedded']['unsorted'][0]['uid'], $filterPipelineId[0]['uid']);
+    }
+
+    #[Depends('testCreateSipEntity')]
+    #[Depends('testFilterUid')]
+    #[Depends('testFilterUidArray')]
+    #[Depends('testFilterCategorySip')]
+    #[Depends('testFilterCategoryMail')]
+    #[Depends('testFilterCategoryChats')]
+    #[Depends('testFilterPipelineId')]
+    public function testDecline($created)
+    {
+        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $declined = $this->amoClient->unsorted->decline($created['_embedded']['unsorted'][0]['uid'], 0);
         $this->assertEquals($created['_embedded']['unsorted'][0]['uid'], $declined['uid']);
+    }
+
+    #[Depends('testDecline')]
+    public function testCreateAndAcceptSipEntity()
+    {
+        $sipEntity1 = $this->amoClient->unsorted->sip();
+        $sipEntity1->source_name = 'sipEntity1';
+        $sipEntity1->source_uid = 'sipEntity1';
+        $sipEntity1->addMetadata(rand(), rand(0, 100), 'ssssss', 'https://ya.com', '11111111111', 0, '6666666', false);
+
+        $created1 = $sipEntity1->create();
 
         $sipEntity2 = $this->amoClient->unsorted->sip();
         $sipEntity2->source_name = 'sipEntity2';
         $sipEntity2->source_uid = 'sipEntity2';
-        $sipEntity2->addMetadata(rand(), rand(0, 100), 'ssssss', 'https://ya.com', '11111111111', 0, '6666666', false);
+        $sipEntity2->addMetadata(rand(), rand(0, 100), 'ssssss', 'https://ya.com', '22222222222', 0, '7777777', false);
 
         $created2 = $sipEntity2->create();
-        $accepted = $this->amoClient->unsorted->accept($created2['_embedded']['unsorted'][0]['uid']);
-        $this->assertArrayHasKey('id', $accepted['_embedded']['leads'][0]);
 
-        $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$accepted['_embedded']['leads'][0]['id']]]);
-        $this->assertEquals('success', $response['status']);
+        // Проверка сортировки по created_at asc
+        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
+        $sortedAsc = $this->amoClient->unsorted->orderCreatedAtAsc()->get();
+        $this->assertLessThanOrEqual(
+            strtotime($sortedAsc[1]['created_at']),
+            strtotime($sortedAsc[0]['created_at'])
+        );
+
+        // Проверка сортировки по created_at desc
+        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
+        $sortedDesc = $this->amoClient->unsorted->orderCreatedAtDesc()->get();
+        $this->assertGreaterThanOrEqual(
+            strtotime($sortedDesc[1]['created_at']),
+            strtotime($sortedDesc[0]['created_at'])
+        );
+
+        $accepted1 = $this->amoClient->unsorted->accept($created1['_embedded']['unsorted'][0]['uid'], 0, 16141420);
+        $this->assertArrayHasKey('id', $accepted1['_embedded']['leads'][0]);
+        $accepted2 = $this->amoClient->unsorted->accept($created2['_embedded']['unsorted'][0]['uid'], 0, 16141420);
+        $this->assertArrayHasKey('id', $accepted2['_embedded']['leads'][0]);
+
+        // Удаление созданных лидов
+        $response1 = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$accepted1['_embedded']['leads'][0]['id']]]);
+        $this->assertEquals('success', $response1['status']);
+
+        $response2 = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$accepted2['_embedded']['leads'][0]['id']]]);
+        $this->assertEquals('success', $response2['status']);
+    }
+
+    #[Depends('testCreateAndAcceptSipEntity')]
+    public function testCreateFormEntity()
+    {
+        $formEntity = $this->amoClient->unsorted->form();
+        $formEntity->source_name = 'testCreateFormEntity';
+        $formEntity->source_uid = 'testCreateFormEntity';
+        $formEntity->addMetadata($formEntity->source_uid, $formEntity->source_name, '111', '222', 'http://ya.ru', '127.0.0.1', 0, 'https://ya.ru');
+        $created = $formEntity->create();
+        $this->assertArrayHasKey('uid', $created['_embedded']['unsorted'][0]);
+
+        return $created;
+    }
+
+    #[Depends('testCreateFormEntity')]
+    public function testCategoryForms($created)
+    {
+        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
+        $filterCategoryForms = $this->amoClient->unsorted->filterCategoryForms()->get();
+
+        $this->assertEquals($created['_embedded']['unsorted'][0]['uid'], $filterCategoryForms[0]['uid']);
+
+        return $created;
+    }
+
+    #[Depends('testCategoryForms')]
+    #[Depends('testCreateFormEntity')]
+    public function testDeclineForm($created)
+    {
+        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
+        $declined = $this->amoClient->unsorted->decline($created['_embedded']['unsorted'][0]['uid'], 0);
+        $this->assertEquals($created['_embedded']['unsorted'][0]['uid'], $declined['uid']);
     }
 }

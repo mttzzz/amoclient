@@ -32,9 +32,10 @@ class ShortLink extends AbstractModel
             }
 
             return [];
-
+            // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
+            // @codeCoverageIgnoreEnd
         }
     }
 }

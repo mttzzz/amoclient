@@ -36,8 +36,10 @@ class Unsorted extends AbstractModel
         }
         try {
             return $this->http->delete("{$this->entity}/{$uid}/decline", $data)->throw()->json();
+            // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
+            // @codeCoverageIgnoreEnd
         }
     }
 
@@ -55,8 +57,10 @@ class Unsorted extends AbstractModel
         }
         try {
             return $this->http->post("{$this->entity}/{$uid}/accept", $data)->throw()->json();
+            // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
+            // @codeCoverageIgnoreEnd
         }
     }
 
@@ -119,20 +123,6 @@ class Unsorted extends AbstractModel
     public function orderCreatedAtDesc(): self
     {
         $this->order['created_at'] = 'desc';
-
-        return $this;
-    }
-
-    public function orderUpdatedAtAsc(): self
-    {
-        $this->order['updated_at'] = 'asc';
-
-        return $this;
-    }
-
-    public function orderUpdatedAtDesc(): self
-    {
-        $this->order['updated_at'] = 'desc';
 
         return $this;
     }
