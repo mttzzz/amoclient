@@ -211,10 +211,13 @@ class LeadTest extends BaseAmoClient
         $lead = $this->amoClient->leads->find($id);
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('add withContacts() before call this function');
-        $lead->getContactsIds();
-        $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
-        $this->assertEquals('success', $response['status']);
 
+        try {
+            $lead->getContactsIds();
+        } finally {
+            $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
+            $this->assertEquals('success', $response['status']);
+        }
     }
 
     public function testLeadGetMainContactIdException()
@@ -225,11 +228,12 @@ class LeadTest extends BaseAmoClient
         $lead = $this->amoClient->leads->find($id);
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('add withContacts() before call this function');
-        $lead->getMainContactId();
-
-        $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
-        $this->assertEquals('success', $response['status']);
-
+        try {
+            $lead->getMainContactId();
+        } finally {
+            $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
+            $this->assertEquals('success', $response['status']);
+        }
     }
 
     public function testLeadGetMainContactIdNotFound()

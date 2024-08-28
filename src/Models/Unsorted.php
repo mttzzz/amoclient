@@ -31,7 +31,7 @@ class Unsorted extends AbstractModel
     public function decline(string $uid, ?int $userId = null): array
     {
         $data = [];
-        if ($userId) {
+        if ($userId !== null) {
             $data['user_id'] = $userId;
         }
         try {
@@ -47,10 +47,10 @@ class Unsorted extends AbstractModel
     public function accept(string $uid, ?int $userId = null, ?int $statusId = null): array
     {
         $data = [];
-        if ($userId) {
+        if ($userId !== null) {
             $data['user_id'] = $userId;
         }
-        if ($statusId) {
+        if ($statusId !== null) {
             $data['status_id'] = $statusId;
         }
         try {
