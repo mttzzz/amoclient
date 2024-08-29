@@ -60,9 +60,12 @@ class Task extends AbstractModel
         return $this;
     }
 
-    public function filterTaskType(int $type): self
+    /**
+     * @param  int|array<int>  $type
+     */
+    public function filterTaskType(int|array $type): self
     {
-        $this->filter['task_type'] = $type;
+        $this->filter['task_type'] = is_array($type) ? $type : (int) $type;
 
         return $this;
     }
