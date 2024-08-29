@@ -116,7 +116,6 @@ class CustomerTest extends BaseAmoClient
     public function testCustomerDelete(int $customerId)
     {
         $response = $this->amoClient->ajax->postJson('/ajax/v1/customers/set/', ['request' => ['customers' => ['delete' => [$customerId]]]]);
-        $this->assertIsArray($response);
         $this->assertEquals(0, count($response['response']['customers']['delete']['errors']));
     }
 

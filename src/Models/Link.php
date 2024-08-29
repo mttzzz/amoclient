@@ -2,6 +2,7 @@
 
 namespace mttzzz\AmoClient\Models;
 
+use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Str;
@@ -55,6 +56,10 @@ class Link extends AbstractModel
 
     public function customers(int $customerId): Entities\Link
     {
+        if (! in_array(Str::before($this->entity, '/'), ['contacts', 'companies'])) {
+            throw new Exception('Customer can be linked only to contact or company');
+        }
+
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
         $entity->to_entity_id = (int) $customerId;
         $entity->to_entity_type = 'customers';
