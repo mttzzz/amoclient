@@ -29,7 +29,7 @@ trait CustomFieldTrait
      * @param  string|array<string>  $value
      * @return $this
      */
-    public function setCF(int $id, string|array $value, bool $isEnumId = false): static
+    public function setCF(int $id, int|string|array $value, bool $isEnumId = false): static
     {
         $values = is_array($value) ? $value : [$value];
 
