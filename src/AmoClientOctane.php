@@ -80,7 +80,7 @@ class AmoClientOctane
 
         /** @var stdClass|null $octaneAccountData */
         $octaneAccountData = DB::connection('octane')->table('accounts')
-            ->select(['accounts.id', 'subdomain', 'domain', 'account_widget.access_token'])
+            ->select(['accounts.id', 'subdomain', 'domain', 'account_widget.access_token, contact_phone_field_id, contact_email_field_id'])
             ->join('account_widget', 'accounts.id', '=', 'account_widget.account_id')
             ->join('widgets', 'widgets.id', '=', 'account_widget.widget_id')
             ->where('account_widget.active', true)
@@ -105,11 +105,6 @@ class AmoClientOctane
         }
 
         $octaneAccount = $this->convertToOctaneAccount($octaneAccountData);
-
-        $octaneAccount->contact_phone_field_id = DB::connection('octane')->table('account_custom_fields')
-            ->where('account_id', $aId)->where('code', 'PHONE')->first()->id ?? null;
-        $octaneAccount->contact_email_field_id = DB::connection('octane')->table('account_custom_fields')
-            ->where('account_id', $aId)->where('code', 'EMAIL')->first()->id ?? null;
 
         $fields = DB::connection('octane')
             ->table('account_custom_fields')
