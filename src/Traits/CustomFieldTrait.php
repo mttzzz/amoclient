@@ -34,7 +34,7 @@ trait CustomFieldTrait
         $values = is_array($value) ? $value : [$value];
 
         foreach ($values as $key => $value) {
-            $values[$key] = $isEnumId ? ['enum_id' => $value] : ['value' => $this->setValue($id, $value)];
+            $values[$key] = $isEnumId ? ['enum_id' => (int) $value] : ['value' => $this->setValue($id, $value)];
         }
 
         if (isset($this->enums[$id])) {
