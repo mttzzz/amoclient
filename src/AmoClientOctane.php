@@ -80,7 +80,7 @@ class AmoClientOctane
 
         /** @var stdClass|null $octaneAccountData */
         $octaneAccountData = DB::connection('octane')->table('accounts')
-            ->select(['accounts.id', 'subdomain', 'domain', 'account_widget.access_token, contact_phone_field_id, contact_email_field_id'])
+            ->select(['accounts.id', 'accounts.subdomain', 'accounts.domain', 'account_widget.access_token', 'accounts.contact_phone_field_id', 'accounts.contact_email_field_id'])
             ->join('account_widget', 'accounts.id', '=', 'account_widget.account_id')
             ->join('widgets', 'widgets.id', '=', 'account_widget.widget_id')
             ->where('account_widget.active', true)
