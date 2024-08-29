@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Entities;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Str;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Link extends AbstractEntity
 {
@@ -35,7 +36,7 @@ class Link extends AbstractEntity
         try {
             return $this->http->post("$str/link", [$this->toArray()])->throw()->json();
         } catch (RequestException $e) {
-            return json_decode($e->response->body(), true) ?? [];
+            throw new AmoCustomException($e);
         }
     }
 
@@ -48,7 +49,7 @@ class Link extends AbstractEntity
         try {
             return $this->http->post("$str/unlink", [$this->toArray()])->throw()->json();
         } catch (RequestException $e) {
-            return json_decode($e->response->body(), true) ?? [];
+            throw new AmoCustomException($e);
         }
     }
 }

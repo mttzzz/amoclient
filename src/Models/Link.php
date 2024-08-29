@@ -7,6 +7,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Str;
 use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Link extends AbstractModel
 {
@@ -76,23 +77,22 @@ class Link extends AbstractModel
     {
         $str = Str::beforeLast($this->entity, '/');
         try {
-            return $this->http->post("$str/link", $this->prepareEntities($entities))->throw()->json() ?? [];
+            return $this->http->post("$str/link", $this->prepareEntities($entities))->throw()->json();
         } catch (RequestException $e) {
-            return json_decode($e->response->body(), true) ?? [];
+            throw new AmoCustomException($e);
         }
     }
 
     /**
      * @param  array<mixed>  $entities
-     * @return array<mixed>
      */
-    public function unlink(array $entities): array
+    public function unlink(array $entities): null
     {
         $str = Str::beforeLast($this->entity, '/');
         try {
-            return $this->http->post("$str/unlink", $this->prepareEntities($entities))->throw()->json() ?? [];
+            return $this->http->post("$str/unlink", $this->prepareEntities($entities))->throw()->json();
         } catch (RequestException $e) {
-            return json_decode($e->response->body(), true) ?? [];
+            throw new AmoCustomException($e);
         }
     }
 }
