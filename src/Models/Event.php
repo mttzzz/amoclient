@@ -14,9 +14,9 @@ class Event extends AbstractModel
     }
 
     /**
-     * @param  int|array<int>  $id
+     * @param  string|array<string>  $id
      */
-    public function id(int|array $id): self
+    public function id(string|array $id): self
     {
         $this->filter['id'] = $id;
 
@@ -226,7 +226,7 @@ class Event extends AbstractModel
         return $this;
     }
 
-    public function typeCustomerStatusCanged(): self
+    public function typeCustomerStatusChanged(): self
     {
         $this->filter['type'][] = $this->setType(__FUNCTION__);
 
@@ -540,16 +540,10 @@ class Event extends AbstractModel
     /**
      * @param  int|array<int>  $value
      */
-    public function valueAfterCustomFieldValues(int|array $value): self
+    public function valueAfterCustomFieldValues(int|array $value, int $fieldId): self
     {
-        $this->filter['value_after']['responsible_user_id'] = is_array($value) ? implode(',', $value) : $value;
-
-        return $this;
-    }
-
-    public function valueAfterValue(string $value): self
-    {
-        $this->filter['value_after']['value'] = $value;
+        $this->filter['value_after']['custom_field_values'] = is_array($value) ? implode(',', $value) : $value;
+        $this->filter['type'] = "custom_field_{$fieldId}_value_changed";
 
         return $this;
     }
@@ -581,16 +575,10 @@ class Event extends AbstractModel
     /**
      * @param  int|array<int>  $value
      */
-    public function valueBeforeCustomFieldValues(int|array $value): self
+    public function valueBeforeCustomFieldValues(int|array $value, int $fieldId): self
     {
-        $this->filter['value_before']['responsible_user_id'] = is_array($value) ? implode(',', $value) : $value;
-
-        return $this;
-    }
-
-    public function valueBeforeValue(string $value): self
-    {
-        $this->filter['value_before']['value'] = $value;
+        $this->filter['value_before']['custom_field_values'] = is_array($value) ? implode(',', $value) : $value;
+        $this->filter['type'] = "custom_field_{$fieldId}_value_changed";
 
         return $this;
     }

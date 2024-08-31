@@ -61,8 +61,10 @@ abstract class AbstractModel
             }
 
             return $embeddedData;
+            // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
+            // @codeCoverageIgnoreEnd
         }
     }
 
@@ -107,6 +109,9 @@ abstract class AbstractModel
         $this->limit = $limit;
         while (true) {
             $chunk = $this->page($page++)->get();
+            if (empty($chunk)) {
+                break;
+            }
             $function($chunk);
             if (count($chunk) < $limit) {
                 break;
