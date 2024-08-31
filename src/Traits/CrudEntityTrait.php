@@ -52,20 +52,6 @@ trait CrudEntityTrait
         return $this->create()['_embedded'][$this->entity][0]['id'];
     }
 
-    // /**
-    //  * @return array<mixed>
-    //  *
-    //  * @throws AmoCustomException
-    //  */
-    // public function delete(): array
-    // {
-    //     try {
-    //         return $this->http->delete($this->entity.'/'.$this->id)->throw()->json();
-    //     } catch (ConnectionException|RequestException $e) {
-    //         throw new AmoCustomException($e);
-    //     }
-    // }
-
     public function setResponsibleUser(int $accountId, int $id): void
     {
         $isExist = DB::connection('octane')

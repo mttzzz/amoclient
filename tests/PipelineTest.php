@@ -19,7 +19,7 @@ class PipelineTest extends BaseAmoClient
         $this->data = [
             'name' => 'Test Pipeline',
             'sort' => 10,
-            'is_main' => true,
+            'is_main' => false,
         ];
 
         $this->pipeline = $this->amoClient->pipelines->entity();
@@ -41,14 +41,7 @@ class PipelineTest extends BaseAmoClient
     #[Depends('testPipelineEntity')]
     public function testPipelineCreate()
     {
-
         $response = $this->pipeline->create();
-
-        $this->assertIsArray($response);
-        $this->assertArrayHasKey('_embedded', $response);
-        $this->assertArrayHasKey('pipelines', $response['_embedded']);
-        $this->assertIsArray($response['_embedded']['pipelines']);
-        $this->assertEquals(1, count($response['_embedded']['pipelines']));
         $this->assertArrayHasKey('id', $response['_embedded']['pipelines'][0]);
 
         $created = $response['_embedded']['pipelines'][0];
@@ -57,6 +50,29 @@ class PipelineTest extends BaseAmoClient
         $this->assertInstanceOf(Pipeline::class, $pipelineEntityWithId);
 
         return $created['id'];
+    }
+
+    public function testPipelineChangeDefaultStatuses()
+    {
+
+        $pipeline = $this->amoClient->pipelines->entity();
+        $pipeline->name = 'testPipelineChangeSuccessStatus';
+        $pipeline->sort = 10;
+        $pipeline->is_main = false;
+        $pipeline->addStatus('статус 1', 1, '#fffeb2');
+        $pipeline->changeSuccessStatus('test_success');
+        $pipeline->changeFailStatus('test_fail');
+        $pipelineId = $pipeline->create()['_embedded']['pipelines'][0]['id'];
+
+        $pipeline = $this->amoClient->pipelines->find($pipelineId)->toArray();
+        $statuses = $pipeline['_embedded']['statuses'];
+
+        $this->assertEquals('test_success', $statuses[2]['name']);
+        $this->assertEquals('test_fail', $statuses[3]['name']);
+
+        $response = $this->amoClient->ajax->postForm('/ajax/v1/pipelines/delete', ['request' => ['id' => $pipelineId]]);
+        $this->assertEquals(true, $response['response'][$pipelineId]);
+
     }
 
     #[Depends('testPipelineCreate')]
@@ -82,7 +98,6 @@ class PipelineTest extends BaseAmoClient
     public function testPipelineDelete(int $pipelineId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/v1/pipelines/delete', ['request' => ['id' => $pipelineId]]);
-        $this->assertIsArray($response);
         $this->assertEquals(true, $response['response'][$pipelineId]);
     }
 

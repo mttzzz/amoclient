@@ -50,9 +50,6 @@ abstract class AbstractModel
             }
             $data = $this->http->get($this->entity, $query)->throw()->json();
             $data = is_null($data) ? [] : $data;
-            if (! $this->page) {
-                $this->filter = [];
-            }
 
             if (isset($data['_embedded']) && is_array($data['_embedded'])) {
                 $embeddedData = Arr::first($data['_embedded']);
