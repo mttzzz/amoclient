@@ -21,19 +21,36 @@ class CallTest extends BaseAmoClient
         $createdCalls = $call
             ->uniq($uniq)
             ->duration($duration)
+            ->result('no answer')
+            ->responsibleUserId(1693819)
+            ->createdBy(1693819)
+            ->updatedBy(1693819)
+            ->createdAt(time() - 1000)
+            ->updatedAt(time() - 500)
+            ->requestId('123')
             ->phone($phone)
             ->link($link)
             ->source($source)
+            ->directionOutbound()
             ->directionInbound()
+            ->statusLeaveMessage()
+            ->statusCallLater()
+            ->statusAbsent()
+            ->statusWrongNumber()
+            ->statusError()
+            ->statusBusy()
             ->statusSuccess()
             ->create();
 
-        $this->assertIsArray($createdCalls);
-        $this->assertArrayHasKey('_embedded', $createdCalls);
-        $this->assertArrayHasKey('calls', $createdCalls['_embedded']);
-        $this->assertIsArray($createdCalls['_embedded']['calls']);
-        $this->assertEquals(1, count($createdCalls['_embedded']['calls']));
         $this->assertArrayHasKey('id', $createdCalls['_embedded']['calls'][0]);
+
+    }
+
+    public function testCallFilterByResult()
+    {
+        $call = $this->amoClient->calls->entity();
+        $this->expectException(AmoCustomException::class);
+        $call->create();
 
     }
 

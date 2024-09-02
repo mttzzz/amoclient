@@ -136,7 +136,12 @@ class Call extends AbstractEntity
         return $this;
     }
 
-    public function direction(string $direction): self
+    /**
+     * Sets the direction of the call.
+     *
+     * @param  string  $direction  The direction of the call. Possible values are "inbound" for incoming calls and "outbound" for outgoing calls.
+     */
+    private function direction(string $direction): self
     {
         $this->direction = $direction;
 
@@ -145,19 +150,16 @@ class Call extends AbstractEntity
 
     public function directionOutbound(): self
     {
-        $this->direction = 'outbound';
-
-        return $this;
+        return $this->direction('outbound');
     }
 
     public function directionInbound(): self
     {
-        $this->direction = 'inbound';
+        return $this->direction('inbound');
 
-        return $this;
     }
 
-    public function status(int $status): self
+    private function status(int $status): self
     {
         $this->call_status = $status;
 
@@ -166,50 +168,36 @@ class Call extends AbstractEntity
 
     public function statusLeaveMessage(): self
     {
-        $this->call_status = 1;
-
-        return $this;
+        return $this->status(1);
     }
 
     public function statusCallLater(): self
     {
-        $this->call_status = 2;
-
-        return $this;
+        return $this->status(2);
     }
 
     public function statusAbsent(): self
     {
-        $this->call_status = 3;
-
-        return $this;
+        return $this->status(3);
     }
 
     public function statusSuccess(): self
     {
-        $this->call_status = 4;
-
-        return $this;
+        return $this->status(4);
     }
 
     public function statusWrongNumber(): self
     {
-        $this->call_status = 5;
-
-        return $this;
+        return $this->status(5);
     }
 
     public function statusError(): self
     {
-        $this->call_status = 6;
-
-        return $this;
+        return $this->status(6);
     }
 
     public function statusBusy(): self
     {
-        $this->call_status = 7;
-
-        return $this;
+        return $this->status(7);
     }
 }
