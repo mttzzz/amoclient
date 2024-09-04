@@ -14,7 +14,7 @@ class OctanePipeline
 {
     public int $id;
 
-    public ?string $name;
+    public string $name;
 
     public int $sort;
 
@@ -134,7 +134,7 @@ class Lead extends AbstractEntity
         return $companyId ? $this->http->get("companies/$companyId")->json('name') : '';
     }
 
-    public function getPipelineName(): ?string
+    public function getPipelineName(): string
     {
         /** @var OctanePipeline|null $pipeline */
         $pipeline = DB::connection('octane')->table('account_pipelines')
@@ -142,7 +142,7 @@ class Lead extends AbstractEntity
             ->where('id', $this->pipeline_id)
             ->first();
 
-        return $pipeline ? $pipeline->name : null;
+        return $pipeline ? $pipeline->name : '';
     }
 
     /**
