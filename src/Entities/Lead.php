@@ -58,6 +58,8 @@ class Lead extends AbstractEntity
 
     public int $group_id;
 
+    public int $created_by;
+
     /**
      * @var array<mixed>
      */
