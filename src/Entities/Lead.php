@@ -42,7 +42,7 @@ class Lead extends AbstractEntity
         'utm_campaign', 'utm_medium',
     ];
 
-    public string $name;
+    public ?string $name;
 
     public Models\Note $notes;
 
