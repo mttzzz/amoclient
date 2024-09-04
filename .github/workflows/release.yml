@@ -68,12 +68,13 @@ jobs:
            # Extract the major and minor parts of the version
           major_version=$(echo $latest_version | cut -d '.' -f 1)
           minor_version=$(echo $latest_version | cut -d '.' -f 2)
+          patch_version=$(echo $latest_version | cut -d '.' -f 3)
 
           # Increment the minor version
-          new_minor_version=$((minor_version + 1))
+          new_patch_version=$((patch_version + 1))
 
           # Combine the major and new minor version to get the new version
-          new_version="$major_version.$new_minor_version"
+          new_version="$major_version.$minor_version.$new_patch_version"
 
           echo "New version: $new_version"
           echo "new_version=$new_version" >> $GITHUB_ENV
