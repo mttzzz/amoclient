@@ -10,20 +10,31 @@ use mttzzz\LaravelTelegramLog\Telegram;
 
 trait CustomFieldTrait
 {
-    protected $cf;
+    /**
+     * @var array<mixed>
+     */
+    protected array $cf = [];
 
-    protected $enums;
+    /**
+     * @var array<mixed>
+     */
+    protected array $enums = [];
 
-    public function setCFByCode(string $code, $value)
+    public function setCFByCode(string $code, string $value): void
     {
         $this->custom_fields_values[] = ['field_code' => $code, 'values' => [['value' => $value]]];
     }
 
-    public function setCF(int $id, $value, bool $isEnumId = false)
+    /**
+     * @param  string|array<string>  $value
+     * @return $this
+     */
+    public function setCF(int $id, int|string|array $value, bool $isEnumId = false): static
     {
         $values = is_array($value) ? $value : [$value];
+
         foreach ($values as $key => $value) {
-            $values[$key] = $isEnumId ? ['enum_id' => $value] : ['value' => $this->setValue($id, $value)];
+            $values[$key] = $isEnumId ? ['enum_id' => (int) $value] : ['value' => $this->setValue($id, $value)];
         }
 
         if (isset($this->enums[$id])) {
@@ -31,20 +42,19 @@ trait CustomFieldTrait
                 $this->custom_fields_values[] = ['field_id' => $id, 'values' => null];
             } else {
                 $enums = Arr::pluck(json_decode($this->enums[$id], true), 'value', 'id');
-                if (in_array($value, $enums) || array_key_exists($value, $enums) || in_array('WORK', $enums)) {
+                if (in_array($value, $enums) || (is_string($value) && array_key_exists($value, $enums)) || in_array('WORK', $enums)) {
                     $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
                 }
             }
-        } elseif (is_array($this->cf) && array_key_exists($id, $this->cf)) {
-            $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
-        } elseif (Str::contains($this->entity, ['catalogs', 'customers'])) {
+        } elseif (is_array($this->cf) && is_string($value) && array_key_exists($id, $this->cf)) {
             $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
         }
 
         return $this;
     }
 
-    private function setValue($id, $value)
+    //TODO: refactor ИЗБАВИТЬСЯ ОТ MIXED
+    private function setValue(int $id, mixed $value): mixed
     {
         if ($type = $this->cf[$id] ?? null) {
             switch ($type) {
@@ -97,34 +107,43 @@ trait CustomFieldTrait
         return $value;
     }
 
-    public function getCF($id)
+    /**
+     * @return array<array<string, mixed>>
+     */
+    public function getCF(int $id): array
     {
         return empty($this->custom_fields_values) ? [] :
             Arr::where($this->custom_fields_values, fn ($i) => isset($i['field_id']) && $i['field_id'] == $id);
     }
 
-    public function getCFByCode($code)
+    /**
+     * @return array<array<string, mixed>>
+     */
+    public function getCFByCode(string $code): array
     {
         return empty($this->custom_fields_values) ? [] :
             Arr::where($this->custom_fields_values, fn ($i) => isset($i['field_code']) && $i['field_code'] == $code);
     }
 
-    public function getCFV($id)
+    public function getCFV(int $id): mixed
     {
         return Arr::first($this->getCF($id))['values'][0]['value'] ?? null;
     }
 
-    public function getCFVByCode($code)
+    public function getCFVByCode(string $code): mixed
     {
         return Arr::first($this->getCFByCode(Str::upper($code)))['values'][0]['value'] ?? null;
     }
 
-    public function getCFE($id)
+    public function getCFE(int $id): ?int
     {
         return Arr::first($this->getCF($id))['values'][0]['enum_id'] ?? null;
     }
 
-    public function getCFCLN($id) //customField ChainedList Names
+    /**
+     * @return array<string>
+     */
+    public function getCFCLN(int $id): array
     {
         $names = [];
         $f = Arr::first($this->getCF($id));
@@ -138,10 +157,15 @@ trait CustomFieldTrait
         return $names;
     }
 
-    public function getCFVM($id)
+    /**
+     * @return array<string> // If the function returns an array of strings
+     */
+    public function getCFVM(int $id): array
     {
         $f = $this->getCF($id);
+        /** @var array<int, array<string, mixed>> $values */
+        $values = Arr::first($f)['values'] ?? [];
 
-        return count($f) ? collect(Arr::first($f)['values'])->pluck('value')->toArray() : [];
+        return count($f) ? collect($values)->pluck('value')->toArray() : [];
     }
 }

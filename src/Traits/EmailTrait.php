@@ -6,7 +6,10 @@ use Illuminate\Support\Arr;
 
 trait EmailTrait
 {
-    public function emailList()
+    /**
+     * @return array<string>
+     */
+    public function emailList(): array
     {
         $emails = [];
         if ($this->custom_fields_values) {
@@ -22,9 +25,13 @@ trait EmailTrait
         return $emails;
     }
 
-    private function emailGet()
+    /**
+     * @return array<mixed>
+     */
+    private function emailGet(): array
     {
         if ($this->custom_fields_values) {
+
             $emails = Arr::where($this->custom_fields_values, function ($item) {
                 return isset($item['field_code']) && $item['field_code'] === 'EMAIL';
             });
@@ -35,10 +42,9 @@ trait EmailTrait
         $this->custom_fields_values[] = ['field_code' => 'EMAIL', 'values' => []];
 
         return $this->emailGet();
-
     }
 
-    public function emailAdd($email)
+    public function emailAdd(string $email): self
     {
         $key = key($this->emailGet());
         $this->custom_fields_values[$key]['values'][] = ['value' => $email, 'enum_code' => 'WORK'];
@@ -46,7 +52,10 @@ trait EmailTrait
         return $this;
     }
 
-    public function emailSet(array $emails)
+    /**
+     * @param  array<string>  $emails
+     */
+    public function emailSet(array $emails): self
     {
         $key = key($this->emailGet());
         $values = [];
@@ -58,12 +67,12 @@ trait EmailTrait
         return $this;
     }
 
-    public function emailDelete(string $email)
+    public function emailDelete(string $email): self
     {
         $key = key($this->emailGet());
-        foreach ($this->custom_fields_values[$key]['values'] as $key => $value) {
+        foreach ($this->custom_fields_values[$key]['values'] as $index => $value) {
             if ($email === $value['value']) {
-                unset($this->custom_fields_values[$key]['values'][$key]);
+                unset($this->custom_fields_values[$key]['values'][$index]);
             }
         }
 

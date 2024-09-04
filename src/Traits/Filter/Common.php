@@ -4,63 +4,69 @@ namespace mttzzz\AmoClient\Traits\Filter;
 
 trait Common
 {
-    public function filterId($id)
+    /**
+     * @param  int|array<mixed>  $id
+     */
+    public function filterId(int|array $id): self
     {
         $this->filter['id'] = $id;
 
         return $this;
     }
 
-    public function filterName($name)
+    public function filterName(string $name): self
     {
         $this->filter['name'] = $name;
 
         return $this;
     }
 
-    public function filterCreatedBy($createdBy)
+    public function filterCreatedBy(int $createdBy): self
     {
         $this->filter['created_by'] = $createdBy;
 
         return $this;
     }
 
-    public function filterUpdatedBy($updatedBy)
+    public function filterUpdatedBy(int $updatedBy): self
     {
         $this->filter['updated_by'] = $updatedBy;
 
         return $this;
     }
 
-    public function filterResponsibleUserId($id)
+    /**
+     * @param  int|array<mixed>  $id
+     */
+    public function filterResponsibleUserId(int|array $id): self
     {
         $this->filter['responsible_user_id'] = $id;
 
         return $this;
     }
 
-    public function filterCreatedAt($from, $to)
+    public function filterCreatedAt(int $from, int $to): self
     {
         $this->filter['created_at'] = compact('from', 'to');
 
         return $this;
     }
 
-    public function filterUpdatedAt($from, $to)
+    public function filterUpdatedAt(int $from, int $to): self
     {
         $this->filter['updated_at'] = compact('from', 'to');
 
         return $this;
     }
 
-    public function filterClosestTaskAt($from, $to)
+    public function filterClosestTaskAt(int $from, int $to): self
     {
         $this->filter['closest_task_at'] = compact('from', 'to');
 
         return $this;
     }
 
-    public function filterCustomField($fieldId, $value)
+    public function filterCustomField(int $fieldId, mixed $value): self
     {
         $value = is_array($value) ? $value : [$value];
         $this->filter['custom_fields_values'][$fieldId] = $value;
@@ -68,7 +74,7 @@ trait Common
         return $this;
     }
 
-    public function filterCustomFieldFromTo($fieldId, $from, $to)
+    public function filterCustomFieldFromTo(int $fieldId, int $from, int $to): self
     {
         $this->filter['custom_fields_values'][$fieldId] = compact('from', 'to');
 

@@ -9,37 +9,43 @@ class Task extends AbstractEntity
 {
     use Traits\CrudEntityTrait;
 
-    protected string $entity = 'tasks';
+    public ?int $entity_id;
 
-    public $id;
+    public string $entity_type;
 
-    public $responsible_user_id;
+    public ?int $duration;
 
-    public $entity_id;
+    public bool $is_completed;
 
-    public $entity_type;
+    public ?int $task_type_id;
 
-    public $duration;
+    public string $text;
 
-    public $is_completed;
+    /**
+     * @var array<mixed>
+     */
+    public array $result;
 
-    public $task_type_id;
+    public ?int $complete_till;
 
-    public $text;
-
-    public $result;
-
-    public $complete_till;
-
-    public function __construct($data, PendingRequest $http, $entityType = null, $entityId = null)
+    /**
+     * @param  array<mixed>  $data
+     */
+    public function __construct(array $data, PendingRequest $http, string $entityType = 'leads', ?int $entityId = null)
     {
+        parent::__construct($data, $http);
+        $this->entity = 'tasks';
         $this->entity_type = $entityType;
         $this->entity_id = $entityId;
-        parent::__construct($data, $http);
     }
 
-    public function add($text, $responsible_user_id = null, $completeTill = null, $duration = null, $type = 1)
-    {
+    /**
+     * @return array<mixed>
+     */
+    public function add(
+        string $text, ?int $responsible_user_id = null,
+        ?int $completeTill = null, ?int $duration = null, ?int $type = 1
+    ): array {
         $this->text = $text;
         if ($responsible_user_id) {
             $this->responsible_user_id = $responsible_user_id;
@@ -51,7 +57,7 @@ class Task extends AbstractEntity
         return $this->create();
     }
 
-    public function setResultText($text)
+    public function setResultText(string $text): self
     {
         $this->result['text'] = $text;
 

@@ -4,14 +4,17 @@ namespace mttzzz\AmoClient\Traits\Filter;
 
 trait Lead
 {
-    public function filterPrice($from, $to)
+    public function filterPrice(int $from, int $to): self
     {
         $this->filter['price'] = compact('from', 'to');
 
         return $this;
     }
 
-    public function filterStatuses($data)
+    /**
+     * @param  array<array<int>>  $data
+     */
+    public function filterStatuses(array $data): self
     {
         $filter = [];
         foreach ($data as $pipelineId => $statuses) {
@@ -24,14 +27,17 @@ trait Lead
         return $this;
     }
 
-    public function filterPipelines($pipelines)
+    /**
+     * @param  int|array<mixed>  $pipelines
+     */
+    public function filterPipelines(int|array $pipelines): self
     {
         $this->filter['pipeline_id'] = $pipelines;
 
         return $this;
     }
 
-    public function filterClosedAt($from, $to)
+    public function filterClosedAt(int $from, int $to): self
     {
         $this->filter['closed_at'] = compact('from', 'to');
 

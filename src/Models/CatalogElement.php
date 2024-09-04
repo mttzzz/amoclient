@@ -4,39 +4,37 @@ namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Traits;
 
 class CatalogElement extends AbstractModel
 {
-    use Traits\CrudTrait, Traits\QueryTrait;
+    use Traits\CrudTrait, Traits\Filter\Common, Traits\QueryTrait;
 
-    protected $entity;
-
-    public function __construct(PendingRequest $http, $catalogId)
+    public function __construct(PendingRequest $http, int $catalogId)
     {
         $this->entity = "catalogs/{$catalogId}/elements";
         parent::__construct($http);
     }
 
-    public function entity($id = null)
+    public function entity(?int $id = null): Entities\CatalogElement
     {
         return new Entities\CatalogElement(['id' => $id], $this->http, $this->entity);
     }
 
-    public function entityData($data)
+    /**
+     * @param  array<mixed>  $data
+     */
+    public function entityData(array $data): Entities\CatalogElement
     {
         return new Entities\CatalogElement($data, $this->http, $this->entity);
     }
 
-    public function find($id)
+    /**
+     * @throws AmoCustomException
+     */
+    public function find(int $id): Entities\CatalogElement
     {
         return new Entities\CatalogElement($this->findEntity($id), $this->http, $this->entity);
-    }
-
-    public function filterId($id)
-    {
-        $this->filter['id'] = $id;
-
-        return $this;
     }
 }

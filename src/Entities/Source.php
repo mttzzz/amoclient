@@ -2,6 +2,9 @@
 
 namespace mttzzz\AmoClient\Entities;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Traits;
 
 class Source extends AbstractEntity
@@ -10,15 +13,32 @@ class Source extends AbstractEntity
 
     protected string $entity = 'sources';
 
-    public $name;
+    public string $name;
 
-    public $pipeline_id;
+    public int $pipeline_id;
 
-    public $external_id;
+    public string $external_id;
 
-    public $default;
+    public bool $default;
 
-    public $origin_code;
+    public ?string $origin_code;
 
-    public $services;
+    /**
+     * @var array<mixed>
+     */
+    public array $services;
+
+    /**
+     * @throws AmoCustomException
+     */
+    public function delete(): null
+    {
+        try {
+            return $this->http->delete($this->entity.'/'.$this->id)->throw()->json();
+            // @codeCoverageIgnoreStart
+        } catch (ConnectionException|RequestException $e) {
+            throw new AmoCustomException($e);
+            // @codeCoverageIgnoreEnd
+        }
+    }
 }

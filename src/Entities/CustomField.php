@@ -11,31 +11,43 @@ class CustomField extends AbstractEntity
 
     protected string $entity;
 
-    public $type;
+    public string $type;
 
-    public $name;
+    public string $name;
 
-    public $code;
+    public string $code;
 
-    public $sort;
+    public int $sort;
 
-    public $group_id;
+    public int $group_id;
 
-    public $is_api_only;
+    public bool $is_api_only;
 
-    public $required_statuses;
+    /**
+     * @var array<array{status_id: int, pipeline_id: int}>
+     */
+    public array $required_statuses;
 
-    public $remind;
+    public ?string $remind;
 
-    public $enums;
+    /**
+     * @var array<mixed>
+     */
+    public array $enums;
 
-    public function __construct($data, PendingRequest $http, $entity)
+    /**
+     * @param  array<mixed>  $data
+     */
+    public function __construct(array $data, PendingRequest $http, string $entity)
     {
         $this->entity = $entity;
         parent::__construct($data, $http);
     }
 
-    public function setData($data)
+    /**
+     * @param  array<mixed>  $data
+     */
+    public function setData(array $data): void
     {
         parent::setData($data);
     }

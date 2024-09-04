@@ -9,15 +9,18 @@ class CatalogElement extends AbstractEntity
 {
     use Traits\CrudEntityTrait, Traits\CustomFieldTrait;
 
-    protected string $entity;
+    //TODO обязательно протестировать
+    public string $name;
 
-    public $id;
+    /**
+     * @var array<mixed>
+     */
+    public array $custom_fields_values = [];
 
-    public $name;
-
-    public $custom_fields_values = [];
-
-    public function __construct($data, PendingRequest $http, $entity)
+    /**
+     * @param  array<mixed>  $data
+     */
+    public function __construct(array $data, PendingRequest $http, string $entity)
     {
         $this->entity = $entity;
         parent::__construct($data, $http);

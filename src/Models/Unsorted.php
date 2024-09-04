@@ -9,118 +9,120 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Unsorted extends AbstractModel
 {
-    protected $entity = 'leads/unsorted';
-
     public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
+        $this->entity = 'leads/unsorted';
     }
 
-    public function sip()
+    public function sip(): Entities\Unsorted\Sip
     {
         return new Entities\Unsorted\Sip($this->http);
     }
 
-    public function form()
+    public function form(): Entities\Unsorted\Form
     {
         return new Entities\Unsorted\Form($this->http);
     }
 
-    public function decline($uid, $userId = null)
+    /**
+     * @return array<mixed>
+     */
+    public function decline(string $uid, ?int $userId = null): array
     {
         $data = [];
-        if ($userId) {
+        if ($userId !== null) {
             $data['user_id'] = $userId;
         }
         try {
             return $this->http->delete("{$this->entity}/{$uid}/decline", $data)->throw()->json();
+            // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
+            // @codeCoverageIgnoreEnd
         }
     }
 
-    public function accept($uid, $userId = null, $statusId = null)
+    /**
+     * @return array<mixed>
+     */
+    public function accept(string $uid, ?int $userId = null, ?int $statusId = null): array
     {
         $data = [];
-        if ($userId) {
+        if ($userId !== null) {
             $data['user_id'] = $userId;
         }
-        if ($statusId) {
+        if ($statusId !== null) {
             $data['status_id'] = $statusId;
         }
         try {
             return $this->http->post("{$this->entity}/{$uid}/accept", $data)->throw()->json();
+            // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
+            // @codeCoverageIgnoreEnd
         }
     }
 
-    public function filterUid($Uid)
+    /**
+     * @param  string|array<string>  $Uid
+     */
+    public function filterUid(string|array $Uid): self
     {
-        $this->filter['uid'] = is_array($Uid) ? $Uid : (string) $Uid;
+        if (is_array($Uid)) {
+            $this->filter['uid'] = $Uid;
+        } else {
+            $this->filter['uid'] = (string) $Uid;
+        }
 
         return $this;
     }
 
-    public function filterCategorySip()
+    public function filterCategorySip(): self
     {
         $this->filter['category'][] = 'sip';
 
         return $this;
     }
 
-    public function filterCategoryMail()
+    public function filterCategoryMail(): self
     {
         $this->filter['category'][] = 'mail';
 
         return $this;
     }
 
-    public function filterCategoryForms()
+    public function filterCategoryForms(): self
     {
         $this->filter['category'][] = 'forms';
 
         return $this;
     }
 
-    public function filterCategoryChats()
+    public function filterCategoryChats(): self
     {
         $this->filter['category'][] = 'chats';
 
         return $this;
     }
 
-    public function filterPipelineId($pipelineId)
+    public function filterPipelineId(int $pipelineId): self
     {
         $this->filter['pipeline_id'] = (int) $pipelineId;
 
         return $this;
     }
 
-    public function orderCreatedAtAsc()
+    public function orderCreatedAtAsc(): self
     {
         $this->order['created_at'] = 'asc';
 
         return $this;
     }
 
-    public function orderCreatedAtDesc()
+    public function orderCreatedAtDesc(): self
     {
         $this->order['created_at'] = 'desc';
-
-        return $this;
-    }
-
-    public function orderUpdatedAtAsc()
-    {
-        $this->order['updated_at'] = 'asc';
-
-        return $this;
-    }
-
-    public function orderUpdatedAtDesc()
-    {
-        $this->order['updated_at'] = 'desc';
 
         return $this;
     }

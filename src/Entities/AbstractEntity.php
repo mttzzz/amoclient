@@ -7,44 +7,67 @@ use Illuminate\Http\Client\PendingRequest;
 
 abstract class AbstractEntity
 {
-    protected $http;
+    protected PendingRequest $http;
 
-    // Define class properties here
-    public $custom_fields_values = [];
+    protected string $entity;
 
-    public $group_id;
+    public ?int $id = null;
+
+    public int $responsible_user_id = 0;
+
+    /**
+     * @var array<mixed>
+     **/
+    public array $custom_fields_values = [];
+
+    public int $group_id;
 
     public ?int $updated_by;
 
     public ?int $closest_task_at;
 
-    public $is_deleted;
+    public ?bool $is_deleted;
 
-    public $is_unsorted;
+    public bool $is_unsorted;
 
-    public $_links;
+    /**
+     * @var array<string>
+     **/
+    public array $_links;
 
-    public $loss_reason_id;
+    public ?int $loss_reason_id;
 
     public ?int $closed_at;
 
-    public $score;
+    public ?int $score;
 
-    public $labor_cost;
+    public ?int $labor_cost;
 
-    public $catalog_id;
+    public int $catalog_id;
 
-    public $_embedded = [];
+    /**
+     * @var array<mixed>
+     **/
+    public array $_embedded = [];
 
-    public $metadata;
+    /**
+     * @var array<mixed>
+     **/
+    public array $metadata = [];
 
-    public function __construct($data = [], ?PendingRequest $http = null)
+    /**
+     * @param  array<mixed>  $data
+     **/
+    public function __construct(array $data, PendingRequest $http)
     {
         $this->http = $http;
         $this->setData($data);
     }
 
-    protected function setData($data)
+    /**
+     * @param  array<mixed>  $data
+     **/
+    protected function setData(array $data): void
     {
         try {
             $intFields = ['id', 'price', 'status_id', 'responsible_user_id', 'duration'];
@@ -58,9 +81,13 @@ abstract class AbstractEntity
         }
     }
 
-    public function toArray()
+    /**
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
     {
         $item = [];
+
         $except = ['http', 'cf', 'entity', 'notes', '_links', 'closest_task_at', 'updated_by',
             'fieldPhoneId', 'fieldEmailId', 'tasks', 'links', 'enums'];
 
@@ -73,7 +100,7 @@ abstract class AbstractEntity
                 $item[$key] = $value;
             }
 
-            if (empty($item[$key]) && ! in_array($key, ['is_main', 'duration', 'disabled'])) {
+            if (empty($item[$key]) && ! in_array($key, ['duration', 'disabled', 'can_link_multiple', 'is_main'])) {
                 unset($item[$key]);
             }
 

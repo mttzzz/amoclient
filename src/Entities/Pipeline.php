@@ -2,6 +2,10 @@
 
 namespace mttzzz\AmoClient\Entities;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Collection;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Traits;
 
 class Pipeline extends AbstractEntity
@@ -10,18 +14,49 @@ class Pipeline extends AbstractEntity
 
     protected string $entity = 'leads/pipelines';
 
-    public $_embedded = ['statuses' => []];
+    /**
+     * @var array<mixed>
+     */
+    public array $_embedded = [];
 
-    public $name;
+    public string $name;
 
-    public $sort = 1;
+    public int $sort = 5000;
 
-    public $is_main = false;
+    public bool $is_main = false;
 
-    public $is_unsorted_on = true;
+    public bool $is_unsorted_on = true;
 
-    public function statuses()
+    /**
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function statuses(): Collection
     {
-        return collect($this->_embedded['statuses']);
+
+        if (! isset($this->_embedded['statuses'])) {
+            return collect();
+        }
+
+        /** @var array<int, array<string, mixed>> $statusesArray */
+        $statusesArray = $this->_embedded['statuses'];
+
+        /** @var Collection<int, array<string, mixed>> $statuses */
+        $statuses = collect($statusesArray);
+
+        return $statuses;
+    }
+
+    /**
+     * @return array<mixed>
+     *
+     * @throws AmoCustomException
+     */
+    public function update(): array
+    {
+        try {
+            return $this->http->patch("$this->entity/$this->id", $this->toArray())->throw()->json();
+        } catch (ConnectionException|RequestException $e) {
+            throw new AmoCustomException($e);
+        }
     }
 }

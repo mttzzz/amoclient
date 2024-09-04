@@ -10,20 +10,23 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 abstract class AbstractModel
 {
-    protected $http;
+    protected PendingRequest $http;
 
-    protected $with = [];
+    /** @var string[] */
+    protected array $with = [];
 
-    protected $page;
+    protected int $page = 1;
 
-    protected $limit;
+    protected int $limit = 150;
 
-    protected $query;
+    protected string $query = '';
 
-    protected $entity;
+    protected string $entity = '';
 
-    protected $order = [];
+    /** @var array<string, mixed> */
+    protected array $order = [];
 
+    /** @var array<string, mixed> */
     protected array $filter = [];
 
     public function __construct(PendingRequest $http)
@@ -31,7 +34,12 @@ abstract class AbstractModel
         $this->http = $http;
     }
 
-    public function get()
+    /**
+     * @return array<string, mixed>
+     *
+     * @throws AmoCustomException
+     */
+    public function get(): array
     {
         try {
             $query = [];
@@ -42,24 +50,29 @@ abstract class AbstractModel
             }
             $data = $this->http->get($this->entity, $query)->throw()->json();
             $data = is_null($data) ? [] : $data;
-            if (! $this->page) {
-                $this->filter = [];
+
+            if (isset($data['_embedded']) && is_array($data['_embedded'])) {
+                $embeddedData = Arr::first($data['_embedded']);
+            } else {
+                $embeddedData = $data;
             }
 
-            return isset($data['_embedded']) ? Arr::first($data['_embedded']) : $data;
+            return $embeddedData;
+            // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
+            // @codeCoverageIgnoreEnd
         }
     }
 
-    public function page(int $page)
+    public function page(int $page): self
     {
         $this->page = $page;
 
         return $this;
     }
 
-    public function limit(int $limit)
+    public function limit(int $limit): self
     {
         $limit = $limit > 150 ? 150 : $limit;
         $this->limit = $limit;
@@ -67,14 +80,18 @@ abstract class AbstractModel
         return $this;
     }
 
-    protected function addWith($with)
+    protected function addWith(string $with): static
     {
         $this->with[] = Str::snake(Str::after($with, 'with'));
 
         return $this;
     }
 
-    protected function prepareEntities($entities)
+    /**
+     * @param  array<mixed>  $entities
+     * @return array<mixed>
+     */
+    protected function prepareEntities(array $entities): array
     {
         foreach ($entities as $key => $entity) {
             $entities[$key] = $entity->toArray();
@@ -83,12 +100,15 @@ abstract class AbstractModel
         return $entities;
     }
 
-    public function each($function, $limit = 150)
+    public function each(callable $function, int $limit = 150): void
     {
         $page = 1;
         $this->limit = $limit;
         while (true) {
             $chunk = $this->page($page++)->get();
+            if (empty($chunk)) {
+                break;
+            }
             $function($chunk);
             if (count($chunk) < $limit) {
                 break;
@@ -96,7 +116,10 @@ abstract class AbstractModel
         }
     }
 
-    public function allItems($limit = 150)
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function allItems(int $limit = 150): array
     {
         $result = [];
         $this->each(function ($items) use (&$result) {

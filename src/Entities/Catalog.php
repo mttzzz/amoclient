@@ -4,35 +4,35 @@ namespace mttzzz\AmoClient\Entities;
 
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Models;
+use mttzzz\AmoClient\Models\CatalogElement;
 use mttzzz\AmoClient\Traits;
 
 class Catalog extends AbstractEntity
 {
     use Traits\CrudEntityTrait;
 
-    protected string $entity = 'catalogs';
+    public string $name;
 
-    public $id;
+    public string $type;
 
-    public $name;
+    public ?int $sort;
 
-    public $type = 'regular';
-
-    public $sort = null;
-
-    public $elements;
+    public CatalogElement $elements;
 
     public bool $can_add_elements;
 
-    public bool $can_link_multiple;
+    public string $test;
 
     public function __construct($data, PendingRequest $http)
     {
         parent::__construct($data, $http);
-        $this->elements = new Models\CatalogElement($http, $this->id);
+        $this->entity = 'catalogs';
+        if ($this->id !== null) {
+            $this->elements = new Models\CatalogElement($http, $this->id);
+        }
     }
 
-    public function customFields()
+    public function customFields(): Models\CustomField
     {
         return new Models\CustomField($this->http, $this->entity.'/'.$this->id);
     }

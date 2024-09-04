@@ -4,16 +4,16 @@ namespace mttzzz\AmoClient\Traits\Filter;
 
 trait PhoneEmail
 {
-    protected $fieldPhoneId;
+    protected int $fieldPhoneId;
 
-    protected $fieldEmailId;
+    protected int $fieldEmailId;
 
-    public function filterPhone($value)
+    public function filterPhone(string $value): self
     {
         return $this->filterCustomField($this->fieldPhoneId, $value);
     }
 
-    public function filterEmail($value)
+    public function filterEmail(string $value): self
     {
         return $this->filterCustomField($this->fieldEmailId, $value);
     }

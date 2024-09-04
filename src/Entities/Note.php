@@ -10,87 +10,119 @@ class Note extends AbstractEntity
 {
     use Traits\CrudEntityTrait;
 
-    protected string $entity;
+    public ?int $entity_id;
 
-    public $id;
+    public string $note_type;
 
-    public $entity_id;
+    /**
+     * @var array<string, mixed>
+     */
+    public array $params = [];
 
-    public $note_type;
-
-    public $params = [];
-
-    public function __construct($data, PendingRequest $http, $parentEntity, $entityId = null)
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function __construct(array $data, PendingRequest $http, string $parentEntity, ?int $entityId = null)
     {
         $this->entity = $parentEntity;
         $this->entity_id = $entityId;
         parent::__construct($data, $http);
     }
 
-    public function common($text)
+    /**
+     * @return array<mixed>
+     */
+    public function common(string $text): array
     {
         $this->params = compact('text');
 
         return $this->createNote(__FUNCTION__);
     }
 
-    public function callIn($uniq, $duration, $link, $phone, $source = 'ASTERISK')
+    /**
+     * @return array<mixed>
+     */
+    public function callIn(string $uniq, int $duration, string $link, string $phone, string $source = 'ASTERISK'): array
     {
         $this->params = compact('uniq', 'duration', 'link', 'phone', 'source');
 
         return $this->createNote(__FUNCTION__);
     }
 
-    public function callOut($uniq, $duration, $link, $phone, $source = 'ASTERISK')
+    /**
+     * @return array<mixed>
+     */
+    public function callOut(string $uniq, int $duration, string $link, string $phone, string $source = 'ASTERISK'): array
     {
         $this->params = compact('uniq', 'duration', 'link', 'phone', 'source');
 
         return $this->createNote(__FUNCTION__);
     }
 
-    public function serviceMessage($text = 'Текст для примечания', $service = 'Сервис для примера')
+    /**
+     * @return array<mixed>
+     */
+    public function serviceMessage(string $text = 'Текст для примечания', string $service = 'Сервис для примера'): array
     {
         $this->params = compact('service', 'text');
 
         return $this->createNote(__FUNCTION__);
     }
 
-    public function messageCashier($status, $text)
+    /**
+     * @return array<mixed>
+     */
+    public function messageCashier(string $status, string $text): array
     {
         $this->params = compact('status', 'text'); //created, shown, canceled
 
         return $this->createNote(__FUNCTION__);
     }
 
-    public function invoicePaid($text, $service, $icon_url)
+    /**
+     * @return array<mixed>
+     */
+    public function invoicePaid(string $text, string $service, string $icon_url): array
     {
         $this->params = compact('text', 'service', 'icon_url');
 
         return $this->createNote(__FUNCTION__);
     }
 
-    public function geolocation($text, $address, $longitude, $latitude)
+    /**
+     * @return array<mixed>
+     */
+    public function geolocation(string $text, string $address, string $longitude, string $latitude): array
     {
         $this->params = compact('text', 'address', 'longitude', 'latitude');
 
         return $this->createNote(__FUNCTION__);
     }
 
-    public function smsIn($text, $phone)
+    /**
+     * @return array<mixed>
+     */
+    public function smsIn(string $text, string $phone): array
     {
         $this->params = compact('text', 'phone');
 
         return $this->createNote(__FUNCTION__);
     }
 
-    public function smsOut($text, $phone)
+    /**
+     * @return array<mixed>
+     */
+    public function smsOut(string $text, string $phone): array
     {
         $this->params = compact('text', 'phone');
 
         return $this->createNote(__FUNCTION__);
     }
 
-    private function createNote($type)
+    /**
+     * @return array<mixed>
+     */
+    private function createNote(string $type): array
     {
         $this->note_type = Str::snake($type);
 

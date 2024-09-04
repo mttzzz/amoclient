@@ -19,20 +19,33 @@ abstract class AbstractUnsorted
 
     public int $created_at;
 
-    protected $http;
+    protected PendingRequest $http;
 
-    protected $entity = 'leads/unsorted';
+    protected string $entity = 'leads/unsorted';
 
+    /**
+     * @var array<string, array<int, array<string, mixed>>>
+     */
     public array $_embedded = [];
 
+    /**
+     * @var array<string, mixed>
+     */
     public array $metadata = [];
 
-    public function __construct(?PendingRequest $http = null)
+    public function __construct(PendingRequest $http)
     {
         $this->http = $http;
     }
 
-    public function create()
+    /**
+     * Create a new unsorted entity.
+     *
+     * @return array<mixed>
+     *
+     * @throws AmoCustomException
+     */
+    public function create(): array
     {
         try {
             return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
@@ -41,7 +54,12 @@ abstract class AbstractUnsorted
         }
     }
 
-    public function toArray()
+    /**
+     * Convert the object to an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
     {
         unset($this->http);
         unset($this->entity);
@@ -49,17 +67,17 @@ abstract class AbstractUnsorted
         return (array) $this;
     }
 
-    public function addLead(Lead $lead)
+    public function addLead(Lead $lead): void
     {
         $this->_embedded['leads'][] = $lead->toArray();
     }
 
-    public function addContact(Contact $contact)
+    public function addContact(Contact $contact): void
     {
         $this->_embedded['contacts'][] = $contact->toArray();
     }
 
-    public function addCompany(Company $company)
+    public function addCompany(Company $company): void
     {
         $this->_embedded['companies'][] = $company->toArray();
     }

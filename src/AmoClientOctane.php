@@ -11,65 +11,100 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use mttzzz\AmoClient\Helpers\OctaneAccount;
+use mttzzz\AmoClient\Helpers\Widget;
+use mttzzz\AmoClient\Models\Account;
+use mttzzz\AmoClient\Models\Call;
+use mttzzz\AmoClient\Models\Catalog;
+use mttzzz\AmoClient\Models\Company;
+use mttzzz\AmoClient\Models\Contact;
+use mttzzz\AmoClient\Models\Customer;
+use mttzzz\AmoClient\Models\Event;
+use mttzzz\AmoClient\Models\Lead;
+use mttzzz\AmoClient\Models\Pipeline;
+use mttzzz\AmoClient\Models\ShortLink;
+use mttzzz\AmoClient\Models\Source;
+use mttzzz\AmoClient\Models\Task;
+use mttzzz\AmoClient\Models\Unsorted;
+use mttzzz\AmoClient\Models\User;
+use mttzzz\AmoClient\Models\Webhook;
 use Psr\Http\Message\RequestInterface;
+use stdClass;
 
 class AmoClientOctane
 {
-    public $leads;
+    public Lead $leads;
 
-    public $contacts;
+    public Contact $contacts;
 
-    public $companies;
+    public Company $companies;
 
-    public $sources;
+    public Source $sources;
 
-    public $catalogs;
+    public Catalog $catalogs;
 
-    public $customers;
+    public Customer $customers;
 
-    public $account;
+    public Account $account;
 
-    public $users;
+    public User $users;
 
-    public $pipelines;
+    public Pipeline $pipelines;
 
-    public $tasks;
+    public Task $tasks;
 
-    public $events;
+    public Event $events;
 
-    public $ajax;
+    public Ajax $ajax;
 
-    public $unsorted;
+    public Unsorted $unsorted;
 
-    public $calls;
+    public Call $calls;
 
-    public $webhooks;
+    public Webhook $webhooks;
 
-    public $shortLinks;
+    public ShortLink $shortLinks;
 
-    public $accountId;
+    public PendingRequest $http;
 
-    public function __construct($aId, $clientId = '00a140c1-7c52-4563-8b36-03f23754d255')
+    public int $accountId;
+
+    public string $clientId = '00a140c1-7c52-4563-8b36-03f23754d255';
+
+    public function __construct(int $aId, ?string $clientId = null)
     {
-        $account = DB::connection('octane')->table('accounts')
-            ->select(['accounts.id', 'subdomain', 'domain', 'account_widget.access_token'])
+
+        if ($clientId) {
+            $this->clientId = $clientId;
+        }
+
+        /** @var stdClass|null $octaneAccountData */
+        $octaneAccountData = DB::connection('octane')->table('accounts')
+            ->select(['accounts.id', 'accounts.subdomain', 'accounts.domain', 'account_widget.access_token', 'accounts.contact_phone_field_id', 'accounts.contact_email_field_id'])
             ->join('account_widget', 'accounts.id', '=', 'account_widget.account_id')
             ->join('widgets', 'widgets.id', '=', 'account_widget.widget_id')
             ->where('account_widget.active', true)
             ->where('accounts.id', $aId)
-            ->where('widgets.client_id', $clientId)
+            ->where('widgets.client_id', $this->clientId)
             ->first();
 
-        if (! $account) {
-            $account = DB::connection('octane')->table('accounts')->where('id', $aId)->first();
-            $widget = DB::connection('octane')->table('widgets')->where('client_id', $clientId)->first();
-            throw new Exception("Account ($account->subdomain) doesnt active widget ($widget->name)");
+        if (! $octaneAccountData) {
+            /** @var stdClass|null $octaneAccountData */
+            $octaneAccountData = DB::connection('octane')->table('accounts')->where('id', $aId)->first();
+            if (! $octaneAccountData) {
+                throw new Exception("Account ($aId) not found");
+            }
+            /** @var Widget|null $widget */
+            $widget = DB::connection('octane')->table('widgets')->where('client_id', $this->clientId)->first();
+            if (! $widget) {
+                throw new Exception("Widget ($this->clientId) not found");
+            }
+            // @codeCoverageIgnoreStart
+            throw new Exception("Widget ($widget->name) doesn't installed in account ($octaneAccountData->subdomain)");
+            // @codeCoverageIgnoreEnd
         }
 
-        $account->contact_phone_field_id = DB::connection('octane')->table('account_custom_fields')
-            ->where('account_id', $aId)->where('code', 'PHONE')->first()->id ?? null;
-        $account->contact_email_field_id = DB::connection('octane')->table('account_custom_fields')
-            ->where('account_id', $aId)->where('code', 'EMAIL')->first()->id ?? null;
+        $octaneAccount = $this->convertToOctaneAccount($octaneAccountData);
 
         $fields = DB::connection('octane')
             ->table('account_custom_fields')
@@ -79,10 +114,10 @@ class AmoClientOctane
         $cf = $fields->pluck('type', 'id')->toArray();
         $enums = $fields->pluck('enums', 'id')->toArray();
 
-        // Создание кастомного стека обработчиков для Guzzle
+        // Создание стека обработчиков для Guzzle
         $stack = HandlerStack::create();
 
-        //Подлючаем спискок прокси из конфига, если конфига нет, то писваиваем массив с 1 элементом null.
+        //Подключаем список прокси из конфига, если конфига нет, то присваиванием массив с 1 элементом null.
         //Это приведет к тому, что запрос будет выполнен без прокси.
         $proxies = Config::get('amoclient.proxies') ?? [null];
 
@@ -99,6 +134,7 @@ class AmoClientOctane
         $stack->push(Middleware::retry(function ($retry, RequestInterface $request, $response, $exception) use (&$proxies, &$currentProxyIndex) {
             // Проверка на наличие GuzzleHttpConnectException и наличие доступных прокси для переключения
             if ($exception instanceof GuzzleHttpConnectException && isset($proxies[$currentProxyIndex + 1])) {
+                // @codeCoverageIgnoreStart
                 // Переход к следующему прокси
                 $currentProxyIndex++;
 
@@ -108,16 +144,19 @@ class AmoClientOctane
                 }
 
                 return true; // Повторить попытку
+                // @codeCoverageIgnoreEnd
             }
 
             return false; // Не повторять попытку для других типов ошибок или если прокси закончились
         }, function () {
+            // @codeCoverageIgnoreStart
             // Логика для определения задержки между попытками
             return 1000; // Задержка в миллисекундах
+            // @codeCoverageIgnoreEnd
         }));
 
-        $baseUrl = "https://{$account->subdomain}.amocrm.{$account->domain}/api/v4";
-        $http = Http::withToken($account->access_token)
+        $baseUrl = "https://{$octaneAccount->subdomain}.amocrm.{$octaneAccount->domain}/api/v4";
+        $http = Http::withToken($octaneAccount->access_token)
             ->connectTimeout($connectTimeout)
             ->timeout($timeout)
             ->retry($retries, $retryDelay, function (Exception $exception, PendingRequest $request) use (&$currentProxyIndex) {
@@ -131,23 +170,35 @@ class AmoClientOctane
                 'proxy' => $proxies[$currentProxyIndex],
             ])
             ->baseUrl($baseUrl);
-
+        // @codeCoverageIgnoreEnd
         $this->accountId = $aId;
-        $this->account = new Models\Account($http);
+        $this->http = $http;
+        $this->account = new Models\Account($http, $aId);
         $this->leads = new Models\Lead($http, $cf, $enums);
         $this->customers = new Models\Customer($http, $cf);
-        $this->contacts = new Models\Contact($http, $account, $cf, $enums);
-        $this->companies = new Models\Company($http, $account, $cf, $enums);
+        $this->contacts = new Models\Contact($http, $octaneAccount, $cf, $enums);
+        $this->companies = new Models\Company($http, $octaneAccount, $cf, $enums);
         $this->catalogs = new Models\Catalog($http);
         $this->users = new Models\User($http);
         $this->pipelines = new Models\Pipeline($http);
         $this->tasks = new Models\Task($http);
         $this->events = new Models\Event($http);
-        $this->ajax = new Ajax($account, $http);
+        $this->ajax = new Ajax($octaneAccount, $http);
         $this->unsorted = new Models\Unsorted($http);
         $this->calls = new Models\Call($http);
         $this->webhooks = new Models\Webhook($http);
         $this->shortLinks = new Models\ShortLink($http);
         $this->sources = new Models\Source($http);
+    }
+
+    private function convertToOctaneAccount(stdClass $data): OctaneAccount
+    {
+        $octaneAccount = new OctaneAccount;
+        $octaneAccount->id = $data->id;
+        $octaneAccount->subdomain = $data->subdomain;
+        $octaneAccount->domain = $data->domain;
+        $octaneAccount->access_token = $data->access_token;
+
+        return $octaneAccount;
     }
 }

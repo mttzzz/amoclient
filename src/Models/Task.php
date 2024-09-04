@@ -10,108 +10,119 @@ class Task extends AbstractModel
 {
     use Traits\CrudTrait;
 
-    protected $entity = 'tasks';
-
     public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
+        $this->entity = 'tasks';
     }
 
-    public function entity($id = null)
+    public function entity(?int $id = null): Entities\Task
     {
         return new Entities\Task(['id' => $id], $this->http);
     }
 
-    public function find($id)
+    public function find(int $id): Entities\Task
     {
         return new Entities\Task($this->findEntity($id), $this->http);
     }
 
-    public function filterId($id)
+    /**
+     * @param  int|array<int>  $id
+     */
+    public function filterId(int|array $id): self
     {
         $this->filter['id'] = is_array($id) ? $id : (int) $id;
 
         return $this;
     }
 
-    public function filterResponsibleUserId($id)
+    /**
+     * @param  int|array<int>  $id
+     */
+    public function filterResponsibleUserId(int|array $id): self
     {
         $this->filter['responsible_user_id'] = is_array($id) ? $id : (int) $id;
 
         return $this;
     }
 
-    public function filterIsCompletedTrue()
+    public function filterIsCompletedTrue(): self
     {
         $this->filter['is_completed'] = true;
 
         return $this;
     }
 
-    public function filterIsCompletedFalse()
+    public function filterIsCompletedFalse(): self
     {
         $this->filter['is_completed'] = false;
 
         return $this;
     }
 
-    public function filterTaskType($type)
+    /**
+     * @param  int|array<int>  $type
+     */
+    public function filterTaskType(int|array $type): self
     {
-        $this->filter['task_type'] = $type;
+        $this->filter['task_type'] = is_array($type) ? $type : (int) $type;
 
         return $this;
     }
 
-    public function filterLead()
+    public function filterLead(): self
     {
         $this->filter['entity_type'] = 'leads';
 
         return $this;
     }
 
-    public function filterContact()
+    public function filterContact(): self
     {
         $this->filter['entity_type'] = 'contacts';
 
         return $this;
     }
 
-    public function filterCompany()
+    public function filterCompany(): self
     {
         $this->filter['entity_type'] = 'companies';
 
         return $this;
     }
 
-    public function filterCustomer()
+    public function filterCustomer(): self
     {
         $this->filter['entity_type'] = 'customers';
 
         return $this;
     }
 
-    public function filterEntityId($id)
+    /**
+     * @param  int|array<int>  $id
+     */
+    public function filterEntityId(int|array $id): self
     {
         $this->filter['entity_id'] = is_array($id) ? $id : (int) $id;
 
         return $this;
     }
 
-    public function filterUpdatedAt(int $from, int $to)
+    public function filterUpdatedAt(int $from, int $to): self
     {
         $this->filter['updated_at'] = ['from' => $from, 'to' => $to];
 
         return $this;
     }
 
-    public function orderByCompleteDesc()
+    public function orderByCompleteDesc(): self
     {
         $this->order['complete_till'] = 'desc';
 
         return $this;
     }
 
-    public function orderByCompleteAsc()
+    public function orderByCompleteAsc(): self
     {
         $this->order['complete_till'] = 'asc';
 

@@ -2,23 +2,35 @@
 
 namespace mttzzz\AmoClient\Traits;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 trait CrudTrait
 {
-    protected function findEntity($id)
+    /**
+     * @return array<mixed>
+     *
+     * @throws AmoCustomException
+     */
+    protected function findEntity(int $id): array
     {
         try {
             return $this->http->get($this->entity.'/'.$id,
                 ['with' => implode(',', $this->with)])
                 ->throw()->json() ?? [];
-        } catch (RequestException $e) {
+        } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
         }
     }
 
-    public function create(array $entities)
+    /**
+     * @param  array<mixed>  $entities
+     * @return array<mixed>
+     *
+     * @throws AmoCustomException
+     */
+    public function create(array $entities): array
     {
         try {
             if (! empty($entities)) {
@@ -27,12 +39,18 @@ trait CrudTrait
 
             return [];
 
-        } catch (RequestException $e) {
+        } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
         }
     }
 
-    public function update(array $entities)
+    /**
+     * @param  array<mixed>  $entities
+     * @return array<mixed>
+     *
+     * @throws AmoCustomException
+     */
+    public function update(array $entities): array
     {
         try {
             if (! empty($entities)) {
@@ -40,7 +58,7 @@ trait CrudTrait
             }
 
             return [];
-        } catch (RequestException $e) {
+        } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
         }
     }

@@ -8,8 +8,6 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Call extends AbstractEntity
 {
-    protected string $entity = 'calls';
-
     public string $direction;
 
     public string $uniq;
@@ -28,8 +26,6 @@ class Call extends AbstractEntity
 
     public int $call_status;
 
-    public int $responsible_user_id;
-
     public int $created_by;
 
     public ?int $updated_by;
@@ -41,9 +37,13 @@ class Call extends AbstractEntity
     public function __construct($data, PendingRequest $http)
     {
         parent::__construct($data, $http);
+        $this->entity = 'calls';
     }
 
-    public function create()
+    /**
+     * @return array<mixed>
+     */
+    public function create(): array
     {
         try {
             return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
@@ -52,164 +52,152 @@ class Call extends AbstractEntity
         }
     }
 
-    public function uniq(string $uniq)
+    public function uniq(string $uniq): self
     {
         $this->uniq = $uniq;
 
         return $this;
     }
 
-    public function duration(int $duration)
+    public function duration(int $duration): self
     {
         $this->duration = $duration;
 
         return $this;
     }
 
-    public function source(string $source)
+    public function source(string $source): self
     {
         $this->source = $source;
 
         return $this;
     }
 
-    public function link(string $link)
+    public function link(string $link): self
     {
         $this->link = $link;
 
         return $this;
     }
 
-    public function phone(string $phone)
+    public function phone(string $phone): self
     {
         $this->phone = $phone;
 
         return $this;
     }
 
-    public function result(string $result)
+    public function result(string $result): self
     {
         $this->call_result = $result;
 
         return $this;
     }
 
-    public function responsibleUserId(int $userId)
+    public function responsibleUserId(int $userId): self
     {
         $this->responsible_user_id = $userId;
 
         return $this;
     }
 
-    public function createdBy(int $userId)
+    public function createdBy(int $userId): self
     {
         $this->created_by = $userId;
 
         return $this;
     }
 
-    public function updatedBy(int $userId)
+    public function updatedBy(int $userId): self
     {
         $this->updated_by = $userId;
 
         return $this;
     }
 
-    public function createdAt(int $time)
+    public function createdAt(int $time): self
     {
         $this->created_at = $time;
 
         return $this;
     }
 
-    public function updatedAt(int $time)
+    public function updatedAt(int $time): self
     {
         $this->updated_at = $time;
 
         return $this;
     }
 
-    public function requestId(string $requestId)
+    public function requestId(string $requestId): self
     {
         $this->request_id = $requestId;
 
         return $this;
     }
 
-    public function direction($direction)
+    /**
+     * Sets the direction of the call.
+     *
+     * @param  string  $direction  The direction of the call. Possible values are "inbound" for incoming calls and "outbound" for outgoing calls.
+     */
+    private function direction(string $direction): self
     {
         $this->direction = $direction;
 
         return $this;
     }
 
-    public function directionOutbound()
+    public function directionOutbound(): self
     {
-        $this->direction = 'outbound';
-
-        return $this;
+        return $this->direction('outbound');
     }
 
-    public function directionInbound()
+    public function directionInbound(): self
     {
-        $this->direction = 'inbound';
+        return $this->direction('inbound');
 
-        return $this;
     }
 
-    public function status($status)
+    private function status(int $status): self
     {
         $this->call_status = $status;
 
         return $this;
     }
 
-    public function statusLeaveMessage()
+    public function statusLeaveMessage(): self
     {
-        $this->call_status = 1;
-
-        return $this;
+        return $this->status(1);
     }
 
-    public function statusCallLater()
+    public function statusCallLater(): self
     {
-        $this->call_status = 2;
-
-        return $this;
+        return $this->status(2);
     }
 
-    public function statusAbsent()
+    public function statusAbsent(): self
     {
-        $this->call_status = 3;
-
-        return $this;
+        return $this->status(3);
     }
 
-    public function statusSuccess()
+    public function statusSuccess(): self
     {
-        $this->call_status = 4;
-
-        return $this;
+        return $this->status(4);
     }
 
-    public function statusWrongNumber()
+    public function statusWrongNumber(): self
     {
-        $this->call_status = 5;
-
-        return $this;
+        return $this->status(5);
     }
 
-    public function statusError()
+    public function statusError(): self
     {
-        $this->call_status = 6;
-
-        return $this;
+        return $this->status(6);
     }
 
-    public function statusBusy()
+    public function statusBusy(): self
     {
-        $this->call_status = 7;
-
-        return $this;
+        return $this->status(7);
     }
 }

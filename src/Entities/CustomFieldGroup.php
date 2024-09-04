@@ -11,11 +11,14 @@ class CustomFieldGroup extends AbstractEntity
 
     protected string $entity;
 
-    public $name;
+    public string $name;
 
-    public $sort;
+    public int $sort;
 
-    public function __construct($data, PendingRequest $http, $entity)
+    /**
+     * @param  array<mixed>  $data
+     */
+    public function __construct(array $data, PendingRequest $http, string $entity)
     {
         $this->entity = $entity;
         parent::__construct($data, $http);

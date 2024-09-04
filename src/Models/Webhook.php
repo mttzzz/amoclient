@@ -7,19 +7,18 @@ use mttzzz\AmoClient\Entities;
 
 class Webhook extends AbstractModel
 {
-    protected $entity = 'webhooks';
-
     public function __construct(PendingRequest $http)
     {
         parent::__construct($http);
+        $this->entity = 'webhooks';
     }
 
-    public function entity($destination = null)
+    public function entity(?string $destination = null): Entities\Webhook
     {
         return new Entities\Webhook(['destination' => $destination], $this->http);
     }
 
-    public function find($destination = null)
+    public function find(string $destination): Entities\Webhook
     {
         $data = $this->http->get($this->entity, ['filter' => ['destination' => $destination]])->throw()->json() ?? [];
         if (isset($data['_embedded']['webhooks'][0])) {
