@@ -9,7 +9,7 @@ use mttzzz\AmoClient\Traits;
 
 class CatalogElement extends AbstractModel
 {
-    use Traits\CrudTrait, Traits\QueryTrait;
+    use Traits\CrudTrait, Traits\Filter\Common, Traits\QueryTrait;
 
     public function __construct(PendingRequest $http, int $catalogId)
     {
