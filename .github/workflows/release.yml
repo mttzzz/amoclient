@@ -70,7 +70,7 @@ jobs:
           minor_version=$(echo $latest_version | cut -d '.' -f 2)
           patch_version=$(echo $latest_version | cut -d '.' -f 3)
 
-          # Increment the minor version
+          # Increment the patch version
           new_patch_version=$((patch_version + 1))
 
           # Combine the major and new minor version to get the new version
