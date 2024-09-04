@@ -11,11 +11,11 @@ class Contact extends AbstractEntity
 {
     use Traits\CrudEntityTrait, Traits\CustomFieldTrait, Traits\EmailTrait, Traits\PhoneTrait, Traits\TagTrait;
 
-    public string $first_name;
+    public ?string $first_name;
 
-    public string $last_name;
+    public ?string $last_name;
 
-    public string $name;
+    public ?string $name;
 
     /**
      * @var array<mixed>

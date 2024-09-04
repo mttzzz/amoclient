@@ -14,7 +14,7 @@ class OctanePipeline
 {
     public int $id;
 
-    public string $name;
+    public ?string $name;
 
     public int $sort;
 
