@@ -20,16 +20,15 @@ trait CustomFieldTrait
      */
     protected array $enums = [];
 
-    public function setCFByCode(string $code, ?string $value): void
+    public function setCFByCode(string $code, mixed $value): void
     {
         $this->custom_fields_values[] = ['field_code' => $code, 'values' => [['value' => $value]]];
     }
 
     /**
-     * @param  int|null|string|array<string>  $value
      * @return $this
      */
-    public function setCF(int $id, int|string|array|null $value, bool $isEnumId = false): static
+    public function setCF(int $id, mixed $value, bool $isEnumId = false): static
     {
         $values = is_array($value) ? $value : [$value];
 
