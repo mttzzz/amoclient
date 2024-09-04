@@ -63,7 +63,6 @@ class CompanyTest extends BaseAmoClient
         $this->company->emailAdd('4444444444@example.com');
         $this->company->setCF(449501, '111111111111');
         $this->company->setCFByCode('ADDRESS', '222222222222222');
-
         $response = $this->company->update();
 
         $this->assertIsArray($response);

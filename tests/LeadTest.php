@@ -131,7 +131,10 @@ class LeadTest extends BaseAmoClient
 
     public function testLeadCreateGetId()
     {
+
+        $this->lead->setCF(449487, 879413, true);
         $id = $this->lead->createGetId();
+        $found = $this->amoClient->leads->find($id)->toArray();
         $this->assertIsInt($id);
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);

@@ -41,7 +41,7 @@ trait CustomFieldTrait
                 $this->custom_fields_values[] = ['field_id' => $id, 'values' => null];
             } else {
                 $enums = Arr::pluck(json_decode($this->enums[$id], true), 'value', 'id');
-                if (in_array($value, $enums) || (is_string($value) && array_key_exists($value, $enums)) || in_array('WORK', $enums)) {
+                if (in_array($value, $enums) || array_key_exists($value, $enums) || in_array('WORK', $enums)) {
                     $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
                 }
             }
