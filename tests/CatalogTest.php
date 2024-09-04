@@ -105,8 +105,10 @@ class CatalogTest extends BaseAmoClient
         $elements = $catalog->elements->get();
 
         $find = $catalog->elements->find($elements[0]['id']);
-
         $this->assertEquals($elements[0]['id'], $find->id);
+
+        $filter = $catalog->elements->filterId($elements[0]['id'])->get();
+        $this->assertEquals($elements[0]['id'], $filter[0]['id']);
 
         $elementEntity->id = $elements[0]['id'];
         $elementEntity->name = 'test 3';
