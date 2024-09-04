@@ -4,7 +4,7 @@ namespace mttzzz\AmoClient\Traits\Filter;
 
 trait Common
 {
-    public function filterId(int $id): self
+    public function filterId(int|array $id): self
     {
         $this->filter['id'] = $id;
 
@@ -32,7 +32,7 @@ trait Common
         return $this;
     }
 
-    public function filterResponsibleUserId(int $id): self
+    public function filterResponsibleUserId(int|array $id): self
     {
         $this->filter['responsible_user_id'] = $id;
 
