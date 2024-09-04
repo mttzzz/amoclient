@@ -29,6 +29,8 @@ class Company extends AbstractEntity
 
     public Models\Link $links;
 
+    public int $created_by;
+
     /**
      * @param  array<mixed>  $data
      * @param  array<mixed>  $cf

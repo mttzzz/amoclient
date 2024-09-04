@@ -27,6 +27,8 @@ class Customer extends AbstractEntity
 
     public int $next_date;
 
+    public int $created_by;
+
     /**
      * @var array<mixed>
      */

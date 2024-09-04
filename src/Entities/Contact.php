@@ -17,6 +17,8 @@ class Contact extends AbstractEntity
 
     public ?string $name;
 
+    public int $created_by;
+
     /**
      * @var array<mixed>
      */
