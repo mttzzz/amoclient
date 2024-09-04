@@ -28,9 +28,9 @@ trait Lead
     }
 
     /**
-     * @param  array<mixed>  $pipelines
+     * @param  int|array<mixed>  $pipelines
      */
-    public function filterPipelines(array $pipelines): self
+    public function filterPipelines(int|array $pipelines): self
     {
         $this->filter['pipeline_id'] = $pipelines;
 
