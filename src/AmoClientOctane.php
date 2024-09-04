@@ -170,9 +170,7 @@ class AmoClientOctane
                 'proxy' => $proxies[$currentProxyIndex],
             ])
             ->baseUrl($baseUrl);
-        /**
-         * @codeCoverageIgnoreEnd
-         */
+        // @codeCoverageIgnoreEnd
         $this->accountId = $aId;
         $this->http = $http;
         $this->account = new Models\Account($http, $aId);

@@ -27,6 +27,10 @@ class LinkTest extends BaseAmoClient
         $found2 = $this->amoClient->contacts->withCustomers()->find($contactId)->toArray();
         $this->assertEquals($found2['_embedded']['customers'][0]['id'], $customerId);
 
+        $this->amoClient->contacts->entity($contactId)->links->customers($customerId)->unlink();
+        $this->amoClient->leads->entity($leadId)->links->contact($contactId)->unlink();
+        $this->amoClient->leads->entity($leadId)->links->companies($companyId)->unlink();
+
         $response = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$contactId]]);
         $this->assertEquals('success', $response['status']);
 
@@ -118,6 +122,34 @@ class LinkTest extends BaseAmoClient
         } finally {
 
             $response = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$contactId]]);
+            $this->assertEquals('success', $response['status']);
+        }
+
+    }
+
+    public function testLinkException()
+    {
+        $leadId = $this->amoClient->leads->entityData(['name' => 'test'])->createGetId();
+        $this->expectException(AmoCustomException::class);
+
+        try {
+            $this->amoClient->leads->entity()->links->companies(999999999999999999)->link();
+        } finally {
+            $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);
+            $this->assertEquals('success', $response['status']);
+        }
+
+    }
+
+    public function testUnLinkException()
+    {
+        $leadId = $this->amoClient->leads->entityData(['name' => 'test'])->createGetId();
+        $this->expectException(AmoCustomException::class);
+
+        try {
+            $this->amoClient->leads->entity()->links->companies(999999999999999999)->unlink();
+        } finally {
+            $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);
             $this->assertEquals('success', $response['status']);
         }
 

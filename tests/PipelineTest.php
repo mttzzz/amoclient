@@ -2,6 +2,7 @@
 
 namespace mttzzz\AmoClient\Tests;
 
+use Illuminate\Support\Collection;
 use mttzzz\AmoClient\Entities\Pipeline;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use PHPUnit\Framework\Attributes\Depends;
@@ -113,5 +114,19 @@ class PipelineTest extends BaseAmoClient
         $pipeline = $this->amoClient->pipelines->entity();
         $this->expectException(AmoCustomException::class);
         $pipeline->update();
+    }
+
+    public function testPipelineStatuses()
+    {
+        $pipeline = $this->amoClient->pipelines->entity();
+        $this->assertInstanceOf(Collection::class, $pipeline->statuses());
+        $this->assertEmpty($pipeline->statuses());
+
+        $pipeline2 = $this->amoClient->pipelines->entity();
+        $pipeline2->addStatus('статус 1', 1, '#fffeb2');
+        $pipeline2->statuses();
+        $this->assertInstanceOf(Collection::class, $pipeline2->statuses());
+        $this->assertEquals(1, $pipeline2->statuses()->count());
+
     }
 }

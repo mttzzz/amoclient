@@ -35,8 +35,10 @@ class Source extends AbstractEntity
     {
         try {
             return $this->http->delete($this->entity.'/'.$this->id)->throw()->json();
+            // @codeCoverageIgnoreStart
         } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
+            // @codeCoverageIgnoreEnd
         }
     }
 }

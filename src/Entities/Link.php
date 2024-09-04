@@ -40,10 +40,7 @@ class Link extends AbstractEntity
         }
     }
 
-    /**
-     * @return array<mixed>
-     */
-    public function unlink(): array
+    public function unlink(): null
     {
         $str = Str::beforeLast($this->entity, '/');
         try {

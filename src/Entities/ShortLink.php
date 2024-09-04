@@ -34,11 +34,7 @@ class ShortLink extends AbstractEntity
 
     public function createGetUrl(): string
     {
-        try {
-            return $this->http->post($this->entity, [$this->toArray()])->throw()->json()['_embedded']['short_links'][0]['url'];
-        } catch (RequestException $e) {
-            throw new AmoCustomException($e);
-        }
+        return $this->create()['_embedded']['short_links'][0]['url'];
     }
 
     public function url(string $url): self
