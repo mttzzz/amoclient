@@ -175,7 +175,7 @@ class Lead extends AbstractEntity
         return $quantity;
     }
 
-    public function getCatalogElementQuantity(int $catalogId, int $elementId): int
+    public function getCatalogElementQuantity(int $catalogId, int $elementId): float|int
     {
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
         foreach ($catalogElementIds as $key => $catalogElementId) {

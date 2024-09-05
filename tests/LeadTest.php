@@ -309,4 +309,21 @@ class LeadTest extends BaseAmoClient
         $this->assertEquals('success', $response['status']);
 
     }
+
+    public function testLeadGetCatalogElementFloatQuantity()
+    {
+        $catalogId = 4265;
+        $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
+        $this->lead->name = 'testLeadGetCatalogElementFloatQuantity';
+        $id = $this->lead->createGetId();
+        $this->amoClient->leads->entity($id)->links->catalogElement($catalogElements[0]['id'], $catalogId, 11.5)->link();
+
+        $lead = $this->amoClient->leads->withCatalogElements()->find($id);
+        $quantity = $lead->getCatalogElementQuantity($catalogId, $catalogElements[0]['id']);
+        $this->assertEquals(11.5, $quantity);
+
+        $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
+        $this->assertEquals('success', $response['status']);
+
+    }
 }

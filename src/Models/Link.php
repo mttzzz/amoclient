@@ -22,14 +22,14 @@ class Link extends AbstractModel
         return new Entities\Link(['id' => $id], $this->http, $this->entity);
     }
 
-    public function catalogElement(int $catalogElementId, int $catalogId, ?int $quantity = null): Entities\Link
+    public function catalogElement(int $catalogElementId, int $catalogId, int|float|null $quantity = null): Entities\Link
     {
         $entity = new Entities\Link(['id' => null], $this->http, $this->entity);
         $entity->to_entity_id = (int) $catalogElementId;
         $entity->to_entity_type = 'catalog_elements';
         $entity->metadata['catalog_id'] = (int) $catalogId;
         if ($quantity) {
-            $entity->metadata['quantity'] = (int) $quantity;
+            $entity->metadata['quantity'] = (float) $quantity;
         }
 
         return $entity;
