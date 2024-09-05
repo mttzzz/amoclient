@@ -31,6 +31,8 @@ class OctanePipeline
     public string $created_at;
 
     public string $updated_at;
+
+    public bool $is_price_computed;
 }
 
 class Lead extends AbstractEntity
