@@ -9,8 +9,9 @@ class CatalogElement extends AbstractEntity
 {
     use Traits\CrudEntityTrait, Traits\CustomFieldTrait;
 
-    //TODO обязательно протестировать
     public string $name;
+
+    public int $created_by;
 
     /**
      * @var array<mixed>
