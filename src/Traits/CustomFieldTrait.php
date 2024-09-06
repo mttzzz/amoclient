@@ -46,7 +46,7 @@ trait CustomFieldTrait
                     $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
                 }
             }
-        } elseif (is_array($this->cf) && is_string($value) && array_key_exists($id, $this->cf)) {
+        } elseif (array_key_exists($id, $this->cf)) {
             $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
         }
 
