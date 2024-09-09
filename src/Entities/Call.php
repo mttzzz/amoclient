@@ -159,7 +159,7 @@ class Call extends AbstractEntity
 
     }
 
-    private function status(int $status): self
+    public function status(int $status): self
     {
         $this->call_status = $status;
 
