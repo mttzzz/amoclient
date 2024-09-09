@@ -141,7 +141,7 @@ class Call extends AbstractEntity
      *
      * @param  string  $direction  The direction of the call. Possible values are "inbound" for incoming calls and "outbound" for outgoing calls.
      */
-    private function direction(string $direction): self
+    public function direction(string $direction): self
     {
         $this->direction = $direction;
 
