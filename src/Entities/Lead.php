@@ -31,8 +31,6 @@ class OctanePipeline
     public string $created_at;
 
     public string $updated_at;
-
-    public bool $is_price_computed;
 }
 
 class Lead extends AbstractEntity
@@ -61,6 +59,8 @@ class Lead extends AbstractEntity
     public int $group_id;
 
     public int $created_by;
+
+    public bool $is_price_computed;
 
     /**
      * @var array<mixed>
