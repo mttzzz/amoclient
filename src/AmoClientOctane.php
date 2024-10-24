@@ -159,7 +159,8 @@ class AmoClientOctane
         $http = Http::withToken($octaneAccount->access_token)
             ->connectTimeout($connectTimeout)
             ->timeout($timeout)
-            ->retry($retries, $retryDelay, function (Exception $exception, PendingRequest $request) use (&$currentProxyIndex) {
+            //->retry($retries, $retryDelay, function (Exception $exception, PendingRequest $request) use (&$currentProxyIndex) {
+            ->retry($retries, $retryDelay, function (Exception $exception) use (&$currentProxyIndex) {
                 $currentProxyIndex = 0; // Обнуляем индекс, чтобы при каждом новом ретрае сначала пробовать без прокси и потом по очередности с указанными прокси если они есть
 
                 //ретраить будем, только если HttpClientConnectionException, остальные ошибки ретраить не будем.
