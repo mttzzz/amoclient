@@ -42,7 +42,7 @@ class Company extends AbstractEntity
         $this->entity = 'companies';
         $this->cf = $cf;
         $this->enums = $enums;
-        //TODO:  сделать одинаково
+        // TODO:  сделать одинаково
         $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");

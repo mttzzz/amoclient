@@ -52,7 +52,7 @@ trait CustomFieldTrait
         return $this;
     }
 
-    //TODO: refactor ИЗБАВИТЬСЯ ОТ MIXED
+    // TODO: refactor ИЗБАВИТЬСЯ ОТ MIXED
     private function setValue(int $id, mixed $value): mixed
     {
         if ($type = $this->cf[$id] ?? null) {

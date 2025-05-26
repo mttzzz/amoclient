@@ -13,7 +13,7 @@ class AjaxTest extends BaseAmoClient
 
     }
 
-    public function testGet()
+    public function test_get()
     {
         $account = new OctaneAccount;
         $account->domain = 'domain';
@@ -26,7 +26,7 @@ class AjaxTest extends BaseAmoClient
         $this->assertEquals(1, $response['id']);
     }
 
-    public function testPostJson()
+    public function test_post_json()
     {
         $account = new OctaneAccount;
         $account->domain = 'domain';
@@ -38,7 +38,7 @@ class AjaxTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $response);
     }
 
-    public function testPostForm()
+    public function test_post_form()
     {
         $account = new OctaneAccount;
         $account->domain = 'domain';
@@ -50,7 +50,7 @@ class AjaxTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $response);
     }
 
-    public function testPatch()
+    public function test_patch()
     {
         $account = new OctaneAccount;
         $account->domain = 'domain';
@@ -63,7 +63,7 @@ class AjaxTest extends BaseAmoClient
         $this->assertEquals(1, $response['id']);
     }
 
-    public function testDelete()
+    public function test_delete()
     {
         $account = new OctaneAccount;
         $account->domain = 'domain';

@@ -4,7 +4,7 @@ namespace mttzzz\AmoClient\Tests;
 
 class ShortLinkTest extends BaseAmoClient
 {
-    public function testShortLink()
+    public function test_short_link()
     {
 
         $contactId = $this->amoClient->contacts->entityData(['name' => 'test'])->createGetId();

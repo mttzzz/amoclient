@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\Depends;
 #[CoversMethod(AmoClientOctane::class, '__construct')]
 class AmoClientOctaneTest extends BaseAmoClient
 {
-    public function testAmoClientOctane()
+    public function test_amo_client_octane()
     {
         $this->assertInstanceOf(AmoClientOctane::class, $this->amoClient);
         $this->assertEquals(16117840, $this->amoClient->accountId);
@@ -34,7 +34,7 @@ class AmoClientOctaneTest extends BaseAmoClient
     }
 
     #[Depends('testAmoClientOctane')]
-    public function testAccountNotFound()
+    public function test_account_not_found()
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Account (999999999999) not found');
@@ -43,7 +43,7 @@ class AmoClientOctaneTest extends BaseAmoClient
     }
 
     #[Depends('testAccountNotFound')]
-    public function testWidgetNotFound()
+    public function test_widget_not_found()
     {
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('Widget (invalid-client-id) not found');

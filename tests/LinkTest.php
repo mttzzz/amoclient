@@ -7,7 +7,7 @@ use mttzzz\AmoClient\Models\Link;
 
 class LinkTest extends BaseAmoClient
 {
-    public function testLink()
+    public function test_link()
     {
 
         $leadId = $this->amoClient->leads->entityData(['name' => 'test'])->createGetId();
@@ -45,7 +45,7 @@ class LinkTest extends BaseAmoClient
 
     }
 
-    public function testLinkCustomerException()
+    public function test_link_customer_exception()
     {
 
         $this->expectExceptionMessage('Customer can be linked only to contact or company');
@@ -53,7 +53,7 @@ class LinkTest extends BaseAmoClient
 
     }
 
-    public function testLinkArrayOfEntities()
+    public function test_link_array_of_entities()
     {
 
         $leadId = $this->amoClient->leads->entityData(['name' => 'test'])->createGetId();
@@ -93,7 +93,7 @@ class LinkTest extends BaseAmoClient
 
     }
 
-    public function testLinkArrayOfEntitiesExceptionLink()
+    public function test_link_array_of_entities_exception_link()
     {
         $contactId = $this->amoClient->contacts->entityData(['name' => 'test'])->createGetId();
         $entity = (new Link($this->amoClient->http, 'leads'))->entity();
@@ -110,7 +110,7 @@ class LinkTest extends BaseAmoClient
 
     }
 
-    public function testLinkArrayOfEntitiesExceptionUnlink()
+    public function test_link_array_of_entities_exception_unlink()
     {
         $contactId = $this->amoClient->contacts->entityData(['name' => 'test'])->createGetId();
         $entity = (new Link($this->amoClient->http, 'leads'))->entity();
@@ -127,7 +127,7 @@ class LinkTest extends BaseAmoClient
 
     }
 
-    public function testLinkException()
+    public function test_link_exception()
     {
         $leadId = $this->amoClient->leads->entityData(['name' => 'test'])->createGetId();
         $this->expectException(AmoCustomException::class);
@@ -141,7 +141,7 @@ class LinkTest extends BaseAmoClient
 
     }
 
-    public function testUnLinkException()
+    public function test_un_link_exception()
     {
         $leadId = $this->amoClient->leads->entityData(['name' => 'test'])->createGetId();
         $this->expectException(AmoCustomException::class);

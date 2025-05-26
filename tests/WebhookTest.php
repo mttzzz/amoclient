@@ -4,7 +4,7 @@ namespace mttzzz\AmoClient\Tests;
 
 class WebhookTest extends BaseAmoClient
 {
-    public function testWebhook()
+    public function test_webhook()
     {
         $destination = 'https://webhook.site/a895608c-8b4a-453e-8359-4ed5d42bb454';
         $entity = $this->amoClient->webhooks->entity($destination);

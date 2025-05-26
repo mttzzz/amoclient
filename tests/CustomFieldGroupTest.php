@@ -17,7 +17,7 @@ class CustomFieldGroupTest extends BaseAmoClient
         $this->customFieldGroup = new CustomFieldGroupModel($this->amoClient->http, 'leads');
     }
 
-    public function testCustomFieldGroupEntity()
+    public function test_custom_field_group_entity()
     {
         $customFieldGroupEntity = $this->customFieldGroup->entity(123);
 

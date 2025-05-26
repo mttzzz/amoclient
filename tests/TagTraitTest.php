@@ -4,7 +4,7 @@ namespace mttzzz\AmoClient\Tests;
 
 class TagTraitTest extends BaseAmoClient
 {
-    public function testTagSingle()
+    public function test_tag_single()
     {
         $tag = 'test1';
         $lead = $this->amoClient->leads->entity();
@@ -18,7 +18,7 @@ class TagTraitTest extends BaseAmoClient
         $this->assertEquals('success', $response['status']);
     }
 
-    public function testTagArray()
+    public function test_tag_array()
     {
         $tags = ['test1', 'test2'];
         $lead = $this->amoClient->leads->entity();
@@ -34,7 +34,7 @@ class TagTraitTest extends BaseAmoClient
         $this->assertEquals('success', $response['status']);
     }
 
-    public function testTagNull()
+    public function test_tag_null()
     {
         $lead = $this->amoClient->leads->entity();
         $lead->tag(null);

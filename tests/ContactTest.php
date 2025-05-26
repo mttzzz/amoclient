@@ -26,14 +26,14 @@ class ContactTest extends BaseAmoClient
         $this->amoClient->contacts->entityData($this->data);
     }
 
-    public function testContactEntity()
+    public function test_contact_entity()
     {
         $this->assertInstanceOf(Contact::class, $this->contact);
         $this->assertEquals($this->data['name'], $this->contact->name);
     }
 
     #[Depends('testContactEntity')]
-    public function testContactCreate()
+    public function test_contact_create()
     {
         $response = $this->contact->create();
 
@@ -50,7 +50,7 @@ class ContactTest extends BaseAmoClient
     }
 
     #[Depends('testContactCreate')]
-    public function testContactUpdate(int $contactId)
+    public function test_contact_update(int $contactId)
     {
         $newName = 'Test Contact 2';
         $this->contact->id = $contactId;
@@ -121,7 +121,7 @@ class ContactTest extends BaseAmoClient
     }
 
     #[Depends('testContactCreate')]
-    public function testContactGetLeadIds(int $companyId)
+    public function test_contact_get_lead_ids(int $companyId)
     {
         $this->contact->id = $companyId;
         $leadIds = $this->contact->getLeadIds();
@@ -131,7 +131,7 @@ class ContactTest extends BaseAmoClient
     }
 
     #[Depends('testContactCreate')]
-    public function testContactCustomFields(int $contactId)
+    public function test_contact_custom_fields(int $contactId)
     {
         $customFields = $this->amoClient->contacts->customFields()->get();
         $this->assertIsArray($customFields);
@@ -141,7 +141,7 @@ class ContactTest extends BaseAmoClient
     }
 
     #[Depends('testContactCreate')]
-    public function testContactQuery(int $contactId)
+    public function test_contact_query(int $contactId)
     {
         $query = $this->amoClient->contacts->query('Test Contact')
             ->withLeads()
@@ -167,13 +167,13 @@ class ContactTest extends BaseAmoClient
     #[Depends('testContactUpdate')]
     #[Depends('testContactCustomFields')]
     #[Depends('testContactQuery')]
-    public function testContactDelete(int $contactId)
+    public function test_contact_delete(int $contactId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$contactId]]);
         $this->assertEquals('success', $response['status']);
     }
 
-    public function testContactCreateGetId()
+    public function test_contact_create_get_id()
     {
         $id = $this->contact->createGetId();
         $this->assertIsInt($id);
@@ -182,7 +182,7 @@ class ContactTest extends BaseAmoClient
         $this->assertEquals('success', $response['status']);
     }
 
-    public function testContactNotFound()
+    public function test_contact_not_found()
     {
         $response = $this->amoClient->contacts->find(112322222222222222);
         $this->assertInstanceOf(Contact::class, $this->contact);
@@ -190,13 +190,13 @@ class ContactTest extends BaseAmoClient
         $this->assertEmpty($response->toArray());
     }
 
-    public function testContactSetResponsibleUser()
+    public function test_contact_set_responsible_user()
     {
         $this->contact->setResponsibleUser($this->amoClient->accountId, 1693819);
         $this->assertEquals($this->contact->responsible_user_id, 1693819);
     }
 
-    public function testContactGetResponsibleName()
+    public function test_contact_get_responsible_name()
     {
         $this->contact->setResponsibleUser($this->amoClient->accountId, 1693819);
         $this->assertEquals('Кирилл Егоров', $this->contact->getResponsibleName());

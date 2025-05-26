@@ -35,7 +35,7 @@ class AmoClientServiceProviderTest extends TestCase
         $this->serviceProvider = new AmoClientServiceProvider($this->app);
     }
 
-    public function testRegister()
+    public function test_register()
     {
         $this->serviceProvider->register();
 
@@ -43,7 +43,7 @@ class AmoClientServiceProviderTest extends TestCase
         $this->assertNotNull($config); // Проверка, что конфигурация была загружена
     }
 
-    public function testProvides()
+    public function test_provides()
     {
         $provides = $this->serviceProvider->provides();
 

@@ -26,14 +26,14 @@ class CompanyTest extends BaseAmoClient
         $this->amoClient->companies->entityData($this->data);
     }
 
-    public function testCompanyEntity()
+    public function test_company_entity()
     {
         $this->assertInstanceOf(Company::class, $this->company);
         $this->assertEquals($this->data['name'], $this->company->name);
     }
 
     #[Depends('testCompanyEntity')]
-    public function testCompanyCreate()
+    public function test_company_create()
     {
         $response = $this->company->create();
 
@@ -50,7 +50,7 @@ class CompanyTest extends BaseAmoClient
     }
 
     #[Depends('testCompanyCreate')]
-    public function testCompanyUpdate(int $companyId)
+    public function test_company_update(int $companyId)
     {
         $newName = 'Test Company 2';
         $this->company->id = $companyId;
@@ -120,7 +120,7 @@ class CompanyTest extends BaseAmoClient
     }
 
     #[Depends('testCompanyCreate')]
-    public function testCompanyGetLeadIds(int $companyId)
+    public function test_company_get_lead_ids(int $companyId)
     {
         $this->company->id = $companyId;
         $leadIds = $this->company->getLeadIds();
@@ -130,7 +130,7 @@ class CompanyTest extends BaseAmoClient
     }
 
     #[Depends('testCompanyCreate')]
-    public function testCompanyCustomFields(int $companyId)
+    public function test_company_custom_fields(int $companyId)
     {
         $customFields = $this->amoClient->companies->customFields()->get();
         $this->assertIsArray($customFields);
@@ -140,7 +140,7 @@ class CompanyTest extends BaseAmoClient
     }
 
     #[Depends('testCompanyCreate')]
-    public function testCompanyQuery(int $companyId)
+    public function test_company_query(int $companyId)
     {
         $query = $this->amoClient->companies->query('Test Company')
             ->withContacts()
@@ -170,7 +170,7 @@ class CompanyTest extends BaseAmoClient
     #[Depends('testCompanyUpdate')]
     #[Depends('testCompanyQuery')]
     #[Depends('testCompanyCustomFields')]
-    public function testCompanyDelete(int $companyId)
+    public function test_company_delete(int $companyId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/companies/multiple/delete/', ['ID' => [$companyId]]);
         $this->assertIsArray($response);
@@ -178,7 +178,7 @@ class CompanyTest extends BaseAmoClient
         $this->assertEquals('success', $response['status']);
     }
 
-    public function testCompanyCreateGetId()
+    public function test_company_create_get_id()
     {
         $id = $this->company->createGetId();
         $this->assertIsInt($id);
@@ -189,7 +189,7 @@ class CompanyTest extends BaseAmoClient
         $this->assertEquals('success', $response['status']);
     }
 
-    public function testCompanyNotFound()
+    public function test_company_not_found()
     {
         $response = $this->amoClient->companies->find(112322222222222222);
         $this->assertInstanceOf(Company::class, $this->company);
@@ -197,13 +197,13 @@ class CompanyTest extends BaseAmoClient
         $this->assertEmpty($response->toArray());
     }
 
-    public function testCompanySetResponsibleUser()
+    public function test_company_set_responsible_user()
     {
         $this->company->setResponsibleUser($this->amoClient->accountId, 1693819);
         $this->assertEquals($this->company->responsible_user_id, 1693819);
     }
 
-    public function testCompanyGetResponsibleName()
+    public function test_company_get_responsible_name()
     {
         $this->company->setResponsibleUser($this->amoClient->accountId, 1693819);
         $this->assertEquals('Кирилл Егоров', $this->company->getResponsibleName());

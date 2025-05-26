@@ -7,7 +7,7 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class CallTest extends BaseAmoClient
 {
-    public function testCallCreate()
+    public function test_call_create()
     {
         $phone = '375296117699';
         $link = 'https://ya.ru';
@@ -46,7 +46,7 @@ class CallTest extends BaseAmoClient
 
     }
 
-    public function testCallFilterByResult()
+    public function test_call_filter_by_result()
     {
         $call = $this->amoClient->calls->entity();
         $this->expectException(AmoCustomException::class);
@@ -54,7 +54,7 @@ class CallTest extends BaseAmoClient
 
     }
 
-    public function testCallCreateException()
+    public function test_call_create_exception()
     {
         $call = $this->amoClient->calls->entity();
         $this->expectException(AmoCustomException::class);

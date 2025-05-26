@@ -4,14 +4,14 @@ namespace mttzzz\AmoClient\Tests;
 
 class EventTest extends BaseAmoClient
 {
-    public function testGetEvents()
+    public function test_get_events()
     {
         $events = $this->amoClient->events->limit(10)->get();
         $this->assertIsArray($events);
         $this->assertGreaterThanOrEqual(0, count($events));
     }
 
-    public function testFilterById()
+    public function test_filter_by_id()
     {
         $events = $this->amoClient->events->limit(1)->get();
         $this->assertIsArray($events);
@@ -19,7 +19,7 @@ class EventTest extends BaseAmoClient
         $this->assertEquals($events[0]['id'], $filtered[0]['id']);
     }
 
-    public function testFilterByCreatedAt()
+    public function test_filter_by_created_at()
     {
         $createdAt = time() - 3600;
         $events = $this->amoClient->events->createdAt($createdAt, time())->limit(10)->get();
@@ -29,7 +29,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByCreatedBy()
+    public function test_filter_by_created_by()
     {
         $createdById = 1693819;
         $events = $this->amoClient->events->createdBy($createdById)->limit(10)->get();
@@ -39,7 +39,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByEntityLead()
+    public function test_filter_by_entity_lead()
     {
         $lead = $this->amoClient->leads->limit(1)->get()[0];
         $events = $this->amoClient->events->lead($lead['id'])->limit(10)->get();
@@ -49,7 +49,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByEntityContact()
+    public function test_filter_by_entity_contact()
     {
         $contact = $this->amoClient->contacts->limit(1)->get()[0];
         $events = $this->amoClient->events->contact($contact['id'])->limit(10)->get();
@@ -59,7 +59,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByEntityCompany()
+    public function test_filter_by_entity_company()
     {
         $company = $this->amoClient->companies->limit(1)->get()[0];
         $events = $this->amoClient->events->company($company['id'])->limit(10)->get();
@@ -69,7 +69,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByEntityCustomer()
+    public function test_filter_by_entity_customer()
     {
         $customer = $this->amoClient->customers->limit(1)->get()[0];
         $events = $this->amoClient->events->customer($customer['id'])->limit(10)->get();
@@ -79,7 +79,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByEntityTask()
+    public function test_filter_by_entity_task()
     {
         $task = $this->amoClient->tasks->limit(1)->get()[0];
         $events = $this->amoClient->events->task($task['id'])->limit(10)->get();
@@ -89,7 +89,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByEntityCatalog()
+    public function test_filter_by_entity_catalog()
     {
         $catalog = $this->amoClient->catalogs->limit(1)->get()[0];
         $catalogElements = $this->amoClient->catalogs->entity($catalog['id'])->elements->get();
@@ -101,7 +101,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeLeadAdded()
+    public function test_filter_by_type_lead_added()
     {
         $events = $this->amoClient->events->typeLeadAdded()->limit(2)->get();
         $this->assertIsArray($events);
@@ -110,7 +110,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeLeadDeleted()
+    public function test_filter_by_type_lead_deleted()
     {
         $events = $this->amoClient->events->typeLeadDeleted()->limit(10)->get();
         $this->assertIsArray($events);
@@ -119,7 +119,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeLeadRestored()
+    public function test_filter_by_type_lead_restored()
     {
         $events = $this->amoClient->events->typeLeadRestored()->limit(10)->get();
         $this->assertIsArray($events);
@@ -128,7 +128,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeLeadStatusChanged()
+    public function test_filter_by_type_lead_status_changed()
     {
         $events = $this->amoClient->events->typeLeadStatusChanged()->limit(10)->get();
         $this->assertIsArray($events);
@@ -137,7 +137,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeLeadLinked()
+    public function test_filter_by_type_lead_linked()
     {
         $events = $this->amoClient->events->typeLeadLinked()->limit(10)->get();
         $this->assertIsArray($events);
@@ -146,7 +146,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeLeadUnlinked()
+    public function test_filter_by_type_lead_unlinked()
     {
         $events = $this->amoClient->events->typeLeadUnlinked()->limit(10)->get();
         $this->assertIsArray($events);
@@ -155,7 +155,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeContactAdded()
+    public function test_filter_by_type_contact_added()
     {
         $events = $this->amoClient->events->typeContactAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -164,7 +164,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeContactDeleted()
+    public function test_filter_by_type_contact_deleted()
     {
         $events = $this->amoClient->events->typeContactDeleted()->limit(10)->get();
         $this->assertIsArray($events);
@@ -173,7 +173,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeContactRestored()
+    public function test_filter_by_type_contact_restored()
     {
         $events = $this->amoClient->events->typeContactRestored()->limit(10)->get();
         $this->assertIsArray($events);
@@ -182,7 +182,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeContactLinked()
+    public function test_filter_by_type_contact_linked()
     {
         $events = $this->amoClient->events->typeContactLinked()->limit(10)->get();
         $this->assertIsArray($events);
@@ -191,7 +191,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeContactUnlinked()
+    public function test_filter_by_type_contact_unlinked()
     {
         $events = $this->amoClient->events->typeContactUnlinked()->limit(10)->get();
         $this->assertIsArray($events);
@@ -200,7 +200,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCompanyAdded()
+    public function test_filter_by_type_company_added()
     {
         $events = $this->amoClient->events->typeCompanyAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -209,7 +209,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCompanyDeleted()
+    public function test_filter_by_type_company_deleted()
     {
         $events = $this->amoClient->events->typeCompanyDeleted()->limit(10)->get();
         $this->assertIsArray($events);
@@ -218,7 +218,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCompanyRestored()
+    public function test_filter_by_type_company_restored()
     {
         $events = $this->amoClient->events->typeCompanyRestored()->limit(10)->get();
         $this->assertIsArray($events);
@@ -227,7 +227,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCompanyLinked()
+    public function test_filter_by_type_company_linked()
     {
         $events = $this->amoClient->events->typeCompanyLinked()->limit(10)->get();
         $this->assertIsArray($events);
@@ -236,7 +236,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCompanyUnlinked()
+    public function test_filter_by_type_company_unlinked()
     {
         $events = $this->amoClient->events->typeCompanyUnlinked()->limit(10)->get();
         $this->assertIsArray($events);
@@ -245,7 +245,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCustomerAdded()
+    public function test_filter_by_type_customer_added()
     {
         $events = $this->amoClient->events->typeCustomerAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -254,7 +254,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCustomerDeleted()
+    public function test_filter_by_type_customer_deleted()
     {
         $events = $this->amoClient->events->typeCustomerDeleted()->limit(10)->get();
         $this->assertIsArray($events);
@@ -263,7 +263,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCustomerStatusChanged()
+    public function test_filter_by_type_customer_status_changed()
     {
         $events = $this->amoClient->events->typeCustomerStatusChanged()->limit(10)->get();
         $this->assertIsArray($events);
@@ -272,7 +272,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCustomerLinked()
+    public function test_filter_by_type_customer_linked()
     {
         $events = $this->amoClient->events->typeCustomerLinked()->limit(10)->get();
         $this->assertIsArray($events);
@@ -282,7 +282,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCustomerUnlinked()
+    public function test_filter_by_type_customer_unlinked()
     {
         $events = $this->amoClient->events->typeCustomerUnlinked()->limit(10)->get();
         $this->assertIsArray($events);
@@ -292,7 +292,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeTaskAdded()
+    public function test_filter_by_type_task_added()
     {
         $events = $this->amoClient->events->typeTaskAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -302,7 +302,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeTaskDeleted()
+    public function test_filter_by_type_task_deleted()
     {
         $events = $this->amoClient->events->typeTaskDeleted()->limit(10)->get();
         $this->assertIsArray($events);
@@ -312,7 +312,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeTaskCompleted()
+    public function test_filter_by_type_task_completed()
     {
         $events = $this->amoClient->events->typeTaskCompleted()->limit(10)->get();
         $this->assertIsArray($events);
@@ -323,7 +323,7 @@ class EventTest extends BaseAmoClient
 
     }
 
-    public function testFilterByTypeTaskTypeChanged()
+    public function test_filter_by_type_task_type_changed()
     {
         $events = $this->amoClient->events->typeTaskTypeChanged()->limit(10)->get();
         $this->assertIsArray($events);
@@ -333,7 +333,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeTaskTextChanged()
+    public function test_filter_by_type_task_text_changed()
     {
         $events = $this->amoClient->events->typeTaskTextChanged()->limit(10)->get();
         $this->assertIsArray($events);
@@ -343,7 +343,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeTaskDeadlineChanged()
+    public function test_filter_by_type_task_deadline_changed()
     {
         $events = $this->amoClient->events->typeTaskDeadlineChanged()->limit(10)->get();
         $this->assertIsArray($events);
@@ -354,7 +354,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeTaskResultAdded()
+    public function test_filter_by_type_task_result_added()
     {
         $events = $this->amoClient->events->typeTaskResultAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -364,7 +364,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeIncomingCall()
+    public function test_filter_by_type_incoming_call()
     {
         $events = $this->amoClient->events->typeIncomingCall()->limit(10)->get();
         $this->assertIsArray($events);
@@ -373,7 +373,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeOutgoingCall()
+    public function test_filter_by_type_outgoing_call()
     {
         $events = $this->amoClient->events->typeOutgoingCall()->limit(10)->get();
         $this->assertIsArray($events);
@@ -382,7 +382,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeIncomingChatMessage()
+    public function test_filter_by_type_incoming_chat_message()
     {
         $events = $this->amoClient->events->typeIncomingChatMessage()->limit(10)->get();
         $this->assertIsArray($events);
@@ -391,7 +391,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeOutgoingChatMessage()
+    public function test_filter_by_type_outgoing_chat_message()
     {
         $events = $this->amoClient->events->typeOutgoingChatMessage()->limit(10)->get();
         $this->assertIsArray($events);
@@ -400,7 +400,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeIncomingSms()
+    public function test_filter_by_type_incoming_sms()
     {
         $events = $this->amoClient->events->typeIncomingSms()->limit(10)->get();
         $this->assertIsArray($events);
@@ -409,7 +409,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeOutgoingSms()
+    public function test_filter_by_type_outgoing_sms()
     {
         $events = $this->amoClient->events->typeOutgoingSms()->limit(10)->get();
         $this->assertIsArray($events);
@@ -418,7 +418,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeEntityTagAdded()
+    public function test_filter_by_type_entity_tag_added()
     {
         $events = $this->amoClient->events->typeEntityTagAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -427,7 +427,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeEntityTagDeleted()
+    public function test_filter_by_type_entity_tag_deleted()
     {
         $events = $this->amoClient->events->typeEntityTagDeleted()->limit(10)->get();
         $this->assertIsArray($events);
@@ -437,7 +437,7 @@ class EventTest extends BaseAmoClient
 
     }
 
-    public function testFilterByTypeEntityLinked()
+    public function test_filter_by_type_entity_linked()
     {
         $events = $this->amoClient->events->typeEntityLinked()->limit(10)->get();
         $this->assertIsArray($events);
@@ -446,7 +446,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeEntityUnlinked()
+    public function test_filter_by_type_entity_unlinked()
     {
         $events = $this->amoClient->events->typeEntityUnlinked()->limit(10)->get();
         $this->assertIsArray($events);
@@ -455,7 +455,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeSaleFieldChanged()
+    public function test_filter_by_type_sale_field_changed()
     {
         $events = $this->amoClient->events->typeSaleFieldChanged()->limit(10)->get();
         $this->assertIsArray($events);
@@ -464,7 +464,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeNameFieldChanged()
+    public function test_filter_by_type_name_field_changed()
     {
         $events = $this->amoClient->events->typeNameFieldChanged()->limit(10)->get();
         $this->assertIsArray($events);
@@ -473,7 +473,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeLtvFieldChanged()
+    public function test_filter_by_type_ltv_field_changed()
     {
         $events = $this->amoClient->events->typeLtvFieldChanged()->limit(10)->get();
         $this->assertIsArray($events);
@@ -482,7 +482,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCustomFieldValueChanged()
+    public function test_filter_by_type_custom_field_value_changed()
     {
         $events = $this->amoClient->events->typeCustomFieldValueChanged()->limit(10)->get();
         $this->assertIsArray($events);
@@ -491,7 +491,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeEntityResponsibleChanged()
+    public function test_filter_by_type_entity_responsible_changed()
     {
         $events = $this->amoClient->events->typeEntityResponsibleChanged()->limit(10)->get();
         $this->assertIsArray($events);
@@ -500,7 +500,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeRobotReplied()
+    public function test_filter_by_type_robot_replied()
     {
         $events = $this->amoClient->events->typeRobotReplied()->limit(10)->get();
         $this->assertIsArray($events);
@@ -509,7 +509,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeIntentIdentified()
+    public function test_filter_by_type_intent_identified()
     {
         $events = $this->amoClient->events->typeIntentIdentified()->limit(10)->get();
         $this->assertIsArray($events);
@@ -519,7 +519,7 @@ class EventTest extends BaseAmoClient
 
     }
 
-    public function testFilterByTypeNpsRateAdded()
+    public function test_filter_by_type_nps_rate_added()
     {
         $events = $this->amoClient->events->typeNpsRateAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -528,7 +528,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeLinkFollowed()
+    public function test_filter_by_type_link_followed()
     {
         $events = $this->amoClient->events->typeLinkFollowed()->limit(10)->get();
         $this->assertIsArray($events);
@@ -537,7 +537,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeTransactionAdded()
+    public function test_filter_by_type_transaction_added()
     {
         $events = $this->amoClient->events->typeTransactionAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -546,7 +546,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCommonNoteAdded()
+    public function test_filter_by_type_common_note_added()
     {
         $events = $this->amoClient->events->typeCommonNoteAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -555,7 +555,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCommonNoteDeleted()
+    public function test_filter_by_type_common_note_deleted()
     {
         $events = $this->amoClient->events->typeCommonNoteDeleted()->limit(10)->get();
         $this->assertIsArray($events);
@@ -564,7 +564,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeAttachmentNoteAdded()
+    public function test_filter_by_type_attachment_note_added()
     {
         $events = $this->amoClient->events->typeAttachmentNoteAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -573,7 +573,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeTargetingInNoteAdded()
+    public function test_filter_by_type_targeting_in_note_added()
     {
         $events = $this->amoClient->events->typeTargetingInNoteAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -582,7 +582,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeTargetingOutNoteAdded()
+    public function test_filter_by_type_targeting_out_note_added()
     {
         $events = $this->amoClient->events->typeTargetingOutNoteAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -591,7 +591,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeGeoNoteAdded()
+    public function test_filter_by_type_geo_note_added()
     {
         $events = $this->amoClient->events->typeGeoNoteAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -600,7 +600,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeServiceNoteAdded()
+    public function test_filter_by_type_service_note_added()
     {
         $events = $this->amoClient->events->typeServiceNoteAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -609,7 +609,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeSiteVisitNoteAdded()
+    public function test_filter_by_type_site_visit_note_added()
     {
         $events = $this->amoClient->events->typeSiteVisitNoteAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -618,7 +618,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeMessageToCashierNoteAdded()
+    public function test_filter_by_type_message_to_cashier_note_added()
     {
         $events = $this->amoClient->events->typeMessageToCashierNoteAdded()->limit(10)->get();
         $this->assertIsArray($events);
@@ -627,7 +627,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeEntityMerged()
+    public function test_filter_by_type_entity_merged()
     {
         $events = $this->amoClient->events->typeEntityMerged()->limit(10)->get();
         $this->assertIsArray($events);
@@ -636,7 +636,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testFilterByTypeCustomFieldByIdValueChanged()
+    public function test_filter_by_type_custom_field_by_id_value_changed()
     {
         $customFiled = $this->amoClient->leads->customFields()->get()[0];
         $events = $this->amoClient->events->typeCustomFieldByIdValueChanged($customFiled['id'])->limit(10)->get();
@@ -647,7 +647,7 @@ class EventTest extends BaseAmoClient
 
     }
 
-    public function testValueAfterLeadStatuses()
+    public function test_value_after_lead_statuses()
     {
 
         $events = $this->amoClient->events->valueAfterLeadStatuses(742990, 142)->limit(10)->get();
@@ -658,7 +658,7 @@ class EventTest extends BaseAmoClient
 
     }
 
-    public function testValueAfterCustomerStatuses()
+    public function test_value_after_customer_statuses()
     {
 
         $events = $this->amoClient->events->valueAfterCustomerStatuses(121207)->limit(10)->get();
@@ -669,7 +669,7 @@ class EventTest extends BaseAmoClient
 
     }
 
-    public function testValueAfterResponsibleUserId()
+    public function test_value_after_responsible_user_id()
     {
         $events = $this->amoClient->events->valueAfterResponsibleUserId(1693819)->limit(10)->get();
         $this->assertIsArray($events);
@@ -678,7 +678,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testValueAfterCustomFieldValues()
+    public function test_value_after_custom_field_values()
     {
         $customFiled = $this->amoClient->leads->customFields()->find(449487);
         $enumIds = array_column($customFiled['enums'], 'id');
@@ -690,7 +690,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testValueBeforeLeadStatuses()
+    public function test_value_before_lead_statuses()
     {
 
         $events = $this->amoClient->events->valueBeforeLeadStatuses(742990, 142)->limit(10)->get();
@@ -700,7 +700,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testValueBeforeCustomerStatuses()
+    public function test_value_before_customer_statuses()
     {
         $events = $this->amoClient->events->valueBeforeCustomerStatuses(121207)->limit(10)->get();
         $this->assertIsArray($events);
@@ -709,7 +709,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testValueBeforeResponsibleUserId()
+    public function test_value_before_responsible_user_id()
     {
         $events = $this->amoClient->events->valueBeforeResponsibleUserId(1693819)->limit(10)->get();
         $this->assertIsArray($events);
@@ -718,7 +718,7 @@ class EventTest extends BaseAmoClient
         }
     }
 
-    public function testValueBeforeCustomFieldValues()
+    public function test_value_before_custom_field_values()
     {
         $customFiled = $this->amoClient->leads->customFields()->find(449487);
         $enumIds = array_column($customFiled['enums'], 'id');

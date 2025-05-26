@@ -32,7 +32,7 @@ class CatalogTest extends BaseAmoClient
         $this->catalog->can_add_elements = $this->data['can_add_elements'];
     }
 
-    public function testCatalogEntity()
+    public function test_catalog_entity()
     {
         $this->assertInstanceOf(Catalog::class, $this->catalog);
         $this->assertEquals($this->data['name'], $this->catalog->name);
@@ -42,7 +42,7 @@ class CatalogTest extends BaseAmoClient
     }
 
     #[Depends('testCatalogEntity')]
-    public function testCatalogCreate()
+    public function test_catalog_create()
     {
         $response = $this->catalog->create();
 
@@ -65,7 +65,7 @@ class CatalogTest extends BaseAmoClient
     }
 
     #[Depends('testCatalogCreate')]
-    public function testCatalogUpdate(int $catalogId)
+    public function test_catalog_update(int $catalogId)
     {
         $newName = 'Test Catalog2';
         $this->catalog->id = $catalogId;
@@ -87,7 +87,7 @@ class CatalogTest extends BaseAmoClient
     }
 
     #[Depends('testCatalogUpdate')]
-    public function testCatalogElement(int $catalogId)
+    public function test_catalog_element(int $catalogId)
     {
 
         $catalog = $this->amoClient->catalogs->entity($catalogId);
@@ -123,14 +123,14 @@ class CatalogTest extends BaseAmoClient
 
     #[Depends('testCatalogUpdate')]
     #[Depends('testCatalogElement')]
-    public function testCatalogDelete(int $catalogId)
+    public function test_catalog_delete(int $catalogId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/v1/catalogs/set/', ['request' => ['catalogs' => ['delete' => $catalogId]]]);
         $this->assertIsArray($response);
         $this->assertEquals(0, count($response['response']['catalogs']['delete']['errors']));
     }
 
-    public function testCatalogCreateGetId()
+    public function test_catalog_create_get_id()
     {
         $id = $this->catalog->createGetId();
         $this->assertIsInt($id);
@@ -140,7 +140,7 @@ class CatalogTest extends BaseAmoClient
         $this->assertEquals(0, count($response['response']['catalogs']['delete']['errors']));
     }
 
-    public function testCatalogNotFound()
+    public function test_catalog_not_found()
     {
         $response = $this->amoClient->catalogs->find(112322222222222222);
         $this->assertInstanceOf(Catalog::class, $this->catalog);
@@ -148,14 +148,14 @@ class CatalogTest extends BaseAmoClient
         $this->assertEmpty($response->toArray());
     }
 
-    public function testCatalogCreateException()
+    public function test_catalog_create_exception()
     {
         $catalog = $this->amoClient->catalogs->entity();
         $this->expectException(AmoCustomException::class);
         $catalog->create();
     }
 
-    public function testCatalogUpdateException()
+    public function test_catalog_update_exception()
     {
         $catalog = $this->amoClient->catalogs->entity();
         $this->expectException(AmoCustomException::class);

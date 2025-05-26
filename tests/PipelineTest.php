@@ -30,7 +30,7 @@ class PipelineTest extends BaseAmoClient
         $this->pipeline->addStatus('статус 1', 1, '#fffeb2');
     }
 
-    public function testPipelineEntity()
+    public function test_pipeline_entity()
     {
         $this->assertInstanceOf(Pipeline::class, $this->pipeline);
         $this->assertEquals($this->data['name'], $this->pipeline->name);
@@ -40,7 +40,7 @@ class PipelineTest extends BaseAmoClient
     }
 
     #[Depends('testPipelineEntity')]
-    public function testPipelineCreate()
+    public function test_pipeline_create()
     {
         $response = $this->pipeline->create();
         $this->assertArrayHasKey('id', $response['_embedded']['pipelines'][0]);
@@ -53,7 +53,7 @@ class PipelineTest extends BaseAmoClient
         return $created['id'];
     }
 
-    public function testPipelineChangeDefaultStatuses()
+    public function test_pipeline_change_default_statuses()
     {
 
         $pipeline = $this->amoClient->pipelines->entity();
@@ -77,7 +77,7 @@ class PipelineTest extends BaseAmoClient
     }
 
     #[Depends('testPipelineCreate')]
-    public function testPipelineUpdate(int $pipelineId)
+    public function test_pipeline_update(int $pipelineId)
     {
         $pipeline = $this->amoClient->pipelines->entity($pipelineId);
         $newName = 'Test Pipeline2';
@@ -89,34 +89,34 @@ class PipelineTest extends BaseAmoClient
     }
 
     #[Depends('testPipelineCreate')]
-    public function testPipelineFind(int $pipelineId)
+    public function test_pipeline_find(int $pipelineId)
     {
         $response = $this->amoClient->pipelines->find($pipelineId);
         $this->assertEquals($response->id, $pipelineId);
     }
 
     #[Depends('testPipelineUpdate')]
-    public function testPipelineDelete(int $pipelineId)
+    public function test_pipeline_delete(int $pipelineId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/v1/pipelines/delete', ['request' => ['id' => $pipelineId]]);
         $this->assertEquals(true, $response['response'][$pipelineId]);
     }
 
-    public function testPipelineCreateException()
+    public function test_pipeline_create_exception()
     {
         $pipeline = $this->amoClient->pipelines->entity();
         $this->expectException(AmoCustomException::class);
         $pipeline->create();
     }
 
-    public function testPipelineUpdateException()
+    public function test_pipeline_update_exception()
     {
         $pipeline = $this->amoClient->pipelines->entity();
         $this->expectException(AmoCustomException::class);
         $pipeline->update();
     }
 
-    public function testPipelineStatuses()
+    public function test_pipeline_statuses()
     {
         $pipeline = $this->amoClient->pipelines->entity();
         $this->assertInstanceOf(Collection::class, $pipeline->statuses());

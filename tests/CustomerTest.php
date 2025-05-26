@@ -30,14 +30,14 @@ class CustomerTest extends BaseAmoClient
 
     }
 
-    public function testCustomerEntity()
+    public function test_customer_entity()
     {
         $this->assertInstanceOf(Customer::class, $this->customer);
         $this->assertEquals($this->data['name'], $this->customer->name);
     }
 
     #[Depends('testCustomerEntity')]
-    public function testCustomerCreate()
+    public function test_customer_create()
     {
         $response = $this->customer->create();
 
@@ -54,12 +54,12 @@ class CustomerTest extends BaseAmoClient
     }
 
     #[Depends('testCustomerCreate')]
-    public function testCustomerUpdate(int $customerId)
+    public function test_customer_update(int $customerId)
     {
         $newName = 'Test Customer 2';
         $this->customer->id = $customerId;
         $this->customer->name = $newName;
-        //TODO: Мы не синхрим поля кастомеров, поэтому функция не устанавливает значение поля
+        // TODO: Мы не синхрим поля кастомеров, поэтому функция не устанавливает значение поля
         $this->customer->setCF(475949, '111111111111');
         $this->customer->setCFByCode('POINTS', 222222222222222);
 
@@ -83,7 +83,7 @@ class CustomerTest extends BaseAmoClient
     }
 
     #[Depends('testCustomerCreate')]
-    public function testCustomerCustomFields(int $customerId)
+    public function test_customer_custom_fields(int $customerId)
     {
         $customFields = $this->amoClient->customers->customFields()->get();
         $this->assertIsArray($customFields);
@@ -91,7 +91,7 @@ class CustomerTest extends BaseAmoClient
     }
 
     #[Depends('testCustomerCreate')]
-    public function testCustomerWith(int $customerId)
+    public function test_customer_with(int $customerId)
     {
         $query = $this->amoClient->customers
             ->withContacts()
@@ -113,13 +113,13 @@ class CustomerTest extends BaseAmoClient
     #[Depends('testCustomerWith')]
     #[Depends('testCustomerCustomFields')]
     #[Depends('testCustomerUpdate')]
-    public function testCustomerDelete(int $customerId)
+    public function test_customer_delete(int $customerId)
     {
         $response = $this->amoClient->ajax->postJson('/ajax/v1/customers/set/', ['request' => ['customers' => ['delete' => [$customerId]]]]);
         $this->assertEquals(0, count($response['response']['customers']['delete']['errors']));
     }
 
-    public function testCustomerCreateGetId()
+    public function test_customer_create_get_id()
     {
         $id = $this->customer->createGetId();
         $this->assertIsInt($id);
@@ -129,7 +129,7 @@ class CustomerTest extends BaseAmoClient
         $this->assertEquals(0, count($response['response']['customers']['delete']['errors']));
     }
 
-    public function testCustomerNotFound()
+    public function test_customer_not_found()
     {
         $response = $this->amoClient->customers->find(112322222222222222);
         $this->assertInstanceOf(Customer::class, $this->customer);
@@ -137,13 +137,13 @@ class CustomerTest extends BaseAmoClient
         $this->assertEmpty($response->toArray());
     }
 
-    public function testCustomerSetResponsibleUser()
+    public function test_customer_set_responsible_user()
     {
         $this->customer->setResponsibleUser($this->amoClient->accountId, 1693819);
         $this->assertEquals($this->customer->responsible_user_id, 1693819);
     }
 
-    public function testCustomerGetResponsibleName()
+    public function test_customer_get_responsible_name()
     {
         $this->customer->setResponsibleUser($this->amoClient->accountId, 1693819);
         $this->assertEquals('Кирилл Егоров', $this->customer->getResponsibleName());

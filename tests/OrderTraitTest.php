@@ -4,7 +4,7 @@ namespace mttzzz\AmoClient\Tests;
 
 class OrderTraitTest extends BaseAmoClient
 {
-    public function testOrderByCreatedAtAsc()
+    public function test_order_by_created_at_asc()
     {
         $leads = $this->amoClient->leads->orderByCreatedAtAsc()->limit(10)->get();
         $this->assertIsArray($leads);
@@ -13,7 +13,7 @@ class OrderTraitTest extends BaseAmoClient
         $this->assertEquals($sortedUpdatedAtsAsc, $updatedAts);
     }
 
-    public function testOrderByCreatedAtDesc()
+    public function test_order_by_created_at_desc()
     {
         $leads = $this->amoClient->leads->orderByCreatedAtDesc()->limit(10)->get();
         $this->assertIsArray($leads);
@@ -23,7 +23,7 @@ class OrderTraitTest extends BaseAmoClient
         $this->assertEquals($sortedUpdatedAtsDesc, $updatedAts);
     }
 
-    public function testOrderByUpdatedAtAsc()
+    public function test_order_by_updated_at_asc()
     {
         $leads = $this->amoClient->leads->orderByUpdatedAtAsc()->limit(10)->get();
         $this->assertIsArray($leads);
@@ -33,7 +33,7 @@ class OrderTraitTest extends BaseAmoClient
         $this->assertEquals($sortedUpdatedAtsAsc, $updatedAts);
     }
 
-    public function testOrderByUpdatedAtDesc()
+    public function test_order_by_updated_at_desc()
     {
         $leads = $this->amoClient->leads->orderByUpdatedAtDesc()->limit(10)->get();
         $this->assertIsArray($leads);
@@ -43,7 +43,7 @@ class OrderTraitTest extends BaseAmoClient
         $this->assertEquals($sortedUpdatedAtsDesc, $updatedAts);
     }
 
-    public function testOrderByIdAsc()
+    public function test_order_by_id_asc()
     {
         $leads = $this->amoClient->leads->orderByIdAsc()->limit(10)->get();
         $this->assertIsArray($leads);
@@ -53,7 +53,7 @@ class OrderTraitTest extends BaseAmoClient
         $this->assertEquals($sortedIdsAsc, $ids);
     }
 
-    public function testOrderByIdDesc()
+    public function test_order_by_id_desc()
     {
         $leads = $this->amoClient->leads->orderByIdDesc()->limit(10)->get();
         $this->assertIsArray($leads);

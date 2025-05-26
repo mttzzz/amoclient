@@ -17,7 +17,7 @@ class AmoClientFacadeTest extends TestCase
         ]);
     }
 
-    public function testFacadeResolves()
+    public function test_facade_resolves()
     {
         $resolvedInstance = AmoClient::getFacadeRoot();
         $this->assertInstanceOf(\stdClass::class, $resolvedInstance);

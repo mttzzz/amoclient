@@ -11,7 +11,7 @@ use mttzzz\AmoClient\Models\Account;
 
 class AccountTest extends BaseAmoClient
 {
-    public function testAccountGet()
+    public function test_account_get()
     {
         $account = $this->amoClient->account->get();
 
@@ -20,7 +20,7 @@ class AccountTest extends BaseAmoClient
         $this->assertIsArray($account);
     }
 
-    public function testAccountGetException()
+    public function test_account_get_exception()
     {
         // Создаем мок для PendingRequest
         /** @var \Illuminate\Http\Client\PendingRequest|\PHPUnit\Framework\MockObject\MockObject $httpMock */
@@ -42,7 +42,7 @@ class AccountTest extends BaseAmoClient
         $account->get();
     }
 
-    public function testAccountContainsKeys()
+    public function test_account_contains_keys()
     {
         $account = $this->amoClient->account->get();
 
@@ -56,13 +56,13 @@ class AccountTest extends BaseAmoClient
         $this->assertArrayHasKey('subdomain', $account);
     }
 
-    public function testAccountWithAmojoId()
+    public function test_account_with_amojo_id()
     {
         $account = $this->amoClient->account->withAmojoId()->get();
         $this->assertArrayHasKey('amojo_id', $account);
     }
 
-    public function testAccountWithAmojoRights()
+    public function test_account_with_amojo_rights()
     {
         $account = $this->amoClient->account->withAmojoRights()->get();
 
@@ -70,7 +70,7 @@ class AccountTest extends BaseAmoClient
         $this->assertArrayHasKey('amojo_rights', $account['_embedded']);
     }
 
-    public function testAccountWithUsersGroups()
+    public function test_account_with_users_groups()
     {
         $account = $this->amoClient->account->withUsersGroups()->get();
 
@@ -78,33 +78,33 @@ class AccountTest extends BaseAmoClient
         $this->assertArrayHasKey('users_groups', $account['_embedded']);
     }
 
-    public function testAccountWithTaskTypes()
+    public function test_account_with_task_types()
     {
         $account = $this->amoClient->account->withTaskTypes()->get();
         $this->assertArrayHasKey('_embedded', $account);
         $this->assertArrayHasKey('task_types', $account['_embedded']);
     }
 
-    public function testAccountWithVersion()
+    public function test_account_with_version()
     {
         $account = $this->amoClient->account->withVersion()->get();
         $this->assertArrayHasKey('version', $account);
     }
 
-    public function testAccountWithEntityNames()
+    public function test_account_with_entity_names()
     {
         $account = $this->amoClient->account->withEntityNames()->get();
         $this->assertArrayHasKey('entity_names', $account);
     }
 
-    public function testAccountWithDatetimeSettings()
+    public function test_account_with_datetime_settings()
     {
         $account = $this->amoClient->account->withDatetimeSettings()->get();
         $this->assertArrayHasKey('_embedded', $account);
         $this->assertArrayHasKey('datetime_settings', $account['_embedded']);
     }
 
-    public function testAccountRequestException()
+    public function test_account_request_exception()
     {
         $this->expectException(RequestException::class);
 

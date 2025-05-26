@@ -4,7 +4,7 @@ namespace mttzzz\AmoClient\Tests;
 
 class sourceTest extends BaseAmoClient
 {
-    public function testSource()
+    public function test_source()
     {
         $sourceEntity = $this->amoClient->sources->entity();
         $sourceEntity->name = 'test';

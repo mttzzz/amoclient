@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 
 class AmoCustomExceptionTest extends TestCase
 {
-    public function testAmoCustomExceptionWithConnectionException()
+    public function test_amo_custom_exception_with_connection_exception()
     {
         $connectionException = new ConnectionException('Connection error', 500);
 
@@ -21,7 +21,7 @@ class AmoCustomExceptionTest extends TestCase
         $this->assertEquals(500, $amoCustomException->getCode());
     }
 
-    public function testAmoCustomExceptionWithRequestException()
+    public function test_amo_custom_exception_with_request_exception()
     {
         $response = new Response(new GuzzleResponse(500, [], json_encode(['error' => 'Internal Server Error'])));
         $requestException = new RequestException($response);
@@ -33,7 +33,7 @@ class AmoCustomExceptionTest extends TestCase
         $this->assertEquals(500, $amoCustomException->getCode());
     }
 
-    public function testAmoCustomExceptionWithPaymentRequired()
+    public function test_amo_custom_exception_with_payment_required()
     {
         $response = new Response(new GuzzleResponse(402, [], ''));
         $requestException = new RequestException($response);
@@ -44,7 +44,7 @@ class AmoCustomExceptionTest extends TestCase
         $this->assertEquals(402, $amoCustomException->getCode());
     }
 
-    public function testInvalidJsonResponse()
+    public function test_invalid_json_response()
     {
         // Создаем GuzzleResponse с некорректным JSON
         $guzzleResponse = new GuzzleResponse(500, [], 'Invalid JSON');
@@ -63,7 +63,7 @@ class AmoCustomExceptionTest extends TestCase
         $this->assertEquals(500, $amoCustomException->getCode());
     }
 
-    public function testAmoCustomExceptionWithInvalidJson()
+    public function test_amo_custom_exception_with_invalid_json()
     {
         // Создаем GuzzleResponse с некорректным JSON
         $guzzleResponse = new GuzzleResponse(500, [], 'Invalid JSON');
@@ -82,7 +82,7 @@ class AmoCustomExceptionTest extends TestCase
         $this->assertEquals(500, $amoCustomException->getCode());
     }
 
-    public function testAmoCustomExceptionWithValidJson()
+    public function test_amo_custom_exception_with_valid_json()
     {
         // Создаем GuzzleResponse с корректным JSON
         $guzzleResponse = new GuzzleResponse(500, [], json_encode(['error' => 'Some error']));
@@ -102,7 +102,7 @@ class AmoCustomExceptionTest extends TestCase
         $this->assertEquals(500, $amoCustomException->getCode());
     }
 
-    public function testAmoCustomExceptionWithUnserializableJson()
+    public function test_amo_custom_exception_with_unserializable_json()
     {
         // Создаем объект с циклической ссылкой
         $a = new \stdClass;

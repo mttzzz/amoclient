@@ -26,14 +26,14 @@ class LeadTest extends BaseAmoClient
         $this->lead = $this->amoClient->leads->entityData($this->data);
     }
 
-    public function testLeadEntity()
+    public function test_lead_entity()
     {
         $this->assertInstanceOf(Lead::class, $this->lead);
         $this->assertEquals($this->data['name'], $this->lead->name);
     }
 
     #[Depends('testLeadEntity')]
-    public function testLeadCreate()
+    public function test_lead_create()
     {
         $response = $this->lead->create();
 
@@ -50,7 +50,7 @@ class LeadTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testLeadUpdate(int $leadId)
+    public function test_lead_update(int $leadId)
     {
         $newName = 'Test Lead 2';
         $this->lead->id = $leadId;
@@ -78,7 +78,7 @@ class LeadTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testLeadCustomFields(int $leadId)
+    public function test_lead_custom_fields(int $leadId)
     {
         $customFields = $this->amoClient->leads->customFields()->get();
         $this->assertIsArray($customFields);
@@ -88,7 +88,7 @@ class LeadTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testLeadQuery(int $leadId)
+    public function test_lead_query(int $leadId)
     {
         $query = $this->amoClient->leads->query('Test Lead')
             ->withContacts()
@@ -121,7 +121,7 @@ class LeadTest extends BaseAmoClient
     #[Depends('testLeadUpdate')]
     #[Depends('testLeadCustomFields')]
     #[Depends('testLeadQuery')]
-    public function testLeadDelete(int $leadId)
+    public function test_lead_delete(int $leadId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);
         $this->assertIsArray($response);
@@ -129,7 +129,7 @@ class LeadTest extends BaseAmoClient
         $this->assertEquals('success', $response['status']);
     }
 
-    public function testLeadCreateGetId()
+    public function test_lead_create_get_id()
     {
 
         $this->lead->setCF(449487, 879413, true);
@@ -143,7 +143,7 @@ class LeadTest extends BaseAmoClient
         $this->assertEquals('success', $response['status']);
     }
 
-    public function testLeadNotFound()
+    public function test_lead_not_found()
     {
         $response = $this->amoClient->leads->find(112322222222222222);
         $this->assertInstanceOf(Lead::class, $this->lead);
@@ -151,13 +151,13 @@ class LeadTest extends BaseAmoClient
         $this->assertEmpty($response->toArray());
     }
 
-    public function testLeadSetResponsibleUser()
+    public function test_lead_set_responsible_user()
     {
         $this->lead->setResponsibleUser($this->amoClient->accountId, 1693819);
         $this->assertEquals($this->lead->responsible_user_id, 1693819);
     }
 
-    public function testLeadGetResponsibleName()
+    public function test_lead_get_responsible_name()
     {
         $this->lead->setResponsibleUser($this->amoClient->accountId, 1693819);
         $this->assertEquals('Кирилл Егоров', $this->lead->getResponsibleName());
@@ -169,7 +169,7 @@ class LeadTest extends BaseAmoClient
         $this->assertNull($this->lead->getResponsibleName());
     }
 
-    public function testLeadSetEntities()
+    public function test_lead_set_entities()
     {
         $contactId = $this->amoClient->contacts->entityData(['name' => 'test'])->createGetId();
         $companyId = $this->amoClient->companies->entityData(['name' => 'test'])->createGetId();
@@ -205,7 +205,7 @@ class LeadTest extends BaseAmoClient
         $this->assertEquals('success', $response3['status']);
     }
 
-    public function testLeadGetContactsIdsException()
+    public function test_lead_get_contacts_ids_exception()
     {
 
         $this->lead->name = 'testLeadGetContactsIdsException';
@@ -223,7 +223,7 @@ class LeadTest extends BaseAmoClient
         }
     }
 
-    public function testLeadGetMainContactIdException()
+    public function test_lead_get_main_contact_id_exception()
     {
         $this->lead->name = 'testLeadGetMainContactIdException';
         $id = $this->lead->createGetId();
@@ -239,7 +239,7 @@ class LeadTest extends BaseAmoClient
         }
     }
 
-    public function testLeadGetMainContactIdNotFound()
+    public function test_lead_get_main_contact_id_not_found()
     {
         $this->lead->name = 'testLeadGetMainContactIdNotFound';
         $id = $this->lead->createGetId();
@@ -252,7 +252,7 @@ class LeadTest extends BaseAmoClient
 
     }
 
-    public function testLeadGetCatalogElementIds()
+    public function test_lead_get_catalog_element_ids()
     {
         $catalogId = 4265;
         $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
@@ -273,7 +273,7 @@ class LeadTest extends BaseAmoClient
 
     }
 
-    public function testLeadGetCatalogQuantity()
+    public function test_lead_get_catalog_quantity()
     {
         $catalogId = 4265;
         $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
@@ -290,7 +290,7 @@ class LeadTest extends BaseAmoClient
 
     }
 
-    public function testLeadGetCatalogElementQuantity()
+    public function test_lead_get_catalog_element_quantity()
     {
         $catalogId = 4265;
         $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
@@ -310,7 +310,7 @@ class LeadTest extends BaseAmoClient
 
     }
 
-    public function testLeadGetCatalogElementFloatQuantity()
+    public function test_lead_get_catalog_element_float_quantity()
     {
         $catalogId = 4265;
         $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();

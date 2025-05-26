@@ -26,7 +26,7 @@ class NoteTest extends BaseAmoClient
         $this->note = $this->lead->notes->entity();
     }
 
-    public function testLeadCreate()
+    public function test_lead_create()
     {
         $response = $this->lead->create();
 
@@ -44,7 +44,7 @@ class NoteTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testNoteCommonCreate(int $leadId)
+    public function test_note_common_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $response = $lead->notes->entity()->common('test text');
@@ -71,7 +71,7 @@ class NoteTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testNoteCallInCreate(int $leadId)
+    public function test_note_call_in_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $response = $lead->notes->entity()->callIn('unique_id', 120, 'http://example.com', '1234567890');
@@ -94,7 +94,7 @@ class NoteTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testNoteCallOutCreate(int $leadId)
+    public function test_note_call_out_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $response = $lead->notes->entity()->callOut('unique_id', 120, 'http://example.com', '1234567890');
@@ -117,7 +117,7 @@ class NoteTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testNoteServiceMessageCreate(int $leadId)
+    public function test_note_service_message_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $response = $lead->notes->entity()->serviceMessage('Текст для примечания', 'Сервис для примера');
@@ -135,7 +135,7 @@ class NoteTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testNoteMessageCashierCreate(int $leadId)
+    public function test_note_message_cashier_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $response = $lead->notes->entity()->messageCashier('created', 'test text');
@@ -153,7 +153,7 @@ class NoteTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testNoteInvoicePaidCreate(int $leadId)
+    public function test_note_invoice_paid_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $response = $lead->notes->entity()->invoicePaid('test text', 'test service', 'http://example.com/icon.png');
@@ -171,7 +171,7 @@ class NoteTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testNoteGeolocationCreate(int $leadId)
+    public function test_note_geolocation_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $response = $lead->notes->entity()->geolocation('test text', 'test address', '123.456', '78.910');
@@ -189,7 +189,7 @@ class NoteTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testNoteSmsInCreate(int $leadId)
+    public function test_note_sms_in_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $response = $lead->notes->entity()->smsIn('test text', '1234567890');
@@ -215,7 +215,7 @@ class NoteTest extends BaseAmoClient
     #[Depends('testNoteInvoicePaidCreate')]
     #[Depends('testNoteGeolocationCreate')]
     #[Depends('testNoteSmsInCreate')]
-    public function testNoteSmsOutCreate(int $leadId)
+    public function test_note_sms_out_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $response = $lead->notes->entity()->smsOut('test text', '1234567890');
@@ -297,7 +297,7 @@ class NoteTest extends BaseAmoClient
     #[Depends('testNoteGeolocationCreate')]
     #[Depends('testNoteSmsInCreate')]
     #[Depends('testNoteSmsOutCreate')]
-    public function testLeadDelete(int $leadId)
+    public function test_lead_delete(int $leadId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);
         $this->assertIsArray($response);

@@ -74,7 +74,7 @@ class Note extends AbstractEntity
      */
     public function messageCashier(string $status, string $text): array
     {
-        $this->params = compact('status', 'text'); //created, shown, canceled
+        $this->params = compact('status', 'text'); // created, shown, canceled
 
         return $this->createNote(__FUNCTION__);
     }

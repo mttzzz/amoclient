@@ -7,7 +7,7 @@ use PHPUnit\Framework\Attributes\Depends;
 
 class UnsortedTest extends BaseAmoClient
 {
-    public function testCreateSipEntity()
+    public function test_create_sip_entity()
     {
         $sipEntity = $this->amoClient->unsorted->sip();
         $sipEntity->source_name = 'sipEntity';
@@ -20,7 +20,7 @@ class UnsortedTest extends BaseAmoClient
     }
 
     #[Depends('testCreateSipEntity')]
-    public function testFilterUid($created)
+    public function test_filter_uid($created)
     {
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $filterUid = $this->amoClient->unsorted->filterUid($created['_embedded']['unsorted'][0]['uid'])->get();
@@ -28,7 +28,7 @@ class UnsortedTest extends BaseAmoClient
     }
 
     #[Depends('testCreateSipEntity')]
-    public function testFilterUidArray($created)
+    public function test_filter_uid_array($created)
     {
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $filterUidArray = $this->amoClient->unsorted->filterUid(['111', '222'])->get();
@@ -36,21 +36,21 @@ class UnsortedTest extends BaseAmoClient
     }
 
     #[Depends('testCreateSipEntity')]
-    public function testFilterCategorySip($created)
+    public function test_filter_category_sip($created)
     {
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $filterCategorySip = $this->amoClient->unsorted->filterCategorySip()->get();
         $this->assertEquals($created['_embedded']['unsorted'][0]['uid'], $filterCategorySip[0]['uid']);
     }
 
-    public function testFilterCategoryMail()
+    public function test_filter_category_mail()
     {
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $filterCategoryMail = $this->amoClient->unsorted->filterCategoryMail()->get();
         $this->assertEmpty($filterCategoryMail);
     }
 
-    public function testFilterCategoryChats()
+    public function test_filter_category_chats()
     {
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $filterCategoryChats = $this->amoClient->unsorted->filterCategoryChats()->get();
@@ -58,7 +58,7 @@ class UnsortedTest extends BaseAmoClient
     }
 
     #[Depends('testCreateSipEntity')]
-    public function testFilterPipelineId($created)
+    public function test_filter_pipeline_id($created)
     {
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $filterPipelineId = $this->amoClient->unsorted->filterPipelineId(742990)->get();
@@ -72,7 +72,7 @@ class UnsortedTest extends BaseAmoClient
     #[Depends('testFilterCategoryMail')]
     #[Depends('testFilterCategoryChats')]
     #[Depends('testFilterPipelineId')]
-    public function testDecline($created)
+    public function test_decline($created)
     {
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $declined = $this->amoClient->unsorted->decline($created['_embedded']['unsorted'][0]['uid'], 0);
@@ -80,7 +80,7 @@ class UnsortedTest extends BaseAmoClient
     }
 
     #[Depends('testDecline')]
-    public function testCreateAndAcceptSipEntity()
+    public function test_create_and_accept_sip_entity()
     {
         $sipEntity1 = $this->amoClient->unsorted->sip();
         $sipEntity1->source_name = 'sipEntity1';
@@ -126,7 +126,7 @@ class UnsortedTest extends BaseAmoClient
     }
 
     #[Depends('testCreateAndAcceptSipEntity')]
-    public function testCreateFormEntity()
+    public function test_create_form_entity()
     {
         $formEntity = $this->amoClient->unsorted->form();
         $formEntity->source_name = 'testCreateFormEntity';
@@ -139,7 +139,7 @@ class UnsortedTest extends BaseAmoClient
     }
 
     #[Depends('testCreateFormEntity')]
-    public function testCategoryForms($created)
+    public function test_category_forms($created)
     {
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $filterCategoryForms = $this->amoClient->unsorted->filterCategoryForms()->get();
@@ -151,7 +151,7 @@ class UnsortedTest extends BaseAmoClient
 
     #[Depends('testCategoryForms')]
     #[Depends('testCreateFormEntity')]
-    public function testDeclineForm($created)
+    public function test_decline_form($created)
     {
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $declined = $this->amoClient->unsorted->decline($created['_embedded']['unsorted'][0]['uid'], 0);

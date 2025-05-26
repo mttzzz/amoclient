@@ -4,13 +4,13 @@ namespace mttzzz\AmoClient\Tests;
 
 class AbstractModelTest extends BaseAmoClient
 {
-    public function testLimit()
+    public function test_limit()
     {
         $leads = $this->amoClient->leads->limit(10)->get();
         $this->assertEquals(10, count($leads));
     }
 
-    public function testAllItems()
+    public function test_all_items()
     {
         $name = uniqid('name_', true);
         $leadId = $this->amoClient->leads->entityData(['name' => $name])->createGetId();
@@ -22,7 +22,7 @@ class AbstractModelTest extends BaseAmoClient
 
     }
 
-    public function testEach()
+    public function test_each()
     {
         $name = uniqid('name_', true);
         $leadId = $this->amoClient->leads->entityData(['name' => $name])->createGetId();

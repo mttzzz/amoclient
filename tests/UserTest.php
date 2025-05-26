@@ -4,7 +4,7 @@ namespace mttzzz\AmoClient\Tests;
 
 class UserTest extends BaseAmoClient
 {
-    public function testUsersGet()
+    public function test_users_get()
     {
         $users = $this->amoClient->users->get();
         $this->assertNotNull($users);
@@ -13,7 +13,7 @@ class UserTest extends BaseAmoClient
 
     }
 
-    public function testUserContainsKeys()
+    public function test_user_contains_keys()
     {
         $users = $this->amoClient->users->get();
 
@@ -30,7 +30,7 @@ class UserTest extends BaseAmoClient
         $this->assertArrayHasKey('lang', $users[0]);
     }
 
-    public function testWithRole()
+    public function test_with_role()
     {
         $users = $this->amoClient->users->withRole()->get();
         $this->assertArrayHasKey('_embedded', $users[0]);
@@ -38,26 +38,26 @@ class UserTest extends BaseAmoClient
 
     }
 
-    public function testWithGroup()
+    public function test_with_group()
     {
         $users = $this->amoClient->users->withGroup()->get();
         $this->assertArrayHasKey('_embedded', $users[0]);
         $this->assertArrayHasKey('groups', $users[0]['_embedded']);
     }
 
-    public function testWithUuid()
+    public function test_with_uuid()
     {
         $users = $this->amoClient->users->withUuid()->get();
         $this->assertArrayHasKey('uuid', $users[0]);
     }
 
-    public function testWithAmojoId()
+    public function test_with_amojo_id()
     {
         $users = $this->amoClient->users->withAmojoId()->get();
         $this->assertArrayHasKey('amojo_id', $users[0]);
     }
 
-    public function testFind()
+    public function test_find()
     {
         $users = $this->amoClient->users->withGroup()->get();
         $user = $this->amoClient->users->find($users[0]['id']);

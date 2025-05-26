@@ -17,7 +17,7 @@ class CustomFieldTest extends BaseAmoClient
         parent::setUp();
     }
 
-    public function testCustomFieldCreate()
+    public function test_custom_field_create()
     {
         $customField = $this->amoClient->leads->customFields()->entity();
         $customField->name = 'Test Custom Field';
@@ -40,7 +40,7 @@ class CustomFieldTest extends BaseAmoClient
     }
 
     #[Depends('testCustomFieldCreate')]
-    public function testCustomFieldUpdate(int $customFieldId = 711869)
+    public function test_custom_field_update(int $customFieldId = 711869)
     {
         $customField = $this->amoClient->leads->customFields()->entity($customFieldId);
         $customField->name = 'Updated Custom Field';
@@ -58,7 +58,7 @@ class CustomFieldTest extends BaseAmoClient
     }
 
     #[Depends('testCustomFieldCreate')]
-    public function testCustomFieldFind(int $customFieldId)
+    public function test_custom_field_find(int $customFieldId)
     {
         $customField = $this->amoClient->leads->customFields()->find($customFieldId);
         $this->assertIsArray($customField);
@@ -66,7 +66,7 @@ class CustomFieldTest extends BaseAmoClient
         $this->assertEquals($customFieldId, $customField['id']);
     }
 
-    public function testCustomFieldFindException()
+    public function test_custom_field_find_exception()
     {
         $customFieldId = 123; // Некорректный ID для теста
 

@@ -25,7 +25,7 @@ class TaskTest extends BaseAmoClient
         $this->lead->status_id = 142;
     }
 
-    public function testLeadCreate()
+    public function test_lead_create()
     {
         $response = $this->lead->create();
 
@@ -43,7 +43,7 @@ class TaskTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testTaskEntity(int $leadId)
+    public function test_task_entity(int $leadId)
     {
 
         $task = $this->amoClient->tasks->entity();
@@ -53,7 +53,7 @@ class TaskTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testTaskAdd(int $leadId)
+    public function test_task_add(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $response = $lead->tasks->add('Test Task', null, time() + 3600, 3600, 1);
@@ -71,7 +71,7 @@ class TaskTest extends BaseAmoClient
     }
 
     #[Depends('testTaskAdd')]
-    public function testTaskFind(int $taskId)
+    public function test_task_find(int $taskId)
     {
         $foundTasks = $this->amoClient->tasks->find($taskId);
         $foundTask = $foundTasks->toArray();
@@ -81,7 +81,7 @@ class TaskTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testTaskFilter(int $leadId)
+    public function test_task_filter(int $leadId)
     {
 
         $lead = $this->amoClient->leads->entity($leadId);
@@ -185,7 +185,7 @@ class TaskTest extends BaseAmoClient
     }
 
     #[Depends('testLeadCreate')]
-    public function testTaskSetResultText(int $leadId)
+    public function test_task_set_result_text(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $lead->tasks->setResultText('sss');
@@ -205,7 +205,7 @@ class TaskTest extends BaseAmoClient
 
     #[Depends('testLeadCreate')]
     #[Depends('testTaskAdd')]
-    public function testLeadDelete(int $leadId)
+    public function test_lead_delete(int $leadId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);
         $this->assertIsArray($response);

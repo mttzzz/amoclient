@@ -117,11 +117,11 @@ class AmoClientOctane
         // Создание стека обработчиков для Guzzle
         $stack = HandlerStack::create();
 
-        //Подключаем список прокси из конфига, если конфига нет, то присваиванием массив с 1 элементом null.
-        //Это приведет к тому, что запрос будет выполнен без прокси.
+        // Подключаем список прокси из конфига, если конфига нет, то присваиванием массив с 1 элементом null.
+        // Это приведет к тому, что запрос будет выполнен без прокси.
         $proxies = Config::get('amoclient.proxies') ?? [null];
 
-        //Остальные параметры из конфига, если они есть.
+        // Остальные параметры из конфига, если они есть.
         $timeout = Config::get('amoclient.timeout') ?? 60;
         $connectTimeout = Config::get('amoclient.connectTimeout') ?? 10;
         $retries = Config::get('amoclient.retries') ?? 2;
@@ -159,11 +159,11 @@ class AmoClientOctane
         $http = Http::withToken($octaneAccount->access_token)
             ->connectTimeout($connectTimeout)
             ->timeout($timeout)
-            //->retry($retries, $retryDelay, function (Exception $exception, PendingRequest $request) use (&$currentProxyIndex) {
+            // ->retry($retries, $retryDelay, function (Exception $exception, PendingRequest $request) use (&$currentProxyIndex) {
             ->retry($retries, $retryDelay, function (Exception $exception) use (&$currentProxyIndex) {
                 $currentProxyIndex = 0; // Обнуляем индекс, чтобы при каждом новом ретрае сначала пробовать без прокси и потом по очередности с указанными прокси если они есть
 
-                //ретраить будем, только если HttpClientConnectionException, остальные ошибки ретраить не будем.
+                // ретраить будем, только если HttpClientConnectionException, остальные ошибки ретраить не будем.
                 return $exception instanceof HttpClientConnectionException;
             })
             ->withOptions([
