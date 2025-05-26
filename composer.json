@@ -15,19 +15,10 @@
         "AmoClient"
     ],
     "require": {
-        "php": "^8.1",
-        "illuminate/support": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
-        "illuminate/http": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
-        "illuminate/console": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
-        "illuminate/contracts": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
-        "illuminate/config": "^6.0|^7.0|^8.0|^9.0|^10.0|^11.0",
+        "php": "^8.1|^8.2|^8.3|^8.4",
         "mttzzz/laravel-telegram-log": "^2.3"
     },
-    "require-dev": {
-        "laravel/pint": "^1.17",
-        "larastan/larastan": "^2.9.8",
-        "orchestra/testbench": "^7.33.0 || ^8.13.0 || ^9.0.3",
-        "phpunit/phpunit": "^11.3"
+    "require-dev": {      
     },
     "autoload": {
         "psr-4": {
