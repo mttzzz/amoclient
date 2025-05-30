@@ -112,7 +112,7 @@ class AmoClientOctane
         $cf = $fields->pluck('type', 'id')->toArray();
         $enums = $fields->pluck('enums', 'id')->toArray();
 
-        //Остальные параметры из конфига, если они есть.
+        // Остальные параметры из конфига, если они есть.
         $timeout = Config::get('amoclient.timeout') ?? 60;
         $connectTimeout = Config::get('amoclient.connectTimeout') ?? 10;
         $retries = Config::get('amoclient.retries') ?? 3;
@@ -127,14 +127,14 @@ class AmoClientOctane
                 if ($exception instanceof HttpClientConnectionException) {
                     return true;
                 }
-                
+
                 // Ретраим при серверных ошибках (5xx статус коды)
                 if ($exception instanceof RequestException) {
                     if ($exception->response->status() >= 500) {
                         return true;
                     }
                 }
-                
+
                 // Остальные ошибки не ретраим
                 return false;
             })
