@@ -3,11 +3,9 @@
 namespace mttzzz\AmoClient;
 
 use Exception;
-use GuzzleHttp\Exception\ConnectException as GuzzleHttpConnectException;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Middleware;
 use Illuminate\Http\Client\ConnectionException as HttpClientConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -28,8 +26,8 @@ use mttzzz\AmoClient\Models\Task;
 use mttzzz\AmoClient\Models\Unsorted;
 use mttzzz\AmoClient\Models\User;
 use mttzzz\AmoClient\Models\Webhook;
-use Psr\Http\Message\RequestInterface;
 use stdClass;
+use Throwable;
 
 class AmoClientOctane
 {
@@ -114,62 +112,32 @@ class AmoClientOctane
         $cf = $fields->pluck('type', 'id')->toArray();
         $enums = $fields->pluck('enums', 'id')->toArray();
 
-        // Создание стека обработчиков для Guzzle
-        $stack = HandlerStack::create();
-
-        // Подключаем список прокси из конфига, если конфига нет, то присваиванием массив с 1 элементом null.
-        // Это приведет к тому, что запрос будет выполнен без прокси.
-        $proxies = Config::get('amoclient.proxies') ?? [null];
-
-        // Остальные параметры из конфига, если они есть.
+        //Остальные параметры из конфига, если они есть.
         $timeout = Config::get('amoclient.timeout') ?? 60;
         $connectTimeout = Config::get('amoclient.connectTimeout') ?? 10;
-        $retries = Config::get('amoclient.retries') ?? 2;
+        $retries = Config::get('amoclient.retries') ?? 3;
         $retryDelay = Config::get('amoclient.retryDelay') ?? 1000;
-
-        // Индекс текущего прокси
-        $currentProxyIndex = 0;
-
-        // Добавление middleware в стек
-        $stack->push(Middleware::retry(function ($retry, RequestInterface $request, $response, $exception) use (&$proxies, &$currentProxyIndex) {
-            // Проверка на наличие GuzzleHttpConnectException и наличие доступных прокси для переключения
-            if ($exception instanceof GuzzleHttpConnectException && isset($proxies[$currentProxyIndex + 1])) {
-                // @codeCoverageIgnoreStart
-                // Переход к следующему прокси
-                $currentProxyIndex++;
-
-                // Если следующий прокси не null, устанавливаем его
-                if ($proxies[$currentProxyIndex] !== null) {
-                    $request->withUri($request->getUri()->withHost($proxies[$currentProxyIndex]));
-                }
-
-                return true; // Повторить попытку
-                // @codeCoverageIgnoreEnd
-            }
-
-            return false; // Не повторять попытку для других типов ошибок или если прокси закончились
-        }, function () {
-            // @codeCoverageIgnoreStart
-            // Логика для определения задержки между попытками
-            return 1000; // Задержка в миллисекундах
-            // @codeCoverageIgnoreEnd
-        }));
 
         $baseUrl = "https://{$octaneAccount->subdomain}.amocrm.{$octaneAccount->domain}/api/v4";
         $http = Http::withToken($octaneAccount->access_token)
             ->connectTimeout($connectTimeout)
             ->timeout($timeout)
-            // ->retry($retries, $retryDelay, function (Exception $exception, PendingRequest $request) use (&$currentProxyIndex) {
-            ->retry($retries, $retryDelay, function (Exception $exception) use (&$currentProxyIndex) {
-                $currentProxyIndex = 0; // Обнуляем индекс, чтобы при каждом новом ретрае сначала пробовать без прокси и потом по очередности с указанными прокси если они есть
-
-                // ретраить будем, только если HttpClientConnectionException, остальные ошибки ретраить не будем.
-                return $exception instanceof HttpClientConnectionException;
+            ->retry($retries, $retryDelay, function (Throwable $exception) {
+                // Ретраим при проблемах с подключением
+                if ($exception instanceof HttpClientConnectionException) {
+                    return true;
+                }
+                
+                // Ретраим при серверных ошибках (5xx статус коды)
+                if ($exception instanceof RequestException) {
+                    if ($exception->response->status() >= 500) {
+                        return true;
+                    }
+                }
+                
+                // Остальные ошибки не ретраим
+                return false;
             })
-            ->withOptions([
-                'handler' => $stack,
-                'proxy' => $proxies[$currentProxyIndex],
-            ])
             ->baseUrl($baseUrl);
         // @codeCoverageIgnoreEnd
         $this->accountId = $aId;
