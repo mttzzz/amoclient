@@ -124,7 +124,7 @@ class AmoClientOctane
 
         // Парсим custom fields из JSON
         $rawCustomFields = $accountData->custom_fields;
-        
+
         // Если custom_fields пришли как JSON строка, парсим их
         if (is_string($rawCustomFields)) {
             /** @var array<int, array{id: int|null, type: string|null, enums: string|null}> $customFields */
@@ -133,22 +133,23 @@ class AmoClientOctane
             /** @var array<int, array{id: int|null, type: string|null, enums: string|null}> $customFields */
             $customFields = $rawCustomFields;
         }
-        
-        if (!is_array($customFields)) {
+
+        if (! is_array($customFields)) {
             $customFields = [];
         }
-        
+
         $fields = collect($customFields)->filter(function (array $field): bool {
-            return !is_null($field['id']); // Фильтруем null значения от LEFT JOIN
+            return ! is_null($field['id']); // Фильтруем null значения от LEFT JOIN
         });
 
         $cf = $fields->pluck('type', 'id')->toArray();
-        
+
         // Обрабатываем enums: если это уже массив, конвертируем в JSON строку для совместимости с трейтом
         $enums = $fields->pluck('enums', 'id')->map(function ($enum) {
             if (is_array($enum)) {
                 return json_encode($enum);
             }
+
             return $enum;
         })->toArray();
 
