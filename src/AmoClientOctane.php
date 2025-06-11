@@ -123,17 +123,34 @@ class AmoClientOctane
         $octaneAccount = $this->convertToOctaneAccount($accountData);
 
         // Парсим custom fields из JSON
-        /** @var array<int, array{id: int|null, type: string|null, enums: string|null}> $customFields */
-        $customFields = json_decode($accountData->custom_fields ?? '[]', true);
-        if (! is_array($customFields)) {
+        $rawCustomFields = $accountData->custom_fields;
+        
+        // Если custom_fields пришли как JSON строка, парсим их
+        if (is_string($rawCustomFields)) {
+            /** @var array<int, array{id: int|null, type: string|null, enums: string|null}> $customFields */
+            $customFields = json_decode($rawCustomFields, true);
+        } else {
+            /** @var array<int, array{id: int|null, type: string|null, enums: string|null}> $customFields */
+            $customFields = $rawCustomFields;
+        }
+        
+        if (!is_array($customFields)) {
             $customFields = [];
         }
+        
         $fields = collect($customFields)->filter(function (array $field): bool {
-            return ! is_null($field['id']); // Фильтруем null значения от LEFT JOIN
+            return !is_null($field['id']); // Фильтруем null значения от LEFT JOIN
         });
 
         $cf = $fields->pluck('type', 'id')->toArray();
-        $enums = $fields->pluck('enums', 'id')->toArray();
+        
+        // Обрабатываем enums: если это уже массив, конвертируем в JSON строку для совместимости с трейтом
+        $enums = $fields->pluck('enums', 'id')->map(function ($enum) {
+            if (is_array($enum)) {
+                return json_encode($enum);
+            }
+            return $enum;
+        })->toArray();
 
         // Остальные параметры из конфига, если они есть.
         $timeout = Config::get('amoclient.timeout') ?? 60;
