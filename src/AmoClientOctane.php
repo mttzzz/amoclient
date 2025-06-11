@@ -76,38 +76,61 @@ class AmoClientOctane
             $this->clientId = $clientId;
         }
 
-        /** @var stdClass|null $octaneAccountData */
-        $octaneAccountData = DB::connection('octane')->table('accounts')
-            ->select(['accounts.id', 'accounts.subdomain', 'accounts.domain', 'account_widget.access_token', 'accounts.contact_phone_field_id', 'accounts.contact_email_field_id'])
-            ->join('account_widget', 'accounts.id', '=', 'account_widget.account_id')
-            ->join('widgets', 'widgets.id', '=', 'account_widget.widget_id')
-            ->where('account_widget.active', true)
-            ->where('accounts.id', $aId)
-            ->where('widgets.client_id', $this->clientId)
-            ->first();
+        // Оптимизированный запрос: объединяем все данные в один запрос с LEFT JOIN
+        $result = DB::connection('octane')
+            ->select("
+                SELECT 
+                    a.id,
+                    a.subdomain,
+                    a.domain,
+                    a.contact_phone_field_id,
+                    a.contact_email_field_id,
+                    aw.access_token,
+                    w.name as widget_name,
+                    JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'id', acf.id,
+                            'type', acf.type,
+                            'enums', acf.enums
+                        )
+                    ) as custom_fields
+                FROM accounts a
+                LEFT JOIN account_widget aw ON a.id = aw.account_id AND aw.active = 1
+                LEFT JOIN widgets w ON w.id = aw.widget_id AND w.client_id = ?
+                LEFT JOIN account_custom_fields acf ON a.id = acf.account_id
+                WHERE a.id = ?
+                GROUP BY a.id, a.subdomain, a.domain, a.contact_phone_field_id, a.contact_email_field_id, aw.access_token, w.name
+            ", [$this->clientId, $aId]);
 
-        if (! $octaneAccountData) {
-            /** @var stdClass|null $octaneAccountData */
-            $octaneAccountData = DB::connection('octane')->table('accounts')->where('id', $aId)->first();
-            if (! $octaneAccountData) {
-                throw new Exception("Account ($aId) not found");
-            }
+        if (empty($result)) {
+            throw new Exception("Account ($aId) not found");
+        }
+
+        $accountData = $result[0];
+
+        // Проверяем, что виджет установлен
+        if (!$accountData->access_token) {
             /** @var Widget|null $widget */
             $widget = DB::connection('octane')->table('widgets')->where('client_id', $this->clientId)->first();
-            if (! $widget) {
+            if (!$widget) {
                 throw new Exception("Widget ($this->clientId) not found");
             }
             // @codeCoverageIgnoreStart
-            throw new Exception("Widget ($widget->name) doesn't installed in account ($octaneAccountData->subdomain)");
+            throw new Exception("Widget ($widget->name) doesn't installed in account ($accountData->subdomain)");
             // @codeCoverageIgnoreEnd
         }
 
-        $octaneAccount = $this->convertToOctaneAccount($octaneAccountData);
+        $octaneAccount = $this->convertToOctaneAccount($accountData);
 
-        $fields = DB::connection('octane')
-            ->table('account_custom_fields')
-            ->where('account_id', $aId)
-            ->get();
+        // Парсим custom fields из JSON
+        /** @var array<int, array{id: int|null, type: string|null, enums: string|null}> $customFields */
+        $customFields = json_decode($accountData->custom_fields ?? '[]', true);
+        if (!is_array($customFields)) {
+            $customFields = [];
+        }
+        $fields = collect($customFields)->filter(function (array $field): bool {
+            return !is_null($field['id']); // Фильтруем null значения от LEFT JOIN
+        });
 
         $cf = $fields->pluck('type', 'id')->toArray();
         $enums = $fields->pluck('enums', 'id')->toArray();
@@ -167,6 +190,8 @@ class AmoClientOctane
         $octaneAccount->subdomain = $data->subdomain;
         $octaneAccount->domain = $data->domain;
         $octaneAccount->access_token = $data->access_token;
+        $octaneAccount->contact_phone_field_id = $data->contact_phone_field_id;
+        $octaneAccount->contact_email_field_id = $data->contact_email_field_id;
 
         return $octaneAccount;
     }
