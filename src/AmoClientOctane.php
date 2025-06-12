@@ -76,8 +76,9 @@ class AmoClientOctane
             $this->clientId = $clientId;
         }
 
-        // Оптимизированный запрос: объединяем все данные в один запрос с LEFT JOIN
-        $result = DB::connection('octane')
+        // Оптимизированный подход: два отдельных запроса для лучшей производительности
+        // Первый запрос - основные данные аккаунта
+        $mainResult = DB::connection('octane')
             ->select("
                 SELECT 
                     a.id,
@@ -86,27 +87,37 @@ class AmoClientOctane
                     a.contact_phone_field_id,
                     a.contact_email_field_id,
                     aw.access_token,
-                    w.name as widget_name,
-                    JSON_ARRAYAGG(
-                        JSON_OBJECT(
-                            'id', acf.id,
-                            'type', acf.type,
-                            'enums', acf.enums
-                        )
-                    ) as custom_fields
+                    w.name as widget_name
                 FROM accounts a
                 LEFT JOIN account_widget aw ON a.id = aw.account_id AND aw.active = 1
                 LEFT JOIN widgets w ON w.id = aw.widget_id AND w.client_id = ?
-                LEFT JOIN account_custom_fields acf ON a.id = acf.account_id
                 WHERE a.id = ?
-                GROUP BY a.id, a.subdomain, a.domain, a.contact_phone_field_id, a.contact_email_field_id, aw.access_token, w.name
             ", [$this->clientId, $aId]);
 
-        if (empty($result)) {
+        if (empty($mainResult)) {
             throw new Exception("Account ($aId) not found");
         }
 
-        $accountData = $result[0];
+        $accountData = $mainResult[0];
+
+        // Второй запрос - custom fields отдельно
+        $customFieldsResult = DB::connection('octane')
+            ->select("
+                SELECT id, type, enums
+                FROM account_custom_fields
+                WHERE account_id = ?
+            ", [$aId]);
+
+        // Формируем custom_fields в том же формате как JSON_ARRAYAGG для совместимости
+        $customFieldsArray = [];
+        foreach ($customFieldsResult as $field) {
+            $customFieldsArray[] = [
+                'id' => $field->id,
+                'type' => $field->type,
+                'enums' => $field->enums
+            ];
+        }
+        $accountData->custom_fields = json_encode($customFieldsArray);
 
         // Проверяем, что виджет установлен
         if (! $accountData->access_token) {
