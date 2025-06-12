@@ -79,7 +79,7 @@ class AmoClientOctane
         // Оптимизированный подход: два отдельных запроса для лучшей производительности
         // Первый запрос - основные данные аккаунта
         $mainResult = DB::connection('octane')
-            ->select("
+            ->select('
                 SELECT 
                     a.id,
                     a.subdomain,
@@ -92,7 +92,7 @@ class AmoClientOctane
                 LEFT JOIN account_widget aw ON a.id = aw.account_id AND aw.active = 1
                 LEFT JOIN widgets w ON w.id = aw.widget_id AND w.client_id = ?
                 WHERE a.id = ?
-            ", [$this->clientId, $aId]);
+            ', [$this->clientId, $aId]);
 
         if (empty($mainResult)) {
             throw new Exception("Account ($aId) not found");
@@ -102,11 +102,11 @@ class AmoClientOctane
 
         // Второй запрос - custom fields отдельно
         $customFieldsResult = DB::connection('octane')
-            ->select("
+            ->select('
                 SELECT id, type, enums
                 FROM account_custom_fields
                 WHERE account_id = ?
-            ", [$aId]);
+            ', [$aId]);
 
         // Формируем custom_fields в том же формате как JSON_ARRAYAGG для совместимости
         $customFieldsArray = [];
@@ -114,7 +114,7 @@ class AmoClientOctane
             $customFieldsArray[] = [
                 'id' => $field->id,
                 'type' => $field->type,
-                'enums' => $field->enums
+                'enums' => $field->enums,
             ];
         }
         $accountData->custom_fields = json_encode($customFieldsArray);
