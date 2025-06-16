@@ -219,8 +219,8 @@ class AmoClientOctane
         $octaneAccount->subdomain = $data->subdomain;
         $octaneAccount->domain = $data->domain;
         $octaneAccount->access_token = $data->access_token;
-        $octaneAccount->contact_phone_field_id = $data->contact_phone_field_id;
-        $octaneAccount->contact_email_field_id = $data->contact_email_field_id;
+        $octaneAccount->contact_phone_field_id = $data->contact_phone_field_id ?? 0;
+        $octaneAccount->contact_email_field_id = $data->contact_email_field_id ?? 0;
 
         return $octaneAccount;
     }
