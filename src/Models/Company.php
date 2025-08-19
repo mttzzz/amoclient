@@ -23,7 +23,6 @@ class Company extends AbstractModel
      */
     private array $enums;
 
-    
     /**
      * Коллекция примечаний по всем компаниям (GET /companies/notes)
      */
