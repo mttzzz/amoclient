@@ -34,6 +34,7 @@ class Lead extends AbstractModel
         $this->enums = $enums;
         parent::__construct($http);
         $this->entity = 'leads';
+        $this->notes = new Note($http, $this->entity, null);
     }
 
     public function entity(?int $id = null): Entities\Lead

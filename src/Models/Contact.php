@@ -40,6 +40,7 @@ class Contact extends AbstractModel
         $this->cf = $cf;
         $this->enums = $enums;
         $this->entity = 'contacts';
+        $this->notes = new Note($http, $this->entity, null);
 
         parent::__construct($http);
     }

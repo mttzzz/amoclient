@@ -41,6 +41,7 @@ class Company extends AbstractModel
         $this->fieldEmailId = $account->contact_email_field_id;
         $this->cf = $cf;
         $this->enums = $enums;
+        $this->notes = new Note($http, $this->entity, null);
     }
 
     public function entity(?int $id = null): Entities\Company
