@@ -23,6 +23,12 @@ class Contact extends AbstractModel
      */
     private array $enums;
 
+    
+    /**
+     * Коллекция примечаний по всем контактам (GET /contacts/notes)
+     */
+    public Note $notes;
+
     /**
      * @param  array<mixed>  $cf
      * @param  array<mixed>  $enums

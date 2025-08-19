@@ -23,6 +23,12 @@ class Company extends AbstractModel
      */
     private array $enums;
 
+    
+    /**
+     * Коллекция примечаний по всем компаниям (GET /companies/notes)
+     */
+    public Note $notes;
+
     /**
      * @param  array<mixed>  $cf
      * @param  array<mixed>  $enums
