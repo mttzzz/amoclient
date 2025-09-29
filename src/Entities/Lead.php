@@ -52,6 +52,8 @@ class Lead extends AbstractEntity
 
     public int $price;
 
+    public int|float|null $sale = null;
+
     public int $status_id;
 
     public int $pipeline_id;
