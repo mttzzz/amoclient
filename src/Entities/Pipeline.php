@@ -25,6 +25,8 @@ class Pipeline extends AbstractEntity
 
     public bool $is_main = false;
 
+    public bool $is_archive = false;
+
     public bool $is_unsorted_on = true;
 
     /**
