@@ -171,7 +171,7 @@ class AmoClientOctane
         $retryDelay = Config::get('amoclient.retryDelay') ?? 2000;
 
         $baseUrl = "https://{$octaneAccount->subdomain}.amocrm.{$octaneAccount->domain}/api/v4";
-            $http = Http::withToken($octaneAccount->access_token)
+        $http = Http::withToken($octaneAccount->access_token)
             ->connectTimeout($connectTimeout)
             ->timeout($timeout)
             ->retry($retries, $retryDelay, function (Throwable $exception) {
