@@ -69,7 +69,7 @@ class AmoClientOctane
 
     public string $clientId = '00a140c1-7c52-4563-8b36-03f23754d255';
 
-    public function __construct(int $aId, ?string $clientId = null)
+    public function __construct(int $aId, ?string $clientId = null, ?string $proxy = null)
     {
 
         if ($clientId) {
@@ -168,10 +168,10 @@ class AmoClientOctane
         $timeout = Config::get('amoclient.timeout') ?? 60;
         $connectTimeout = Config::get('amoclient.connectTimeout') ?? 10;
         $retries = Config::get('amoclient.retries') ?? 3;
-        $retryDelay = Config::get('amoclient.retryDelay') ?? 1000;
+        $retryDelay = Config::get('amoclient.retryDelay') ?? 2000;
 
         $baseUrl = "https://{$octaneAccount->subdomain}.amocrm.{$octaneAccount->domain}/api/v4";
-        $http = Http::withToken($octaneAccount->access_token)
+            $http = Http::withToken($octaneAccount->access_token)
             ->connectTimeout($connectTimeout)
             ->timeout($timeout)
             ->retry($retries, $retryDelay, function (Throwable $exception) {
@@ -191,6 +191,10 @@ class AmoClientOctane
                 return false;
             })
             ->baseUrl($baseUrl);
+
+        if ($proxy) {
+            $http = $http->withOptions(['proxy' => $proxy]);
+        }
         // @codeCoverageIgnoreEnd
         $this->accountId = $aId;
         $this->http = $http;
