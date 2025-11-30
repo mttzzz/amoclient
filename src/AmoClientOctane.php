@@ -192,8 +192,9 @@ class AmoClientOctane
             })
             ->baseUrl($baseUrl);
 
-        if ($proxy) {
-            $http = $http->withOptions(['proxy' => $proxy]);
+        $proxyToUse = $proxy ?? config('app.proxy');
+        if ($proxyToUse) {
+            $http = $http->withOptions(['proxy' => $proxyToUse]);
         }
         // @codeCoverageIgnoreEnd
         $this->accountId = $aId;
