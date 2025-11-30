@@ -171,30 +171,61 @@ class AmoClientOctane
         $retryDelay = Config::get('amoclient.retryDelay') ?? 2000;
 
         $baseUrl = "https://{$octaneAccount->subdomain}.amocrm.{$octaneAccount->domain}/api/v4";
+
+        // Собираем уникальные прокси в порядке приоритета
+        /** @var array<int, string|null> $proxies */
+        $proxies = [];
+        if ($proxy) {
+            $proxies[] = $proxy;
+        }
+        if (config('app.proxy') && ! in_array(config('app.proxy'), $proxies)) {
+            $proxies[] = config('app.proxy');
+        }
+        if (config('app.secondProxy') && ! in_array(config('app.secondProxy'), $proxies)) {
+            $proxies[] = config('app.secondProxy');
+        }
+        // Добавляем null как последний вариант (без прокси)
+        $proxies[] = null;
+
+        $proxyIndex = 0;
+        $maxProxyAttempts = count($proxies);
+
         $http = Http::withToken($octaneAccount->access_token)
             ->connectTimeout($connectTimeout)
             ->timeout($timeout)
-            ->retry($retries, $retryDelay, function (Throwable $exception) {
-                // Ретраим при проблемах с подключением
+            ->retry($retries * $maxProxyAttempts, $retryDelay, function (Throwable $exception, PendingRequest $request) use (&$proxyIndex, $proxies, $maxProxyAttempts) {
+                // Проверяем, нужно ли переключить прокси
+                $shouldRetry = false;
+
                 if ($exception instanceof HttpClientConnectionException) {
-                    return true;
+                    $shouldRetry = true;
                 }
 
-                // Ретраим при серверных ошибках (5xx статус коды)
                 if ($exception instanceof RequestException) {
                     if ($exception->response->status() >= 500) {
-                        return true;
+                        $shouldRetry = true;
                     }
                 }
 
-                // Остальные ошибки не ретраим
+                if ($shouldRetry && $proxyIndex < $maxProxyAttempts - 1) {
+                    $proxyIndex++;
+                    $newProxy = $proxies[$proxyIndex] ?? null;
+                    if ($newProxy) {
+                        $request->withOptions(['proxy' => $newProxy]);
+                    } else {
+                        $request->withOptions(['proxy' => null]);
+                    }
+
+                    return true;
+                }
+
                 return false;
             })
             ->baseUrl($baseUrl);
 
-        $proxyToUse = $proxy ?? config('app.proxy');
-        if ($proxyToUse) {
-            $http = $http->withOptions(['proxy' => $proxyToUse]);
+        // Устанавливаем первую прокси (если есть)
+        if ($proxies[0]) {
+            $http = $http->withOptions(['proxy' => $proxies[0]]);
         }
         // @codeCoverageIgnoreEnd
         $this->accountId = $aId;
