@@ -112,7 +112,7 @@ trait CustomFieldTrait
     public function getCF(int $id): array
     {
         return empty($this->custom_fields_values) ? [] :
-            Arr::where($this->custom_fields_values, fn($i) => isset($i['field_id']) && $i['field_id'] == $id);
+            Arr::where($this->custom_fields_values, fn ($i) => isset($i['field_id']) && $i['field_id'] == $id);
     }
 
     /**
@@ -121,7 +121,7 @@ trait CustomFieldTrait
     public function getCFByCode(string $code): array
     {
         return empty($this->custom_fields_values) ? [] :
-            Arr::where($this->custom_fields_values, fn($i) => isset($i['field_code']) && $i['field_code'] == $code);
+            Arr::where($this->custom_fields_values, fn ($i) => isset($i['field_code']) && $i['field_code'] == $code);
     }
 
     public function getCFV(int $id): mixed
