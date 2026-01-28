@@ -170,7 +170,9 @@ class AmoClientOctane
         $retries = Config::get('amoclient.retries') ?? 3;
         $retryDelay = Config::get('amoclient.retryDelay') ?? 2000;
 
-        $baseUrl = "https://{$octaneAccount->subdomain}.amocrm.{$octaneAccount->domain}/api/v4";
+        $baseUrl = $octaneAccount->domain === 'com'
+            ? "https://{$octaneAccount->subdomain}.kommo.com/api/v4"
+            : "https://{$octaneAccount->subdomain}.amocrm.{$octaneAccount->domain}/api/v4";
 
         // Собираем уникальные прокси в порядке приоритета
         /** @var array<int, string|null> $proxies */

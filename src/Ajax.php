@@ -12,8 +12,11 @@ class Ajax
     public function __construct(OctaneAccount $account, PendingRequest $http)
     {
         $this->http = clone $http;
+        $baseUrl = $account->domain === 'com'
+            ? "https://{$account->subdomain}.kommo.com"
+            : "https://{$account->subdomain}.amocrm.{$account->domain}";
         $this->http = $this->http->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
-            ->baseUrl("https://{$account->subdomain}.amocrm.{$account->domain}");
+            ->baseUrl($baseUrl);
     }
 
     /**
