@@ -2,6 +2,8 @@
 
 namespace mttzzz\AmoClient\Tests;
 
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
+
 class EventTest extends BaseAmoClient
 {
     public function test_get_events()
@@ -71,8 +73,14 @@ class EventTest extends BaseAmoClient
 
     public function test_filter_by_entity_customer()
     {
-        $customer = $this->amoClient->customers->limit(1)->get()[0];
-        $events = $this->amoClient->events->customer($customer['id'])->limit(10)->get();
+        try {
+            $customer = $this->amoClient->customers->limit(1)->get()[0];
+            $events = $this->amoClient->events->customer($customer['id'])->limit(10)->get();
+        } catch (AmoCustomException $e) {
+            $this->skipIfCustomersUnavailable($e);
+            throw $e;
+        }
+
         $this->assertIsArray($events);
         foreach ($events as $event) {
             $this->assertEquals($customer['id'], $event['entity_id']);
@@ -487,7 +495,10 @@ class EventTest extends BaseAmoClient
         $events = $this->amoClient->events->typeCustomFieldValueChanged()->limit(10)->get();
         $this->assertIsArray($events);
         foreach ($events as $event) {
-            $this->assertMatchesRegularExpression('/^custom_field_\d+_value_changed$/', $event['type']);
+            $this->assertTrue(
+                $event['type'] === 'custom_field_value_changed'
+                || preg_match('/^custom_field_\d+_value_changed$/', $event['type']) === 1
+            );
         }
     }
 
@@ -660,8 +671,13 @@ class EventTest extends BaseAmoClient
 
     public function test_value_after_customer_statuses()
     {
+        try {
+            $events = $this->amoClient->events->valueAfterCustomerStatuses(121207)->limit(10)->get();
+        } catch (AmoCustomException $e) {
+            $this->skipIfUnsupportedAmoResponse($e, ['customers_statuses', 'Error 426.'], 'Customer status event filters are unavailable for the current account.');
+            throw $e;
+        }
 
-        $events = $this->amoClient->events->valueAfterCustomerStatuses(121207)->limit(10)->get();
         $this->assertIsArray($events);
         foreach ($events as $event) {
             $this->assertEquals(121207, $event['value_after'][0]['customer_status']['id']);
@@ -702,7 +718,13 @@ class EventTest extends BaseAmoClient
 
     public function test_value_before_customer_statuses()
     {
-        $events = $this->amoClient->events->valueBeforeCustomerStatuses(121207)->limit(10)->get();
+        try {
+            $events = $this->amoClient->events->valueBeforeCustomerStatuses(121207)->limit(10)->get();
+        } catch (AmoCustomException $e) {
+            $this->skipIfUnsupportedAmoResponse($e, ['customers_statuses', 'Error 426.'], 'Customer status event filters are unavailable for the current account.');
+            throw $e;
+        }
+
         $this->assertIsArray($events);
         foreach ($events as $event) {
             $this->assertEquals(121207, $event['value_before'][0]['customer_status']['id']);

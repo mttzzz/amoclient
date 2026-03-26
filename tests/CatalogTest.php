@@ -41,7 +41,7 @@ class CatalogTest extends BaseAmoClient
         $this->assertEquals($this->data['can_add_elements'], $this->catalog->can_add_elements);
     }
 
-    #[Depends('testCatalogEntity')]
+    #[Depends('test_catalog_entity')]
     public function test_catalog_create()
     {
         $response = $this->catalog->create();
@@ -64,7 +64,7 @@ class CatalogTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testCatalogCreate')]
+    #[Depends('test_catalog_create')]
     public function test_catalog_update(int $catalogId)
     {
         $newName = 'Test Catalog2';
@@ -86,7 +86,7 @@ class CatalogTest extends BaseAmoClient
         return $catalogId;
     }
 
-    #[Depends('testCatalogUpdate')]
+    #[Depends('test_catalog_update')]
     public function test_catalog_element(int $catalogId)
     {
 
@@ -121,8 +121,8 @@ class CatalogTest extends BaseAmoClient
         return $catalogId;
     }
 
-    #[Depends('testCatalogUpdate')]
-    #[Depends('testCatalogElement')]
+    #[Depends('test_catalog_update')]
+    #[Depends('test_catalog_element')]
     public function test_catalog_delete(int $catalogId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/v1/catalogs/set/', ['request' => ['catalogs' => ['delete' => $catalogId]]]);

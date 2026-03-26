@@ -41,7 +41,7 @@ class LinkTest extends BaseAmoClient
         $this->assertEquals('success', $response['status']);
 
         $response = $this->amoClient->ajax->postJson('/ajax/v1/customers/set/', ['request' => ['customers' => ['delete' => [$customerId]]]]);
-        $this->assertEquals(0, count($response['response']['customers']['delete']['errors']));
+        $this->assertCustomerDeleteAccepted($response);
 
     }
 

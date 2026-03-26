@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Tests;
 use mttzzz\AmoClient\AmoClientOctane;
 use mttzzz\AmoClient\Entities\Lead;
 use mttzzz\AmoClient\Entities\Task;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use PHPUnit\Framework\Attributes\Depends;
 
 class TaskTest extends BaseAmoClient
@@ -42,7 +43,7 @@ class TaskTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_task_entity(int $leadId)
     {
 
@@ -52,7 +53,7 @@ class TaskTest extends BaseAmoClient
         return $leadId;
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_task_add(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -70,7 +71,7 @@ class TaskTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testTaskAdd')]
+    #[Depends('test_task_add')]
     public function test_task_find(int $taskId)
     {
         $foundTasks = $this->amoClient->tasks->find($taskId);
@@ -80,7 +81,7 @@ class TaskTest extends BaseAmoClient
         $this->assertEquals($taskId, $foundTask['id']);
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_task_filter(int $leadId)
     {
 
@@ -132,21 +133,27 @@ class TaskTest extends BaseAmoClient
         $this->assertEquals($filtered7[0]['entity_type'], 'companies');
 
         $this->amoClient = new AmoClientOctane($aId, $clientId);
-        $customer = $this->amoClient->customers->entityData([
-            'name' => 'Test Customer',
-            'next_date' => 1270000,
-        ])->create();
-        $this->amoClient->customers
-            ->entity($customer['_embedded']['customers'][0]['id'])->tasks->add('test');
+        try {
+            $customer = $this->amoClient->customers->entityData([
+                'name' => 'Test Customer',
+                'next_date' => 1270000,
+            ])->create();
+            $this->amoClient->customers
+                ->entity($customer['_embedded']['customers'][0]['id'])->tasks->add('test');
 
-        $filtered8 = $this->amoClient->tasks->filterCustomer(1)->get();
-        $this->assertEquals($filtered8[0]['entity_type'], 'customers');
-        $this->amoClient->ajax->postJson('/ajax/v1/customers/set/',
-            ['request' => [
-                'customers' => ['delete' => [
-                    $customer['_embedded']['customers'][0]['id'],
-                ]],
-            ]]);
+            $filtered8 = $this->amoClient->tasks->filterCustomer()->get();
+            $this->assertEquals($filtered8[0]['entity_type'], 'customers');
+            $this->amoClient->ajax->postJson('/ajax/v1/customers/set/',
+                ['request' => [
+                    'customers' => ['delete' => [
+                        $customer['_embedded']['customers'][0]['id'],
+                    ]],
+                ]]);
+        } catch (AmoCustomException $e) {
+            $this->skipIfCustomersUnavailable($e);
+            $this->skipIfUnsupportedAmoResponse($e, ['Код ошибки 237'], 'Customer task filters are not supported for the current account.');
+            throw $e;
+        }
 
         $this->amoClient = new AmoClientOctane($aId, $clientId);
         $filtered9 = $this->amoClient->tasks->filterEntityId($leadId)->get();
@@ -184,7 +191,7 @@ class TaskTest extends BaseAmoClient
 
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_task_set_result_text(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -203,8 +210,8 @@ class TaskTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
-    #[Depends('testTaskAdd')]
+    #[Depends('test_lead_create')]
+    #[Depends('test_task_add')]
     public function test_lead_delete(int $leadId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);

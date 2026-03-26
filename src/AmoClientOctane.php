@@ -89,8 +89,8 @@ class AmoClientOctane
                     aw.access_token,
                     w.name as widget_name
                 FROM accounts a
-                LEFT JOIN account_widget aw ON a.id = aw.account_id AND aw.active = 1
-                LEFT JOIN widgets w ON w.id = aw.widget_id AND w.client_id = ?
+                LEFT JOIN widgets w ON w.client_id = ?
+                LEFT JOIN account_widget aw ON a.id = aw.account_id AND aw.active = 1 AND aw.widget_id = w.id
                 WHERE a.id = ?
             ', [$this->clientId, $aId]);
 
@@ -169,6 +169,7 @@ class AmoClientOctane
         $connectTimeout = Config::get('amoclient.connectTimeout') ?? 10;
         $retries = Config::get('amoclient.retries') ?? 3;
         $retryDelay = Config::get('amoclient.retryDelay') ?? 2000;
+        $verify = Config::get('amoclient.verify');
 
         $baseUrl = $octaneAccount->domain === 'com'
             ? "https://{$octaneAccount->subdomain}.kommo.com/api/v4"
@@ -195,6 +196,7 @@ class AmoClientOctane
         $http = Http::withToken($octaneAccount->access_token)
             ->connectTimeout($connectTimeout)
             ->timeout($timeout)
+            ->withOptions(['verify' => $verify])
             ->retry($retries * $maxProxyAttempts, $retryDelay, function (Throwable $exception, PendingRequest $request) use (&$proxyIndex, $proxies, $maxProxyAttempts) {
                 // Проверяем, нужно ли переключить прокси
                 $shouldRetry = false;

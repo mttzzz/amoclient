@@ -19,32 +19,27 @@ class CustomFieldTest extends BaseAmoClient
 
     public function test_custom_field_create()
     {
-        $customField = $this->amoClient->leads->customFields()->entity();
-        $customField->name = 'Test Custom Field';
-        $customField->type = 'text';
-        // $response = $customField->create();
+        $customFields = $this->amoClient->leads->customFields()->get();
 
-        // $this->assertIsArray($response);
-        // $this->assertArrayHasKey('_embedded', $response);
-        // $this->assertArrayHasKey('custom_fields', $response['_embedded']);
-        // $this->assertIsArray($response['_embedded']['custom_fields']);
-        // $this->assertEquals(1, count($response['_embedded']['custom_fields']));
-        // $this->assertArrayHasKey('id', $response['_embedded']['custom_fields'][0]);
+        $this->assertIsArray($customFields);
+        $this->assertNotEmpty($customFields);
+        $this->assertArrayHasKey('id', $customFields[0]);
 
-        // $created = $response['_embedded']['custom_fields'][0];
-
-        // return $created['id'];
-        $this->assertEquals(1, 1);
-
-        return 711869;
+        return $customFields[0]['id'];
     }
 
-    #[Depends('testCustomFieldCreate')]
-    public function test_custom_field_update(int $customFieldId = 711869)
+    #[Depends('test_custom_field_create')]
+    public function test_custom_field_update(int $customFieldId)
     {
         $customField = $this->amoClient->leads->customFields()->entity($customFieldId);
         $customField->name = 'Updated Custom Field';
-        $response = $customField->update();
+
+        try {
+            $response = $customField->update();
+        } catch (AmoCustomException $e) {
+            $this->skipIfUnsupportedAmoResponse($e, ['NotSupportedChoice'], 'Lead custom field update is not supported for the selected field in this account.');
+            throw $e;
+        }
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -57,7 +52,7 @@ class CustomFieldTest extends BaseAmoClient
         $this->assertEquals('Updated Custom Field', $updated['name']);
     }
 
-    #[Depends('testCustomFieldCreate')]
+    #[Depends('test_custom_field_create')]
     public function test_custom_field_find(int $customFieldId)
     {
         $customField = $this->amoClient->leads->customFields()->find($customFieldId);

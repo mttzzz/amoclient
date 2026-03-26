@@ -39,7 +39,7 @@ class PipelineTest extends BaseAmoClient
 
     }
 
-    #[Depends('testPipelineEntity')]
+    #[Depends('test_pipeline_entity')]
     public function test_pipeline_create()
     {
         $response = $this->pipeline->create();
@@ -76,7 +76,7 @@ class PipelineTest extends BaseAmoClient
 
     }
 
-    #[Depends('testPipelineCreate')]
+    #[Depends('test_pipeline_create')]
     public function test_pipeline_update(int $pipelineId)
     {
         $pipeline = $this->amoClient->pipelines->entity($pipelineId);
@@ -88,14 +88,14 @@ class PipelineTest extends BaseAmoClient
         return $pipelineId;
     }
 
-    #[Depends('testPipelineCreate')]
+    #[Depends('test_pipeline_create')]
     public function test_pipeline_find(int $pipelineId)
     {
         $response = $this->amoClient->pipelines->find($pipelineId);
         $this->assertEquals($response->id, $pipelineId);
     }
 
-    #[Depends('testPipelineUpdate')]
+    #[Depends('test_pipeline_update')]
     public function test_pipeline_delete(int $pipelineId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/v1/pipelines/delete', ['request' => ['id' => $pipelineId]]);

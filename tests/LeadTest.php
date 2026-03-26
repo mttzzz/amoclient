@@ -32,7 +32,18 @@ class LeadTest extends BaseAmoClient
         $this->assertEquals($this->data['name'], $this->lead->name);
     }
 
-    #[Depends('testLeadEntity')]
+    public function test_lead_entity_stores_unknown_api_fields()
+    {
+        $lead = $this->amoClient->leads->entityData([
+            'name' => 'Test Lead',
+            'price_with_minor_units' => 1500,
+        ]);
+
+        $this->assertSame(1500, $lead->price_with_minor_units);
+        $this->assertSame(1500, $lead->toArray()['price_with_minor_units']);
+    }
+
+    #[Depends('test_lead_entity')]
     public function test_lead_create()
     {
         $response = $this->lead->create();
@@ -49,7 +60,7 @@ class LeadTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_lead_update(int $leadId)
     {
         $newName = 'Test Lead 2';
@@ -77,7 +88,7 @@ class LeadTest extends BaseAmoClient
         return $leadId;
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_lead_custom_fields(int $leadId)
     {
         $customFields = $this->amoClient->leads->customFields()->get();
@@ -87,7 +98,7 @@ class LeadTest extends BaseAmoClient
         return $leadId;
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_lead_query(int $leadId)
     {
         $query = $this->amoClient->leads->query('Test Lead')
@@ -118,9 +129,9 @@ class LeadTest extends BaseAmoClient
         return $leadId;
     }
 
-    #[Depends('testLeadUpdate')]
-    #[Depends('testLeadCustomFields')]
-    #[Depends('testLeadQuery')]
+    #[Depends('test_lead_update')]
+    #[Depends('test_lead_custom_fields')]
+    #[Depends('test_lead_query')]
     public function test_lead_delete(int $leadId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);

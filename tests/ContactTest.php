@@ -32,7 +32,7 @@ class ContactTest extends BaseAmoClient
         $this->assertEquals($this->data['name'], $this->contact->name);
     }
 
-    #[Depends('testContactEntity')]
+    #[Depends('test_contact_entity')]
     public function test_contact_create()
     {
         $response = $this->contact->create();
@@ -49,10 +49,26 @@ class ContactTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testContactCreate')]
+    #[Depends('test_contact_create')]
     public function test_contact_update(int $contactId)
     {
         $newName = 'Test Contact 2';
+        $contactCustomFieldId = null;
+        $positionFieldExists = false;
+
+        foreach ($this->amoClient->contacts->customFields()->get() as $field) {
+            if (! $contactCustomFieldId
+                && ($field['type'] ?? null) === 'text'
+                && isset($field['id'])
+                && ($field['code'] ?? null) !== 'POSITION') {
+                $contactCustomFieldId = (int) $field['id'];
+            }
+
+            if (($field['code'] ?? null) === 'POSITION') {
+                $positionFieldExists = true;
+            }
+        }
+
         $this->contact->id = $contactId;
         $this->contact->name = $newName;
         $this->contact->phoneSet(['11111111111', '22222222222']);
@@ -61,8 +77,12 @@ class ContactTest extends BaseAmoClient
         $this->contact->emailSet(['11111111111@example.com', '22222222222@example.com']);
         $this->contact->emailAdd('3333333333@example.com');
         $this->contact->emailAdd('4444444444@example.com');
-        $this->contact->setCF(492281, 'Клиент');
-        $this->contact->setCFByCode('POSITION', '222222222222222');
+        if ($contactCustomFieldId) {
+            $this->contact->setCF($contactCustomFieldId, 'Клиент');
+        }
+        if ($positionFieldExists) {
+            $this->contact->setCFByCode('POSITION', '222222222222222');
+        }
 
         $response = $this->contact->update();
 
@@ -77,8 +97,12 @@ class ContactTest extends BaseAmoClient
 
         $this->assertEquals($contactId, $contact->id);
         $this->assertEquals($newName, $contact->name);
-        $this->assertEquals('Клиент', $contact->getCFV(492281));
-        $this->assertEquals('222222222222222', $contact->getCFVByCode('POSITION'));
+        if ($contactCustomFieldId) {
+            $this->assertEquals('Клиент', $contact->getCFV($contactCustomFieldId));
+        }
+        if ($positionFieldExists) {
+            $this->assertEquals('222222222222222', $contact->getCFVByCode('POSITION'));
+        }
 
         $phones = $contact->phoneList();
         $this->assertContains('11111111111', $phones);
@@ -120,7 +144,7 @@ class ContactTest extends BaseAmoClient
         return $contactId;
     }
 
-    #[Depends('testContactCreate')]
+    #[Depends('test_contact_create')]
     public function test_contact_get_lead_ids(int $companyId)
     {
         $this->contact->id = $companyId;
@@ -130,7 +154,7 @@ class ContactTest extends BaseAmoClient
         return $companyId;
     }
 
-    #[Depends('testContactCreate')]
+    #[Depends('test_contact_create')]
     public function test_contact_custom_fields(int $contactId)
     {
         $customFields = $this->amoClient->contacts->customFields()->get();
@@ -140,7 +164,7 @@ class ContactTest extends BaseAmoClient
         return $contactId;
     }
 
-    #[Depends('testContactCreate')]
+    #[Depends('test_contact_create')]
     public function test_contact_query(int $contactId)
     {
         $query = $this->amoClient->contacts->query('Test Contact')
@@ -164,9 +188,9 @@ class ContactTest extends BaseAmoClient
         return $contactId;
     }
 
-    #[Depends('testContactUpdate')]
-    #[Depends('testContactCustomFields')]
-    #[Depends('testContactQuery')]
+    #[Depends('test_contact_update')]
+    #[Depends('test_contact_custom_fields')]
+    #[Depends('test_contact_query')]
     public function test_contact_delete(int $contactId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$contactId]]);

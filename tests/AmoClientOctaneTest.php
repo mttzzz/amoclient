@@ -33,7 +33,7 @@ class AmoClientOctaneTest extends BaseAmoClient
             "Account ($octaneAccountData->subdomain) doesn't have an active widget ($widget->name)");
     }
 
-    #[Depends('testAmoClientOctane')]
+    #[Depends('test_amo_client_octane')]
     public function test_account_not_found()
     {
         $this->expectException(Exception::class);
@@ -42,7 +42,7 @@ class AmoClientOctaneTest extends BaseAmoClient
         new AmoClientOctane(999999999999, '00a140c1-7c52-4563-8b36-03f23754d255');
     }
 
-    #[Depends('testAccountNotFound')]
+    #[Depends('test_account_not_found')]
     public function test_widget_not_found()
     {
         $this->expectException(Exception::class);

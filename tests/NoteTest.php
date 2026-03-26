@@ -43,7 +43,7 @@ class NoteTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_note_common_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -70,7 +70,7 @@ class NoteTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_note_call_in_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -93,7 +93,7 @@ class NoteTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_note_call_out_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -116,7 +116,7 @@ class NoteTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_note_service_message_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -134,7 +134,7 @@ class NoteTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_note_message_cashier_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -152,7 +152,7 @@ class NoteTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_note_invoice_paid_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -170,7 +170,7 @@ class NoteTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_note_geolocation_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -188,7 +188,7 @@ class NoteTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
+    #[Depends('test_lead_create')]
     public function test_note_sms_in_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -206,15 +206,15 @@ class NoteTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
-    #[Depends('testNoteCommonCreate')]
-    #[Depends('testNoteCallInCreate')]
-    #[Depends('testNoteCallOutCreate')]
-    #[Depends('testNoteServiceMessageCreate')]
-    #[Depends('testNoteMessageCashierCreate')]
-    #[Depends('testNoteInvoicePaidCreate')]
-    #[Depends('testNoteGeolocationCreate')]
-    #[Depends('testNoteSmsInCreate')]
+    #[Depends('test_lead_create')]
+    #[Depends('test_note_common_create')]
+    #[Depends('test_note_call_in_create')]
+    #[Depends('test_note_call_out_create')]
+    #[Depends('test_note_service_message_create')]
+    #[Depends('test_note_message_cashier_create')]
+    #[Depends('test_note_invoice_paid_create')]
+    #[Depends('test_note_geolocation_create')]
+    #[Depends('test_note_sms_in_create')]
     public function test_note_sms_out_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
@@ -287,16 +287,16 @@ class NoteTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testLeadCreate')]
-    #[Depends('testNoteCommonCreate')]
-    #[Depends('testNoteCallInCreate')]
-    #[Depends('testNoteCallOutCreate')]
-    #[Depends('testNoteServiceMessageCreate')]
-    #[Depends('testNoteMessageCashierCreate')]
-    #[Depends('testNoteInvoicePaidCreate')]
-    #[Depends('testNoteGeolocationCreate')]
-    #[Depends('testNoteSmsInCreate')]
-    #[Depends('testNoteSmsOutCreate')]
+    #[Depends('test_lead_create')]
+    #[Depends('test_note_common_create')]
+    #[Depends('test_note_call_in_create')]
+    #[Depends('test_note_call_out_create')]
+    #[Depends('test_note_service_message_create')]
+    #[Depends('test_note_message_cashier_create')]
+    #[Depends('test_note_invoice_paid_create')]
+    #[Depends('test_note_geolocation_create')]
+    #[Depends('test_note_sms_in_create')]
+    #[Depends('test_note_sms_out_create')]
     public function test_lead_delete(int $leadId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);

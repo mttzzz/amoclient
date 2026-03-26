@@ -32,7 +32,7 @@ class CompanyTest extends BaseAmoClient
         $this->assertEquals($this->data['name'], $this->company->name);
     }
 
-    #[Depends('testCompanyEntity')]
+    #[Depends('test_company_entity')]
     public function test_company_create()
     {
         $response = $this->company->create();
@@ -49,7 +49,7 @@ class CompanyTest extends BaseAmoClient
         return $created['id'];
     }
 
-    #[Depends('testCompanyCreate')]
+    #[Depends('test_company_create')]
     public function test_company_update(int $companyId)
     {
         $newName = 'Test Company 2';
@@ -119,7 +119,7 @@ class CompanyTest extends BaseAmoClient
         return $companyId;
     }
 
-    #[Depends('testCompanyCreate')]
+    #[Depends('test_company_create')]
     public function test_company_get_lead_ids(int $companyId)
     {
         $this->company->id = $companyId;
@@ -129,7 +129,7 @@ class CompanyTest extends BaseAmoClient
         return $companyId;
     }
 
-    #[Depends('testCompanyCreate')]
+    #[Depends('test_company_create')]
     public function test_company_custom_fields(int $companyId)
     {
         $customFields = $this->amoClient->companies->customFields()->get();
@@ -139,7 +139,7 @@ class CompanyTest extends BaseAmoClient
         return $companyId;
     }
 
-    #[Depends('testCompanyCreate')]
+    #[Depends('test_company_create')]
     public function test_company_query(int $companyId)
     {
         $query = $this->amoClient->companies->query('Test Company')
@@ -167,9 +167,9 @@ class CompanyTest extends BaseAmoClient
 
     }
 
-    #[Depends('testCompanyUpdate')]
-    #[Depends('testCompanyQuery')]
-    #[Depends('testCompanyCustomFields')]
+    #[Depends('test_company_update')]
+    #[Depends('test_company_query')]
+    #[Depends('test_company_custom_fields')]
     public function test_company_delete(int $companyId)
     {
         $response = $this->amoClient->ajax->postForm('/ajax/companies/multiple/delete/', ['ID' => [$companyId]]);
