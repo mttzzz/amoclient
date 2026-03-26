@@ -3,10 +3,12 @@
 namespace mttzzz\AmoClient\Tests;
 
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Models\CustomField;
 use PHPUnit\Framework\Attributes\Depends;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class CustomFieldTest extends BaseAmoClient
 {
@@ -66,16 +68,16 @@ class CustomFieldTest extends BaseAmoClient
         $customFieldId = 123; // Некорректный ID для теста
 
         // Создаем мок для PendingRequest
-        /** @var \Illuminate\Http\Client\PendingRequest|\PHPUnit\Framework\MockObject\MockObject $httpMock */
-        $httpMock = $this->createMock(\Illuminate\Http\Client\PendingRequest::class);
+        /** @var PendingRequest|MockObject $httpMock */
+        $httpMock = $this->createMock(PendingRequest::class);
 
         // Создаем реальный объект Response с необходимыми данными
-        $response = new \Illuminate\Http\Client\Response(
+        $response = new Response(
             new \GuzzleHttp\Psr7\Response(500, [], 'Internal Server Error')
         );
 
         // Настраиваем мок так, чтобы метод get выбрасывал RequestException с реальным объектом Response
-        $httpMock->method('get')->will($this->throwException(new \Illuminate\Http\Client\RequestException($response)));
+        $httpMock->method('get')->will($this->throwException(new RequestException($response)));
 
         // Создаем экземпляр класса, который мы тестируем, и подставляем мок
         $customFieldService = new CustomField($httpMock, 'leads');

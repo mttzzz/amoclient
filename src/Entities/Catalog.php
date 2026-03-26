@@ -28,7 +28,7 @@ class Catalog extends AbstractEntity
         parent::__construct($data, $http);
         $this->entity = 'catalogs';
         if ($this->id !== null) {
-            $this->elements = new Models\CatalogElement($http, $this->id);
+            $this->elements = new CatalogElement($http, $this->id);
         }
     }
 

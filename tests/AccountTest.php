@@ -8,6 +8,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Models\Account;
+use PHPUnit\Framework\MockObject\MockObject;
 
 class AccountTest extends BaseAmoClient
 {
@@ -23,11 +24,11 @@ class AccountTest extends BaseAmoClient
     public function test_account_get_exception()
     {
         // Создаем мок для PendingRequest
-        /** @var \Illuminate\Http\Client\PendingRequest|\PHPUnit\Framework\MockObject\MockObject $httpMock */
+        /** @var PendingRequest|MockObject $httpMock */
         $httpMock = $this->createMock(PendingRequest::class);
 
         // Создаем реальный объект Response с необходимыми данными
-        $response = new \Illuminate\Http\Client\Response(new \GuzzleHttp\Psr7\Response(500, [], 'Internal Server Error'));
+        $response = new Response(new GuzzleResponse(500, [], 'Internal Server Error'));
 
         // Настраиваем мок так, чтобы метод get выбрасывал RequestException с реальным объектом Response
         $httpMock->method('get')->will($this->throwException(new RequestException($response)));

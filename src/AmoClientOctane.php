@@ -234,22 +234,22 @@ class AmoClientOctane
         // @codeCoverageIgnoreEnd
         $this->accountId = $aId;
         $this->http = $http;
-        $this->account = new Models\Account($http, $aId);
-        $this->leads = new Models\Lead($http, $cf, $enums);
-        $this->customers = new Models\Customer($http, $cf);
-        $this->contacts = new Models\Contact($http, $octaneAccount, $cf, $enums);
-        $this->companies = new Models\Company($http, $octaneAccount, $cf, $enums);
-        $this->catalogs = new Models\Catalog($http);
-        $this->users = new Models\User($http);
-        $this->pipelines = new Models\Pipeline($http);
-        $this->tasks = new Models\Task($http);
-        $this->events = new Models\Event($http);
+        $this->account = new Account($http, $aId);
+        $this->leads = new Lead($http, $cf, $enums);
+        $this->customers = new Customer($http, $cf);
+        $this->contacts = new Contact($http, $octaneAccount, $cf, $enums);
+        $this->companies = new Company($http, $octaneAccount, $cf, $enums);
+        $this->catalogs = new Catalog($http);
+        $this->users = new User($http);
+        $this->pipelines = new Pipeline($http);
+        $this->tasks = new Task($http);
+        $this->events = new Event($http);
         $this->ajax = new Ajax($octaneAccount, $http);
-        $this->unsorted = new Models\Unsorted($http);
-        $this->calls = new Models\Call($http);
-        $this->webhooks = new Models\Webhook($http);
-        $this->shortLinks = new Models\ShortLink($http);
-        $this->sources = new Models\Source($http);
+        $this->unsorted = new Unsorted($http);
+        $this->calls = new Call($http);
+        $this->webhooks = new Webhook($http);
+        $this->shortLinks = new ShortLink($http);
+        $this->sources = new Source($http);
     }
 
     private function convertToOctaneAccount(stdClass $data): OctaneAccount
