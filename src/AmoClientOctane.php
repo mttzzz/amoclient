@@ -90,7 +90,7 @@ class AmoClientOctane
                     w.name as widget_name
                 FROM accounts a
                 LEFT JOIN widgets w ON w.client_id = ?
-                LEFT JOIN account_widget aw ON a.id = aw.account_id AND aw.active = 1 AND aw.widget_id = w.id
+                LEFT JOIN account_widget aw ON a.id = aw.account_id AND aw.active = true AND aw.widget_id = w.id
                 WHERE a.id = ?
             ', [$this->clientId, $aId]);
 
