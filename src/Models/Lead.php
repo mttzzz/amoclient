@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Models;
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
+use mttzzz\AmoClient\LazyCustomFields;
 use mttzzz\AmoClient\Traits;
 use mttzzz\AmoClient\Traits\Filter;
 
@@ -13,25 +14,16 @@ class Lead extends AbstractModel
     use Filter\Common, Filter\Lead;
     use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
 
-    /** @var array<mixed> */
-    private array $cf;
-
-    /** @var array<mixed> */
-    private array $enums;
+    private LazyCustomFields $lazyCf;
 
     /**
      * Коллекция примечаний по всем сделкам (GET /leads/notes)
      */
     public Note $notes;
 
-    /**
-     * @param  array<mixed>  $cf
-     * @param  array<mixed>  $enums
-     */
-    public function __construct(PendingRequest $http, array $cf, array $enums)
+    public function __construct(PendingRequest $http, LazyCustomFields $lazyCf)
     {
-        $this->cf = $cf;
-        $this->enums = $enums;
+        $this->lazyCf = $lazyCf;
         parent::__construct($http);
         $this->entity = 'leads';
         $this->notes = new Note($http, $this->entity, null);
@@ -39,7 +31,7 @@ class Lead extends AbstractModel
 
     public function entity(?int $id = null): Entities\Lead
     {
-        return new Entities\Lead(['id' => $id], $this->http, $this->cf, $this->enums);
+        return new Entities\Lead(['id' => $id], $this->http, $this->lazyCf->cf(), $this->lazyCf->enums());
     }
 
     /**
@@ -47,7 +39,7 @@ class Lead extends AbstractModel
      */
     public function entityData(array $data): Entities\Lead
     {
-        return new Entities\Lead($data, $this->http, $this->cf, $this->enums);
+        return new Entities\Lead($data, $this->http, $this->lazyCf->cf(), $this->lazyCf->enums());
     }
 
     public function customFields(): CustomField
@@ -60,7 +52,7 @@ class Lead extends AbstractModel
      */
     public function find(int $id): Entities\Lead
     {
-        return new Entities\Lead($this->findEntity($id), $this->http, $this->cf, $this->enums);
+        return new Entities\Lead($this->findEntity($id), $this->http, $this->lazyCf->cf(), $this->lazyCf->enums());
     }
 
     public function withCatalogElements(): static

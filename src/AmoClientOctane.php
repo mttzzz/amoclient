@@ -76,11 +76,12 @@ class AmoClientOctane
             $this->clientId = $clientId;
         }
 
-        // Оптимизированный подход: два отдельных запроса для лучшей производительности
-        // Первый запрос - основные данные аккаунта
+        // Один запрос: account + widget. account_custom_fields подгружаются
+        // лениво через LazyCustomFields — только если caller дойдёт до
+        // entity()/one()/find() у Lead/Customer/Contact/Company.
         $mainResult = DB::connection('octane')
             ->select('
-                SELECT 
+                SELECT
                     a.id,
                     a.subdomain,
                     a.domain,
@@ -100,25 +101,6 @@ class AmoClientOctane
 
         $accountData = $mainResult[0];
 
-        // Второй запрос - custom fields отдельно
-        $customFieldsResult = DB::connection('octane')
-            ->select('
-                SELECT id, type, enums
-                FROM account_custom_fields
-                WHERE account_id = ?
-            ', [$aId]);
-
-        // Формируем custom_fields в том же формате как JSON_ARRAYAGG для совместимости
-        $customFieldsArray = [];
-        foreach ($customFieldsResult as $field) {
-            $customFieldsArray[] = [
-                'id' => $field->id,
-                'type' => $field->type,
-                'enums' => $field->enums,
-            ];
-        }
-        $accountData->custom_fields = json_encode($customFieldsArray);
-
         // Проверяем, что виджет установлен
         if (! $accountData->access_token) {
             /** @var Widget|null $widget */
@@ -133,36 +115,7 @@ class AmoClientOctane
 
         $octaneAccount = $this->convertToOctaneAccount($accountData);
 
-        // Парсим custom fields из JSON
-        $rawCustomFields = $accountData->custom_fields;
-
-        // Если custom_fields пришли как JSON строка, парсим их
-        if (is_string($rawCustomFields)) {
-            /** @var array<int, array{id: int|null, type: string|null, enums: string|null}> $customFields */
-            $customFields = json_decode($rawCustomFields, true);
-        } else {
-            /** @var array<int, array{id: int|null, type: string|null, enums: string|null}> $customFields */
-            $customFields = $rawCustomFields;
-        }
-
-        if (! is_array($customFields)) {
-            $customFields = [];
-        }
-
-        $fields = collect($customFields)->filter(function (array $field): bool {
-            return ! is_null($field['id']); // Фильтруем null значения от LEFT JOIN
-        });
-
-        $cf = $fields->pluck('type', 'id')->toArray();
-
-        // Обрабатываем enums: если это уже массив, конвертируем в JSON строку для совместимости с трейтом
-        $enums = $fields->pluck('enums', 'id')->map(function ($enum) {
-            if (is_array($enum)) {
-                return json_encode($enum);
-            }
-
-            return $enum;
-        })->toArray();
+        $lazyCf = new LazyCustomFields($aId);
 
         // Остальные параметры из конфига, если они есть.
         $timeout = Config::get('amoclient.timeout') ?? 60;
@@ -235,10 +188,10 @@ class AmoClientOctane
         $this->accountId = $aId;
         $this->http = $http;
         $this->account = new Account($http, $aId);
-        $this->leads = new Lead($http, $cf, $enums);
-        $this->customers = new Customer($http, $cf);
-        $this->contacts = new Contact($http, $octaneAccount, $cf, $enums);
-        $this->companies = new Company($http, $octaneAccount, $cf, $enums);
+        $this->leads = new Lead($http, $lazyCf);
+        $this->customers = new Customer($http, $lazyCf);
+        $this->contacts = new Contact($http, $octaneAccount, $lazyCf);
+        $this->companies = new Company($http, $octaneAccount, $lazyCf);
         $this->catalogs = new Catalog($http);
         $this->users = new User($http);
         $this->pipelines = new Pipeline($http);

@@ -5,30 +5,25 @@ namespace mttzzz\AmoClient\Models;
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
+use mttzzz\AmoClient\LazyCustomFields;
 use mttzzz\AmoClient\Traits;
 
 class Customer extends AbstractModel
 {
     use Traits\CrudTrait;
 
-    /**
-     * @var array<mixed>
-     */
-    private array $cf;
+    private LazyCustomFields $lazyCf;
 
-    /**
-     * @param  array<mixed>  $cf
-     */
-    public function __construct(PendingRequest $http, array $cf)
+    public function __construct(PendingRequest $http, LazyCustomFields $lazyCf)
     {
         parent::__construct($http);
         $this->entity = 'customers';
-        $this->cf = $cf;
+        $this->lazyCf = $lazyCf;
     }
 
     public function entity(?int $id = null): Entities\Customer
     {
-        return new Entities\Customer(['id' => $id], $this->http, $this->cf);
+        return new Entities\Customer(['id' => $id], $this->http, $this->lazyCf->cf());
     }
 
     /**
@@ -36,7 +31,7 @@ class Customer extends AbstractModel
      */
     public function entityData(array $data): Entities\Customer
     {
-        return new Entities\Customer($data, $this->http, $this->cf);
+        return new Entities\Customer($data, $this->http, $this->lazyCf->cf());
     }
 
     public function customFields(): CustomField
@@ -49,7 +44,7 @@ class Customer extends AbstractModel
      */
     public function find(int $id): Entities\Customer
     {
-        return new Entities\Customer($this->findEntity($id), $this->http, $this->cf);
+        return new Entities\Customer($this->findEntity($id), $this->http, $this->lazyCf->cf());
     }
 
     public function withCatalogElements(): self

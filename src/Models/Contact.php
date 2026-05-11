@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Models;
 use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Helpers\OctaneAccount;
+use mttzzz\AmoClient\LazyCustomFields;
 use mttzzz\AmoClient\Traits;
 use mttzzz\AmoClient\Traits\Filter;
 
@@ -13,31 +14,18 @@ class Contact extends AbstractModel
     use Filter\Common, Filter\PhoneEmail;
     use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
 
-    /**
-     * @var array<mixed>
-     */
-    private array $cf;
-
-    /**
-     * @var array<mixed>
-     */
-    private array $enums;
+    private LazyCustomFields $lazyCf;
 
     /**
      * Коллекция примечаний по всем контактам (GET /contacts/notes)
      */
     public Note $notes;
 
-    /**
-     * @param  array<mixed>  $cf
-     * @param  array<mixed>  $enums
-     */
-    public function __construct(PendingRequest $http, OctaneAccount $account, array $cf, array $enums)
+    public function __construct(PendingRequest $http, OctaneAccount $account, LazyCustomFields $lazyCf)
     {
         $this->fieldPhoneId = $account->contact_phone_field_id;
         $this->fieldEmailId = $account->contact_email_field_id;
-        $this->cf = $cf;
-        $this->enums = $enums;
+        $this->lazyCf = $lazyCf;
         $this->entity = 'contacts';
         $this->notes = new Note($http, $this->entity, null);
 
@@ -46,7 +34,7 @@ class Contact extends AbstractModel
 
     public function entity(?int $id = null): Entities\Contact
     {
-        return new Entities\Contact(['id' => $id], $this->http, $this->cf, $this->enums);
+        return new Entities\Contact(['id' => $id], $this->http, $this->lazyCf->cf(), $this->lazyCf->enums());
     }
 
     /**
@@ -54,12 +42,12 @@ class Contact extends AbstractModel
      */
     public function entityData(array $data): Entities\Contact
     {
-        return new Entities\Contact($data, $this->http, $this->cf, $this->enums);
+        return new Entities\Contact($data, $this->http, $this->lazyCf->cf(), $this->lazyCf->enums());
     }
 
     public function find(int $id): ?Entities\Contact
     {
-        return new Entities\Contact($this->findEntity($id), $this->http, $this->cf, $this->enums);
+        return new Entities\Contact($this->findEntity($id), $this->http, $this->lazyCf->cf(), $this->lazyCf->enums());
     }
 
     public function customFields(): CustomField
