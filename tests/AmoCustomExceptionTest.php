@@ -102,6 +102,42 @@ class AmoCustomExceptionTest extends TestCase
         $this->assertEquals(500, $amoCustomException->getCode());
     }
 
+    /*
+     * Оригинальное исключение должно сохраняться как previous во всех ветках —
+     * иначе потребители (Sentry, retry-классификаторы в приложениях) не могут
+     * отличить transient ConnectionException от бизнес-ошибки иначе как по
+     * хрупкому str_contains на message (masterm MASTERM-PUSHKA-BIZ-2E).
+     */
+
+    public function test_connection_exception_is_preserved_as_previous()
+    {
+        $connectionException = new ConnectionException('cURL error 28: Connection timed out');
+
+        $amoCustomException = new AmoCustomException($connectionException);
+
+        $this->assertSame($connectionException, $amoCustomException->getPrevious());
+    }
+
+    public function test_request_exception_is_preserved_as_previous()
+    {
+        $response = new Response(new GuzzleResponse(500, [], json_encode(['error' => 'Internal Server Error'])));
+        $requestException = new RequestException($response);
+
+        $amoCustomException = new AmoCustomException($requestException);
+
+        $this->assertSame($requestException, $amoCustomException->getPrevious());
+    }
+
+    public function test_payment_required_exception_is_preserved_as_previous()
+    {
+        $response = new Response(new GuzzleResponse(402, [], ''));
+        $requestException = new RequestException($response);
+
+        $amoCustomException = new AmoCustomException($requestException);
+
+        $this->assertSame($requestException, $amoCustomException->getPrevious());
+    }
+
     public function test_amo_custom_exception_with_unserializable_json()
     {
         // Создаем объект с циклической ссылкой
