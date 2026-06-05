@@ -46,13 +46,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Get latest release version
-        id: get_latest_release
-        uses: pozetroninc/github-action-get-latest-release@master
         with:
-          repository: ${{ github.repository }}
-          token: ${{ secrets.GIT_TOKEN }}
+          fetch-depth: 0 # нужны все теги для определения последней версии
+
+      # Версию считаем от старшего git-тега, а НЕ от последнего GitHub Release:
+      # ручной тег без Release (как 3.1.0) ломал линию — автобамп продолжал
+      # 3.0.x, и релизы 3.0.33–3.0.35 были semver-ниже установленной версии.
+      - name: Get latest version tag
+        id: get_latest_release
+        run: |
+          latest_version=$(git tag --list --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+          echo "Latest version tag: $latest_version"
+          echo "release=$latest_version" >> $GITHUB_OUTPUT
 
       - name: Set up Git
         run: |
