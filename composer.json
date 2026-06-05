@@ -19,9 +19,10 @@
         "mttzzz/laravel-telegram-log": "*"
     },
     "require-dev": {
-        "phpunit/phpunit": "^13.2",
+        "phpunit/phpunit": "^12.5",
         "guzzlehttp/guzzle": "^7.11",
-        "illuminate/http": "^13.14"
+        "illuminate/http": "^13.14",
+        "orchestra/testbench": "^11.1"
     },
     "autoload": {
         "psr-4": {
