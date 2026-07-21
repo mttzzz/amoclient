@@ -9,6 +9,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use mttzzz\AmoClient\Exceptions\AmoPaymentRequiredException;
 use mttzzz\AmoClient\Helpers\OctaneAccount;
 use mttzzz\AmoClient\Helpers\Widget;
 use mttzzz\AmoClient\Models\Account;
@@ -145,12 +146,55 @@ class AmoClientOctane
 
         $proxyIndex = 0;
         $maxProxyAttempts = count($proxies);
+        $currentToken = $octaneAccount->access_token;
 
-        $http = Http::withToken($octaneAccount->access_token)
+        $http = Http::withToken($currentToken)
             ->connectTimeout($connectTimeout)
             ->timeout($timeout)
             ->withOptions(['verify' => $verify])
-            ->retry($retries * $maxProxyAttempts, $retryDelay, function (Throwable $exception, PendingRequest $request) use (&$proxyIndex, $proxies, $maxProxyAttempts) {
+            ->retry($retries * $maxProxyAttempts, $retryDelay, function (Throwable $exception, PendingRequest $request) use (&$proxyIndex, $proxies, $maxProxyAttempts, $aId, &$currentToken) {
+                if ($exception instanceof RequestException) {
+                    $status = $exception->response->status();
+
+                    /*
+                     * 402 Payment Required: не ретраим и не отдаём голый
+                     * RequestException — бросаем типизированную ошибку со
+                     * снапшотом octane accounts.payed, чтобы потребитель отличил
+                     * реальную неоплату от ночного флапа амо (окно ротации
+                     * токенов ~00:05). Ретраить внутри запроса бессмысленно:
+                     * окна живут минуты — это забота очереди
+                     * (Queue\RetriesTransientAmoErrors).
+                     */
+                    if ($status === 402) {
+                        throw AmoPaymentRequiredException::fromRequestException($exception, $aId);
+                    }
+
+                    /*
+                     * 401: гонка с ночной ротацией — запрос ушёл со старым
+                     * токеном, октан только что записал новый (амо отзывает
+                     * старый при refresh). Перечитываем токен из octane:
+                     * изменился → повтор со свежим; не изменился → реальная
+                     * auth-проблема, не ретраим.
+                     */
+                    if ($status === 401) {
+                        $freshToken = DB::connection('octane')->table('account_widget')
+                            ->join('widgets', 'widgets.id', '=', 'account_widget.widget_id')
+                            ->where('widgets.client_id', $this->clientId)
+                            ->where('account_widget.account_id', $aId)
+                            ->where('account_widget.active', true)
+                            ->value('access_token');
+
+                        if (is_string($freshToken) && $freshToken !== '' && $freshToken !== $currentToken) {
+                            $currentToken = $freshToken;
+                            $request->withToken($freshToken);
+
+                            return true;
+                        }
+
+                        return false;
+                    }
+                }
+
                 // Проверяем, нужно ли переключить прокси
                 $shouldRetry = false;
 
