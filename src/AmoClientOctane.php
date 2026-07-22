@@ -3,6 +3,7 @@
 namespace mttzzz\AmoClient;
 
 use Exception;
+use GuzzleHttp\Exception\ConnectException as GuzzleConnectException;
 use Illuminate\Http\Client\ConnectionException as HttpClientConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -207,18 +208,31 @@ class AmoClientOctane
                     }
                 }
 
-                // Проверяем, нужно ли переключить прокси
-                $shouldRetry = false;
-
-                if ($exception instanceof HttpClientConnectionException) {
-                    $shouldRetry = true;
-                }
-
-                if ($exception instanceof RequestException) {
-                    if ($exception->response->status() >= 500) {
-                        $shouldRetry = true;
-                    }
-                }
+                /*
+                 * Смена прокси лечит НЕДОСТИЖИМЫЙ СЕТЕВОЙ ПУТЬ и только его.
+                 *
+                 * Если соединение до амо установилось, отказ пришёл от самого амо —
+                 * и повтор через другой роутер уходит в тот же бэкенд. Раньше сюда
+                 * попадали два случая, в которых ротация не лечила ничего, а платили
+                 * за неё временем:
+                 *
+                 *  - 5xx: у ответа есть HTTP-статус, значит запрос дошёл. Failover
+                 *    обязан жить НИЖЕ уровня, на котором статус существует
+                 *    (решение по архитектуре 4.0, п.5).
+                 *  - read-таймаут: соединение открыто, амо принял запрос и молчит.
+                 *    Это самый дорогой случай: каждый лишний заход стоит полного
+                 *    `timeout`, то есть ротация умножала простой на размер пула,
+                 *    ничего не выигрывая. У потребителя с очередью это съедало
+                 *    таймаут воркера и убивало процесс раньше, чем джоба успевала
+                 *    сделать release, — то есть лестница ретраев вырождалась в
+                 *    фиксированный retry_after.
+                 *
+                 * Оба теперь не ротируют. Повторную попытку по ним делает очередь
+                 * потребителя (Queue\RetriesTransientAmoErrors) — там пауза измеряется
+                 * минутами, а не задержкой внутри одного запроса.
+                 */
+                $shouldRetry = $exception instanceof HttpClientConnectionException
+                    && self::pathIsUnreachable($exception);
 
                 if ($shouldRetry && $proxyIndex < $maxProxyAttempts - 1) {
                     $proxyIndex++;
@@ -290,5 +304,33 @@ class AmoClientOctane
         $value = Config::get($key);
 
         return is_numeric($value) ? (int) $value : $default;
+    }
+
+    /**
+     * Установить соединение не удалось вовсе — то есть сетевой путь недостижим.
+     *
+     * Guzzle кладёт в `ConnectException` и невозможность соединиться, и таймаут
+     * ожидания ответа: обе фазы приходят одним типом, поэтому различаем по факту,
+     * а не по классу. Различитель — `connect_time` из handler-контекста curl:
+     * ноль означает, что рукопожатие не состоялось (мёртвый маршрут, DNS, отказ
+     * в соединении) и другой прокси имеет шанс помочь; положительное значение
+     * означает, что соединение было установлено и молчал уже сам амо — менять
+     * маршрут бессмысленно.
+     *
+     * Когда контекста нет (например, стаб в тестах потребителя), считаем путь
+     * недостижимым: это прежнее поведение, и ошибиться в эту сторону дешевле —
+     * лишняя попытка против несделанной.
+     */
+    private static function pathIsUnreachable(HttpClientConnectionException $e): bool
+    {
+        $previous = $e->getPrevious();
+
+        if (! $previous instanceof GuzzleConnectException) {
+            return true;
+        }
+
+        $connectTime = $previous->getHandlerContext()['connect_time'] ?? null;
+
+        return ! (is_numeric($connectTime) && $connectTime > 0);
     }
 }
