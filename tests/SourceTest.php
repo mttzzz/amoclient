@@ -8,7 +8,12 @@ class SourceTest extends BaseAmoClient
     {
         $sourceEntity = $this->amoClient->sources->entity();
         $sourceEntity->name = $this->marked('test');
-        $sourceEntity->external_id = '111111';
+        /* external_id уникален в рамках аккаунта (SourceAlreadyExists) — жёсткий литерал
+         * делал тест невозможным навсегда после первого невыгруженного хвоста: следующий
+         * прогон падал на createGetId(), ДО собственной уборки, и починить это можно было
+         * только руками в боевом аккаунте. time() — не маркер (маркер живёт в name и ищется
+         * свипом), а разовость на прогон: невыгруженный хвост портит один прогон, а не все. */
+        $sourceEntity->external_id = (string) time();
         $createdId = $sourceEntity->createGetId();
         $this->track('sources', $createdId);
         $found = $this->amoClient->sources->find($createdId);
