@@ -180,7 +180,13 @@ class BaseAmoClientTest extends BaseAmoClient
      * списков amo: сразу после принятого сноса лид может успеть прийти ещё
      * раз. В счастливом пути ожидания нет — цикл выходит на первой итерации.
      *
-     * @return array<string, mixed>
+     * Тип — `array<mixed>`, а не `array<string, mixed>`: наружу отдаётся то же,
+     * что вернул `get()`, то есть СПИСОК лидов с целочисленными ключами.
+     * Прежнее объявление повторяло враньё `AbstractModel::get()` этажом выше, и
+     * два одинаковых вранья гасили друг друга — стан молчал, пока не починили
+     * нижнее.
+     *
+     * @return array<mixed>
      */
     private function activeLead(int $leadId): array
     {
