@@ -308,5 +308,10 @@ class NoteTest extends BaseAmoClient
         $this->assertIsArray($response);
         $this->assertArrayHasKey('status', $response);
         $this->assertEquals('success', $response['status']);
+        /* лид снесён вручную — снимаем его с учёта. Дети (notes/calls, затреканные выше по
+         * #[Depends]-цепочке) уходят с ним каскадом, но остаются в реестре: их forget() тут
+         * не сделать безопасно — #[Depends] с одним параметром не даёт их id в этой области
+         * видимости, см. флаг лиду. */
+        self::registry()->forget('leads', $leadId);
     }
 }

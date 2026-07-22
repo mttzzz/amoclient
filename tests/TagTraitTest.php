@@ -18,6 +18,7 @@ class TagTraitTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $leadId);
     }
 
     public function test_tag_array()
@@ -36,6 +37,7 @@ class TagTraitTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $leadId);
     }
 
     public function test_tag_null()
@@ -50,5 +52,6 @@ class TagTraitTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$leadId]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $leadId);
     }
 }

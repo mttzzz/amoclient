@@ -138,6 +138,9 @@ class LeadTest extends BaseAmoClient
         $this->assertIsArray($response);
         $this->assertArrayHasKey('status', $response);
         $this->assertEquals('success', $response['status']);
+        /* снёс сам — снял с учёта: иначе реестр держит id, которого уже нет, и teardown
+         * девять раз подряд пытается снести удалённое (ложный хвост в отчёте). */
+        self::registry()->forget('leads', $leadId);
     }
 
     public function test_lead_create_get_id()
@@ -153,6 +156,7 @@ class LeadTest extends BaseAmoClient
         $this->assertIsArray($response);
         $this->assertArrayHasKey('status', $response);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
     }
 
     public function test_lead_not_found()
@@ -212,12 +216,15 @@ class LeadTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
         $response2 = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$contactId]]);
         $this->assertEquals('success', $response2['status']);
+        self::registry()->forget('contacts', $contactId);
 
         $response3 = $this->amoClient->ajax->postForm('/ajax/companies/multiple/delete/', ['ID' => [$companyId]]);
         $this->assertEquals('success', $response3['status']);
+        self::registry()->forget('companies', $companyId);
     }
 
     public function test_lead_get_contacts_ids_exception()
@@ -236,6 +243,7 @@ class LeadTest extends BaseAmoClient
         } finally {
             $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
             $this->assertEquals('success', $response['status']);
+            self::registry()->forget('leads', $id);
         }
     }
 
@@ -253,6 +261,7 @@ class LeadTest extends BaseAmoClient
         } finally {
             $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
             $this->assertEquals('success', $response['status']);
+            self::registry()->forget('leads', $id);
         }
     }
 
@@ -267,6 +276,7 @@ class LeadTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
     }
 
@@ -289,6 +299,7 @@ class LeadTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
     }
 
@@ -307,6 +318,7 @@ class LeadTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
     }
 
@@ -328,6 +340,7 @@ class LeadTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
     }
 
@@ -346,6 +359,7 @@ class LeadTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
     }
 }

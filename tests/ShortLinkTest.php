@@ -28,6 +28,7 @@ class ShortLinkTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$contactId]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('contacts', $contactId);
 
     }
 }

@@ -221,5 +221,9 @@ class TaskTest extends BaseAmoClient
         $this->assertIsArray($response);
         $this->assertArrayHasKey('status', $response);
         $this->assertEquals('success', $response['status']);
+        /* лид снесён вручную — снимаем его с учёта. Затреканные на этом лиде задачи
+         * (test_task_add и др.) уходят каскадом, но остаются в реестре — см. флаг лиду,
+         * тот же случай, что в NoteTest::test_lead_delete. */
+        self::registry()->forget('leads', $leadId);
     }
 }

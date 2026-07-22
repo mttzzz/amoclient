@@ -137,6 +137,7 @@ class CustomerTest extends BaseAmoClient
     {
         $response = $this->amoClient->ajax->postJson('/ajax/v1/customers/set/', ['request' => ['customers' => ['delete' => [$customerId]]]]);
         $this->assertCustomerDeleteAccepted($response);
+        self::registry()->forget('customers', $customerId);
     }
 
     public function test_customer_create_get_id()
@@ -147,6 +148,7 @@ class CustomerTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postJson('/ajax/v1/customers/set/', ['request' => ['customers' => ['delete' => [$id]]]]);
         $this->assertCustomerDeleteAccepted($response);
+        self::registry()->forget('customers', $id);
     }
 
     public function test_customer_not_found()

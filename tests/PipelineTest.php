@@ -72,9 +72,12 @@ class PipelineTest extends BaseAmoClient
         $this->assertEquals('test_success', $statuses[2]['name']);
         $this->assertEquals('test_fail', $statuses[3]['name']);
 
-        $response = $this->amoClient->ajax->postForm('/ajax/v1/pipelines/delete', ['request' => ['id' => $pipelineId]]);
-        $this->assertEquals(true, $response['response'][$pipelineId]);
-
+        /* Метод либы, не сырой ajax: тест обязан ходить тем же путём, что и потребители
+         * (§9.10 ресёрча — 204 успех, 400 NotSupportedChoice «уже нет», 422 «внутри лиды»,
+         * Deleter сворачивает это в bool). Снёс сам — снял с учёта: иначе реестр держит id,
+         * которого уже нет, и teardown девять раз подряд пытается снести удалённое. */
+        $this->assertTrue($this->amoClient->pipelines->delete($pipelineId));
+        self::registry()->forget('pipelines', $pipelineId);
     }
 
     #[Depends('test_pipeline_create')]
@@ -99,8 +102,8 @@ class PipelineTest extends BaseAmoClient
     #[Depends('test_pipeline_update')]
     public function test_pipeline_delete(int $pipelineId)
     {
-        $response = $this->amoClient->ajax->postForm('/ajax/v1/pipelines/delete', ['request' => ['id' => $pipelineId]]);
-        $this->assertEquals(true, $response['response'][$pipelineId]);
+        $this->assertTrue($this->amoClient->pipelines->delete($pipelineId));
+        self::registry()->forget('pipelines', $pipelineId);
     }
 
     public function test_pipeline_create_exception()

@@ -137,9 +137,11 @@ class UnsortedTest extends BaseAmoClient
         // Удаление созданных лидов
         $response1 = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$accepted1['_embedded']['leads'][0]['id']]]);
         $this->assertEquals('success', $response1['status']);
+        self::registry()->forget('leads', $accepted1['_embedded']['leads'][0]['id']);
 
         $response2 = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$accepted2['_embedded']['leads'][0]['id']]]);
         $this->assertEquals('success', $response2['status']);
+        self::registry()->forget('leads', $accepted2['_embedded']['leads'][0]['id']);
     }
 
     #[Depends('test_create_and_accept_sip_entity')]

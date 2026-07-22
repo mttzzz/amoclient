@@ -22,6 +22,8 @@ class SourceTest extends BaseAmoClient
         /* delete() переведён с null на bool (lib-delete-2) — null был бы одинаково зелёным
          * и при реальном удалении, и при молчаливом no-op, bool этого различия не прячет. */
         $this->assertTrue($deleted);
-
+        /* снёс сам — снял с учёта: иначе реестр держит id, которого уже нет, и teardown
+         * девять раз подряд пытается снести удалённое (ложный хвост в отчёте). */
+        self::registry()->forget('sources', $createdId);
     }
 }

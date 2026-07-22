@@ -49,6 +49,8 @@ class WebhookTest extends BaseAmoClient
         /* unSubscribe() переведён с null на bool (lib-delete-2) — той же причине, что и
          * Source::delete(): null не отличал бы реальный снос от молчаливого no-op. */
         $this->assertTrue($unsubscribe);
+        /* снёс сам — снял с учёта: иначе реестр держит destination, которого уже нет. */
+        self::registry()->forget('webhooks', $destination);
 
         $empty = $this->amoClient->webhooks->find('asdasdasdd');
         $this->assertEmpty($empty->toArray());
