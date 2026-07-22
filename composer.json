@@ -22,7 +22,8 @@
         "phpunit/phpunit": "^12.5",
         "guzzlehttp/guzzle": "^7.11",
         "illuminate/http": "^13.14",
-        "orchestra/testbench": "^11.1"
+        "orchestra/testbench": "^11.1",
+        "larastan/larastan": "^3.0"
     },
     "autoload": {
         "psr-4": {
@@ -33,6 +34,10 @@
         "psr-4": {
             "mttzzz\\AmoClient\\Tests\\": "tests"
         }
+    },
+    "scripts": {
+        "stan": "phpstan analyse --no-progress --memory-limit=2G",
+        "test": "phpunit"
     },
     "extra": {
         "laravel": {
