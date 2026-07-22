@@ -17,7 +17,6 @@
 /.tmp               export-ignore
 
 phpunit.xml         export-ignore
-phpunit.xml.bak     export-ignore
 phpstan.neon        export-ignore
 .styleci.yml        export-ignore
 .infisical.json     export-ignore
