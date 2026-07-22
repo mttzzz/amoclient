@@ -6,7 +6,7 @@ use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
-use mttzzz\AmoClient\Exceptions\AmoUnexpectedResponseException;
+use mttzzz\AmoClient\Exceptions\AmoUnknownException;
 use mttzzz\AmoClient\Traits\CrudTrait;
 
 class Catalog extends AbstractModel
@@ -44,7 +44,7 @@ class Catalog extends AbstractModel
      * @return bool false — каталога уже нет
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function delete(int|array $ids): bool
     {

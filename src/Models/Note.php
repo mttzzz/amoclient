@@ -6,7 +6,7 @@ use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
-use mttzzz\AmoClient\Exceptions\AmoUnexpectedResponseException;
+use mttzzz\AmoClient\Exceptions\AmoUnknownException;
 
 class Note extends AbstractModel
 {
@@ -38,9 +38,13 @@ class Note extends AbstractModel
      * Это свойство роута амо, а не недосмотр библиотеки.
      *
      * @param  int|list<int>  $ids
+     * @return bool false — амо ответил HTTP 400 `{"status":"fail","id":N}`,
+     *              то есть примечания уже нет. «Уже нет» приходит здесь ошибочным
+     *              статусом, а не полем в теле двухсотки — разбирает это
+     *              Deleter, вызывающему достаточно bool
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function delete(int|array $ids): bool
     {

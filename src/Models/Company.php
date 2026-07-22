@@ -6,7 +6,7 @@ use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
-use mttzzz\AmoClient\Exceptions\AmoUnexpectedResponseException;
+use mttzzz\AmoClient\Exceptions\AmoUnknownException;
 use mttzzz\AmoClient\Helpers\OctaneAccount;
 use mttzzz\AmoClient\LazyCustomFields;
 use mttzzz\AmoClient\Traits;
@@ -60,10 +60,14 @@ class Company extends AbstractModel
      *
      * @param  int|list<int>  $ids
      * @return bool false — амо отказал сообщением «Недостаточно прав для
-     *              удаления…», которое неотличимо от «уже в корзине»
+     *              удаления…». Тем же ответом он отвечает и на повторное
+     *              удаление лежащего в корзине, и на настоящий отказ по правам:
+     *              какой из двух случаев произошёл, по ответу амо установить
+     *              невозможно. Значение выбрано так, чтобы повторный снос был
+     *              идемпотентным, но неоднозначность видна вызывающему
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function delete(int|array $ids): bool
     {

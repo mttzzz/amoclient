@@ -6,7 +6,7 @@ use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
-use mttzzz\AmoClient\Exceptions\AmoUnexpectedResponseException;
+use mttzzz\AmoClient\Exceptions\AmoUnknownException;
 use mttzzz\AmoClient\LazyCustomFields;
 use mttzzz\AmoClient\Traits;
 
@@ -48,7 +48,7 @@ class Customer extends AbstractModel
      * @return bool false — все ошибки ответа с code=404 («покупателя уже нет»)
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function delete(int|array $ids): bool
     {

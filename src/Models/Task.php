@@ -6,7 +6,7 @@ use Illuminate\Http\Client\PendingRequest;
 use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
-use mttzzz\AmoClient\Exceptions\AmoUnexpectedResponseException;
+use mttzzz\AmoClient\Exceptions\AmoUnknownException;
 use mttzzz\AmoClient\Traits;
 
 class Task extends AbstractModel
@@ -28,9 +28,13 @@ class Task extends AbstractModel
      * всегда», а «ломается громко и чинится patch-ом» (детали — в Deleter).
      *
      * @param  int|list<int>  $ids
+     * @return bool false — амо ответил HTTP 400 `{"status":"fail","id":N}`,
+     *              то есть задачи уже нет. «Уже нет» приходит здесь ошибочным
+     *              статусом, а не полем в теле двухсотки — разбирает это
+     *              Deleter, вызывающему достаточно bool
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function delete(int|array $ids): bool
     {

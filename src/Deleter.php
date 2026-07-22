@@ -7,11 +7,11 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use InvalidArgumentException;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
-use mttzzz\AmoClient\Exceptions\AmoUnexpectedResponseException;
+use mttzzz\AmoClient\Exceptions\AmoUnknownException;
 
 /**
  * Единственное место, где живёт таблица «тип сущности → механизм удаления»
- * (docs/research/amo-delete-mechanisms.md, §7.6).
+ * (docs/research/amo-delete-mechanisms.md, §7.6 и §8).
  *
  * Модельные `$amo->{коллекция}->delete()` и entity-level
  * `Entities\Source::delete()` / `Entities\Webhook::unSubscribe()` — делегации
@@ -20,23 +20,45 @@ use mttzzz\AmoClient\Exceptions\AmoUnexpectedResponseException;
  * которая уже развела транспортный retry-колбэк и `RetriesTransientAmoErrors`
  * по охвату (решение по архитектуре 4.0, п. 9).
  *
+ * ЧЕТЫРЕ ЛИЦА ОДНОГО ФАКТА «СУЩНОСТИ УЖЕ НЕТ» — главная причина, по которой это
+ * знание обязано лежать в одном классе, а не расползаться по вызывающим. Амо
+ * сообщает об одном и том же четырьмя несовместимыми способами:
+ *
+ * | Канал | Как выглядит «уже нет» |
+ * |---|---|
+ * | `/private/notes/edit2.php` | HTTP **400**, тело `{"status":"fail","id":N}`, текста нет вовсе |
+ * | `/ajax/{тип}/multiple/delete/` | HTTP 200, `{"status":"fail","errors":["Недостаточно прав для удаления …"]}` |
+ * | `/ajax/v1/{раздел}/set/` | HTTP 200, `errors[].code === 404` |
+ * | публичный v4 | HTTP 404 |
+ *
+ * Ни teardown, ни свип, ни потребитель не должны знать ни одного из четырёх —
+ * они читают `bool`.
+ *
  * ЯРУС SEMVER. Часть операций ниже ходит в приватные роуты амо
  * (`/private/notes/edit2.php`, `/ajax/**`) — недокументированные и способные
  * поменяться без предупреждения. По ним библиотека обещает НЕ «работает
  * всегда», а «ломается громко и чинится patch-ом»: изменившийся ответ даёт
- * AmoUnexpectedResponseException с сырым телом, а не тихий неверный результат.
+ * AmoUnknownException с сырым телом, а не тихий неверный результат.
  * Публичный v4 (sources, pipelines, webhooks) живёт по обычным правилам.
  *
  * СЕМАНТИКА ВОЗВРАТА, единая для всех методов:
  * - `true`  — амо подтвердил удаление;
- * - `false` — амо явно отказал по известной причине «сущности уже нет»
- *             (детали у конкретного метода). Это делает повторный снос
- *             идемпотентным: второй прогон teardown не падает;
+ * - `false` — амо отказал причиной, которую в его исполнении невозможно
+ *             отличить от «сущности уже нет». Это НЕ доказательство того, что
+ *             её нет: у `multiple/delete` тем же ответом выражается и реальный
+ *             отказ по правам (§7.4). Значение выбрано так, чтобы повторный
+ *             снос был идемпотентным и второй прогон teardown не падал ложно,
+ *             но неоднозначность обязана быть видна вызывающему;
  * - бросок  — HTTP-ошибка (AmoCustomException) либо нераспознанный ответ
- *             (AmoUnexpectedResponseException). Молчаливого «ну наверное
- *             удалилось» нет ни в одной ветке.
+ *             (AmoUnknownException). Молчаливого «ну наверное удалилось» нет
+ *             ни в одной ветке.
  *
  * Пустой список id — `true` без запроса: удалить ничего успешно можно.
+ *
+ * Зависит только от `Ajax` и `PendingRequest`, то есть работает от голого
+ * клиента `AmoClientOctane` — снос зовётся не только из тестов, но и из
+ * `register_shutdown_function` и из CLI-свипа, где ни тест-кейса, ни живого
+ * DI-контейнера уже нет.
  */
 class Deleter
 {
@@ -56,6 +78,12 @@ class Deleter
      * Поэтому текст трактуется как «уже нет» ТОЛЬКО внутри операции удаления
      * (решение по архитектуре 4.0, п. 2: глобальное правило по тексту
      * запрещено — оно маскировало бы реальный пермишн-фейл).
+     *
+     * Матчим строго по этому префиксу и никогда по полной строке: §8 показал,
+     * что хвост сообщения врёт про тип сущности — удаление компании амо
+     * комментирует как «…для удаления контакта», и в успехе тоже («Удаление
+     * прошло успешно для 1 контакта»). Тип сущности из текста амо не выводить
+     * ни при каких условиях.
      */
     private const ALREADY_GONE_MARKER = 'Недостаточно прав для удаления';
 
@@ -80,11 +108,14 @@ class Deleter
      * коллекция. Родитель примечания и каталог элемента здесь не нужны —
      * приватные роуты резолвят их сами по id сущности (§6).
      *
+     * Идентификатор допускает строку: вебхук адресуется destination'ом, а не
+     * числом, и реестр уборки расширен до `int|string` именно из-за него.
+     *
      * @param  int|string|array<mixed>  $ids
      *
      * @throws InvalidArgumentException неизвестный тип — громко, не тихий no-op
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function byType(string $type, int|string|array $ids): bool
     {
@@ -119,11 +150,13 @@ class Deleter
      * Одним запросом на всю пачку.
      *
      * @param  int|list<int>  $ids
-     * @return bool false — амо ответил «Недостаточно прав для удаления…»,
-     *              что по §7.4 неотличимо от «уже в корзине»
+     * @return bool false — амо ответил «Недостаточно прав для удаления…». Тем
+     *              же ответом он отвечает и на повторное удаление лежащего в
+     *              корзине, и на настоящий отказ по правам: какой из двух
+     *              случаев произошёл, по ответу амо установить невозможно
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function leads(int|array $ids): bool
     {
@@ -134,9 +167,11 @@ class Deleter
      * Удаление в корзину, семантика и возврат — как у leads().
      *
      * @param  int|list<int>  $ids
+     * @return bool false — «Недостаточно прав для удаления…»: неотличимо от
+     *              «уже в корзине», см. leads()
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function contacts(int|array $ids): bool
     {
@@ -147,9 +182,11 @@ class Deleter
      * Удаление в корзину, семантика и возврат — как у leads().
      *
      * @param  int|list<int>  $ids
+     * @return bool false — «Недостаточно прав для удаления…»: неотличимо от
+     *              «уже в корзине», см. leads()
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function companies(int|array $ids): bool
     {
@@ -165,7 +202,7 @@ class Deleter
      *              смешанный набор ошибок — бросок, а не тихий частичный успех
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function customers(int|array $ids): bool
     {
@@ -182,15 +219,15 @@ class Deleter
      * Каскадом уносит элементы каталога (§2).
      *
      * По одному запросу на каталог: скалярная форма `request[catalogs][delete]`
-     * — единственная эмпирически проверенная. Списочную не отправляем, пока она
-     * не снята с живого аккаунта: выдуманная форма даёт «Код ошибки 222» и
-     * молча ничего не удаляет.
+     * — единственная работающая. Списочная снята отдельным зондом (§8) и
+     * роняет бэкенд амо: HTTP 500 с HTML-страницей вместо json. Пачку сюда
+     * не собирать, сколько бы запросов это ни стоило.
      *
      * @param  int|list<int>  $ids
      * @return bool false — амо вернул `code=404` («каталога уже нет»)
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function catalogs(int|array $ids): bool
     {
@@ -218,7 +255,7 @@ class Deleter
      * @return bool false — амо вернул `code=404` («элемента уже нет»)
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function catalogElements(int|array $ids): bool
     {
@@ -239,9 +276,11 @@ class Deleter
      * По одному запросу на задачу: роут принимает скалярный `ID`.
      *
      * @param  int|list<int>  $ids
+     * @return bool false — амо ответил HTTP 400 `{"status":"fail","id":N}`,
+     *              то есть задачи уже нет (§8)
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function tasks(int|array $ids): bool
     {
@@ -258,9 +297,11 @@ class Deleter
      * влияет. Это свойство роута, а не недосмотр.
      *
      * @param  int|list<int>  $ids
+     * @return bool false — амо ответил HTTP 400 `{"status":"fail","id":N}`,
+     *              то есть примечания уже нет (§8)
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function notes(int|array $ids): bool
     {
@@ -276,9 +317,11 @@ class Deleter
      * звонок по совпадению телефона (боевая компания в спайке), не трогается.
      *
      * @param  int|list<int>  $ids
+     * @return bool false — амо ответил HTTP 400 `{"status":"fail","id":N}`,
+     *              то есть звонка уже нет (§8)
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     public function calls(int|array $ids): bool
     {
@@ -331,7 +374,8 @@ class Deleter
      * delete, а не отключение (проверено: после вызова `find()` пуст, §2).
      *
      * Вебхук адресуется destination'ом, а не id: id в ответе `subscribe()`
-     * есть, но роут удаления его не принимает.
+     * есть, но роут удаления его не принимает. Отсюда единственная в этом
+     * классе строковая сигнатура — она обязана такой остаться.
      *
      * @param  string|list<string>  $destinations
      * @return bool false — подписки уже нет (404)
@@ -356,7 +400,7 @@ class Deleter
      * @param  int|list<int>  $ids
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     private function deleteViaMultiple(string $entity, int|array $ids): bool
     {
@@ -381,7 +425,7 @@ class Deleter
             return false;
         }
 
-        throw new AmoUnexpectedResponseException(
+        throw new AmoUnknownException(
             $operation,
             'ожидался status success либо отказ «'.self::ALREADY_GONE_MARKER.'…»',
             $response
@@ -400,7 +444,7 @@ class Deleter
      * @param  int|list<int>  $deletePayload  форма зависит от раздела: скаляр у catalogs, список у остальных
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     private function deleteViaSet(string $section, string $url, int|array $deletePayload, bool $asJson, string $operation): bool
     {
@@ -414,7 +458,7 @@ class Deleter
         $errors = is_array($delete) ? ($delete['errors'] ?? null) : null;
 
         if (! is_array($errors)) {
-            throw new AmoUnexpectedResponseException(
+            throw new AmoUnknownException(
                 $operation,
                 "в ответе нет response.{$section}.delete.errors",
                 $response
@@ -429,12 +473,13 @@ class Deleter
             return false;
         }
 
-        throw new AmoUnexpectedResponseException($operation, 'амо вернул ошибки удаления', $response);
+        throw new AmoUnknownException($operation, 'амо вернул ошибки удаления', $response);
     }
 
     /**
      * Приватный `/private/notes/edit2.php`. Минимальный контракт снят с живого
-     * аккаунта: ID + ACTION, родитель не нужен (§6). Ответ `{"status":"ok","id":N}`.
+     * аккаунта: ID + ACTION, родитель не нужен (§6). Успех — HTTP 200
+     * `{"status":"ok","id":N}`.
      *
      * Роут скалярный, поэтому пачка — это N запросов. Если бросок случился на
      * i-м id, предыдущие уже удалены: откатывать нечего и не нужно, но
@@ -443,15 +488,36 @@ class Deleter
      * @param  list<int>  $ids
      *
      * @throws AmoCustomException
-     * @throws AmoUnexpectedResponseException
+     * @throws AmoUnknownException
      */
     private function deleteViaPrivateNotes(array $ids, string $action, string $operation): bool
     {
+        $confirmed = true;
+
         foreach ($ids as $id) {
-            $response = $this->post(self::PRIVATE_NOTES_ENDPOINT, ['ID' => $id, 'ACTION' => $action], false);
+            try {
+                $response = $this->ajax->postForm(self::PRIVATE_NOTES_ENDPOINT, ['ID' => $id, 'ACTION' => $action]);
+            } catch (RequestException $e) {
+                /*
+                 * «Уже нет» приходит в этом канале ОШИБОЧНЫМ СТАТУСОМ, а не
+                 * полем в теле двухсотки (§8), поэтому распознаём до того, как
+                 * обернём исключение: после AmoCustomException тело уже не
+                 * разобрать структурно. Текста в ответе нет вовсе — только эхо
+                 * id, так что матч по строке здесь физически невозможен.
+                 */
+                if ($this->isPrivateAlreadyGone($e, $id)) {
+                    $confirmed = false;
+
+                    continue;
+                }
+
+                throw new AmoCustomException($e);
+            } catch (ConnectionException $e) {
+                throw new AmoCustomException($e);
+            }
 
             if (($response['status'] ?? null) !== 'ok') {
-                throw new AmoUnexpectedResponseException($operation, "ожидался status ok на {$action} id={$id}", $response);
+                throw new AmoUnknownException($operation, "ожидался status ok на {$action} id={$id}", $response);
             }
 
             /*
@@ -463,11 +529,37 @@ class Deleter
             $echo = $response['id'] ?? null;
 
             if (is_numeric($echo) && (int) $echo !== $id) {
-                throw new AmoUnexpectedResponseException($operation, "амо подтвердил удаление другого id (просили {$id})", $response);
+                throw new AmoUnknownException($operation, "амо подтвердил удаление другого id (просили {$id})", $response);
             }
         }
 
-        return true;
+        return $confirmed;
+    }
+
+    /**
+     * Признак «сущности уже нет» у приватного роута: связка (400, status=fail,
+     * эхо id совпадает с запрошенным), §8.
+     *
+     * Эхо требуем строго. 400 без него — не наш случай: лучше громко упасть на
+     * незнакомой четырёхсотке, чем принять за идемпотентный повтор чужую
+     * ошибку запроса. Не-json тело (амо отдаёт HTML на своих пятисотках) сюда
+     * просто не проходит — json() вернёт не массив.
+     */
+    private function isPrivateAlreadyGone(RequestException $e, int $id): bool
+    {
+        if ($e->response->status() !== 400) {
+            return false;
+        }
+
+        $body = $e->response->json();
+
+        if (! is_array($body) || ($body['status'] ?? null) !== 'fail') {
+            return false;
+        }
+
+        $echo = $body['id'] ?? null;
+
+        return is_numeric($echo) && (int) $echo === $id;
     }
 
     /**
@@ -496,6 +588,11 @@ class Deleter
     }
 
     /**
+     * Не-json тело (амо отдаёт HTML-страницу на своих пятисотках, §8)
+     * переживается здесь бесплатно: до разбора дело не доходит, `->throw()`
+     * бросает раньше, а AmoCustomException при невалидном json падбэчится на
+     * getMessage() вместо того, чтобы уронить парсер поверх настоящей ошибки.
+     *
      * @param  array<string, mixed>  $data
      * @return array<mixed>
      *
