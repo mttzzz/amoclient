@@ -48,42 +48,57 @@ final class AmoTestSweeper
      */
     public const TEST_MARKER = 'amoclient-sweep-7c3f9a2e5b41';
 
-    /* Насовсем: запись физически исчезает из аккаунта. */
+    /* Насовсем: физическое стирание подтверждено эмпирикой, а не ответом amo. */
     public const SEMANTIC_PURGED = 'purged';
 
     /* В корзину: запись остаётся с is_deleted=true, purge недоступен нигде. */
     public const SEMANTIC_TRASHED = 'trashed';
 
-    /* Механизм отвечает «ок», но жёсткость удаления эмпирически не снята. */
+    /* amo подтвердил удаление, физическое стирание не доказано. */
     public const SEMANTIC_UNVERIFIED = 'unverified';
 
     /*
-     * Семантика удаления по типам — §7.6 плюс решение владельца №2.
+     * Семантика удаления по типам. Правило одно: в PURGED попадает только то,
+     * для чего есть ЭМПИРИЧЕСКОЕ доказательство физического стирания —
+     * повторный запрос сущности после удаления показал, что её нет. Ответ amo
+     * «ок» таким доказательством не является: он говорит лишь, что вызов
+     * принят.
+     *
+     * Сегодня доказательство есть ровно у одного типа: webhooks — после
+     * unSubscribe() `find()` по destination отдаёт пусто (§1, §2).
+     *
+     * leads/contacts/companies — TRASHED, и это тоже доказано: §7.3/§8.5,
+     * запись живёт с is_deleted=true и находится через withOnlyDeleted().
+     *
+     * Всё остальное — UNVERIFIED, и это не осторожность ради осторожности:
+     * §7.7 прямо оговаривает, что {"status":"ok"} и пропажа из выборок — не
+     * доказательство стирания, аналога withOnlyDeleted() у этих типов нет.
+     * §8.6 добавляет к tasks/notes/calls деталь: повтор удаления примечания
+     * отдаёт {"status":"no note"} — «в хранилище примечаний такого нет», а не
+     * «стёрто физически». Решение владельца №2 про корзину касалось
+     * leads/contacts/companies и о задачах с примечаниями не говорит ничего,
+     * ссылаться на него здесь нельзя.
+     *
+     * Отчёт свипа — единственное место, где мы обещаем результат уборки;
+     * над-обещание именно здесь стоит дороже всего.
+     *
      * Состав словаря обязан совпадать с Deleter::TYPES и типами
      * TestEntityRegistry: тип, известный контракту, но забытый здесь, не
      * ищется вовсе — и тогда «свип отработал, ноль находок» неотличимо от
      * «свип не искал».
-     *
-     * customers помечены UNVERIFIED честно: §7.6 приводит механизм «из прежних
-     * тестов», но семантику (насовсем или в корзину) никто не снимал.
-     * По tasks/notes/calls §7.7 оговаривает, что {"status":"ok"} и пропажа из
-     * выборок — ещё не доказательство hard delete; владелец (решение №2) счёл
-     * их удалением насовсем, здесь следуем этому решению, но оговорку не
-     * прячем — она ровно тут, чтобы следующий читатель не считал вопрос
-     * закрытым эмпирикой.
      */
     private const SEMANTICS = [
+        'webhooks' => self::SEMANTIC_PURGED,
         'leads' => self::SEMANTIC_TRASHED,
         'contacts' => self::SEMANTIC_TRASHED,
         'companies' => self::SEMANTIC_TRASHED,
-        'tasks' => self::SEMANTIC_PURGED,
-        'notes' => self::SEMANTIC_PURGED,
-        'calls' => self::SEMANTIC_PURGED,
-        'catalogs' => self::SEMANTIC_PURGED,
-        'catalogElements' => self::SEMANTIC_PURGED,
-        'pipelines' => self::SEMANTIC_PURGED,
-        'webhooks' => self::SEMANTIC_PURGED,
-        'sources' => self::SEMANTIC_PURGED,
+        'tasks' => self::SEMANTIC_UNVERIFIED,
+        'notes' => self::SEMANTIC_UNVERIFIED,
+        'calls' => self::SEMANTIC_UNVERIFIED,
+        'catalogs' => self::SEMANTIC_UNVERIFIED,
+        'catalogElements' => self::SEMANTIC_UNVERIFIED,
+        'pipelines' => self::SEMANTIC_UNVERIFIED,
+        'sources' => self::SEMANTIC_UNVERIFIED,
         'customers' => self::SEMANTIC_UNVERIFIED,
     ];
 
@@ -110,12 +125,14 @@ final class AmoTestSweeper
 
     /**
      * @var array{
+     *     account: int,
      *     marker: string,
      *     window: array{days: int, from: int, to: int},
      *     purged: array<string, int>,
      *     trashed: array<string, int>,
      *     unverified: array<string, int>,
-     *     failed: list<array{type: string, id: int, reason: string}>,
+     *     stale: list<array{type: string, ref: string}>,
+     *     failed: list<array{type: string, ref: string, reason: string}>,
      *     scanned: array<string, int>,
      *     warnings: list<string>
      * }
@@ -132,12 +149,14 @@ final class AmoTestSweeper
 
     /**
      * @return array{
+     *     account: int,
      *     marker: string,
      *     window: array{days: int, from: int, to: int},
      *     purged: array<string, int>,
      *     trashed: array<string, int>,
      *     unverified: array<string, int>,
-     *     failed: list<array{type: string, id: int, reason: string}>,
+     *     stale: list<array{type: string, ref: string}>,
+     *     failed: list<array{type: string, ref: string, reason: string}>,
      *     scanned: array<string, int>,
      *     warnings: list<string>
      * }
@@ -151,11 +170,14 @@ final class AmoTestSweeper
 
         $this->deleted = 0;
         $this->report = [
+            /* Инструмент удаляет в боевой CRM: из выхлопа должно быть видно, в какой именно. */
+            'account' => $amo->accountId,
             'marker' => self::TEST_MARKER,
             'window' => ['days' => $this->windowDays, 'from' => $from, 'to' => $to],
             'purged' => [],
             'trashed' => [],
             'unverified' => [],
+            'stale' => [],
             'failed' => [],
             'scanned' => [],
             'warnings' => [],
@@ -204,22 +226,31 @@ final class AmoTestSweeper
 
         try {
             /*
-             * Возврат Deleter'а сознательно игнорируется. false означает «amo
-             * явно сказал, что сущности уже нет» — ровно та цель, ради которой
-             * свип и звался; при этом «уже нет» приходит тремя разными
-             * формами (400 status:fail, 200 «Недостаточно прав», errors[].code
-             * 404), и различать их — работа Deleter'а, а не уборщика.
-             * Отчитываемся о результате, а не о механике вызова; различаем то,
-             * что реально различно, — насовсем против корзины.
+             * В teardown false («amo говорит, что сущности уже нет») штатен:
+             * тест мог удалить её сам. В свипе — нет. Свип только что видел
+             * эту сущность в ОБЫЧНОЙ выборке, а по §8.5 удалённая в неё не
+             * приходит вовсе. Значит false сразу после дискавери означает не
+             * «уже убрано», а что-то другое: реальный отказ по правам, гонку с
+             * параллельным прогоном, неверно определённый тип. Считать это
+             * успешной уборкой — записать неудалённое в удалённое, то есть
+             * соврать ровно в том месте, ради которого свип и существует.
+             *
+             * Как выглядит каждая из четырёх форм «уже нет», свипу знать не
+             * нужно: их различает Deleter, сюда доходит один бит.
              */
-            $amo->deleter->byType($target->type, $target->handle);
+            $confirmed = $amo->deleter->byType($target->type, $target->handle);
 
             $this->deleted++;
-            $this->report[$semantic][$target->type] = ($this->report[$semantic][$target->type] ?? 0) + 1;
+
+            if ($confirmed) {
+                $this->report[$semantic][$target->type] = ($this->report[$semantic][$target->type] ?? 0) + 1;
+            } else {
+                $this->report['stale'][] = ['type' => $target->type, 'ref' => $target->ref()];
+            }
         } catch (Throwable $e) {
             $this->report['failed'][] = [
                 'type' => $target->type,
-                'id' => $target->id,
+                'ref' => $target->ref(),
                 'reason' => $this->reason($e),
             ];
         }
@@ -323,9 +354,18 @@ final class AmoTestSweeper
         }
     }
 
+    /**
+     * ЗНАЕМЫЙ ПРОБЕЛ: задачи идут в порядке amo по умолчанию, то есть по
+     * возрастанию (§8.7). Наши записи всегда самые свежие, поэтому лежат
+     * ровно в хвосте, который отрезает потолок страниц: на пустом аккаунте
+     * незаметно, на нагруженном — систематический промах именно по своему
+     * мусору. Лечится `desc`, но у Models\Task нет OrderTrait — он заказан
+     * lib-delete; как появится, здесь добавляется orderByUpdatedAtDesc(), как
+     * уже сделано у примечаний. До тех пор страховка — узкое окно (--days).
+     */
     private function sweepTasks(AmoClientOctane $amo, int $from, int $to): void
     {
-        foreach ($this->targets('tasks', 'tasks', $amo->tasks->filterUpdatedAt($from, $to)) as $target) {
+        foreach ($this->targets('tasks', 'tasks', $amo->tasks->filterUpdatedAt($from, $to), true) as $target) {
             $this->delete($amo, $target);
         }
     }
@@ -334,6 +374,14 @@ final class AmoTestSweeper
      * Звонок в amo — примечание особого типа (§6), поэтому и находится, и
      * удаляется вместе с примечаниями; в отчёте разводим их по note_type,
      * чтобы «удалили 3 примечания» не скрывало снесённые звонки.
+     *
+     * Сортировка `desc` обязательна, а не для красоты: по умолчанию amo отдаёт
+     * примечания по возрастанию (§8.7), то есть наши — самые свежие — лежат в
+     * хвосте, который отрезает потолок страниц. На пустом аккаунте это не
+     * видно, на нагруженном свип перестанет находить именно свой мусор.
+     * Направление берётся методом либы, а не строкой: неверное направление amo
+     * не отвергает — отвечает 200 и сортирует по умолчанию (§8.7), так что
+     * опечатка в литерале не проявилась бы ничем.
      */
     private function sweepNotesAndCalls(AmoClientOctane $amo, int $from, int $to): void
     {
@@ -344,7 +392,9 @@ final class AmoTestSweeper
         ];
 
         foreach ($collections as $parent => $notes) {
-            foreach ($this->scanAll("notes:{$parent}", $notes->filterUpdatedAt($from, $to)) as $payload) {
+            $windowed = $notes->filterUpdatedAt($from, $to)->orderUpdatedAtDesc();
+
+            foreach ($this->scanAll("notes:{$parent}", $windowed, true) as $payload) {
                 $noteType = is_string($payload['note_type'] ?? null) ? $payload['note_type'] : '';
                 $type = in_array($noteType, ['call_in', 'call_out'], true) ? 'calls' : 'notes';
 
@@ -449,11 +499,11 @@ final class AmoTestSweeper
      *
      * @return list<SweepTarget>
      */
-    private function targets(string $label, string $type, AbstractModel $model): array
+    private function targets(string $label, string $type, AbstractModel $model, bool $windowed = false): array
     {
         $targets = [];
 
-        foreach ($this->scanAll($label, $model) as $payload) {
+        foreach ($this->scanAll($label, $model, $windowed) as $payload) {
             $target = $this->target($type, $payload);
 
             if ($target !== null) {
@@ -488,9 +538,13 @@ final class AmoTestSweeper
      * warnings, остальные всё равно должны быть убраны — иначе один
      * отключённый в аккаунте раздел оставлял бы хвосты по всем остальным.
      *
+     * @param  bool  $windowed  выборка ограничена окном updated_at (tasks/notes/calls).
+     *                          От этого зависит совет в предупреждении: повторный
+     *                          прогон оконной дискавери вернёт ровно те же первые
+     *                          страницы, помочь может только сужение окна
      * @return list<array<string, mixed>>
      */
-    private function scanAll(string $label, AbstractModel $model): array
+    private function scanAll(string $label, AbstractModel $model, bool $windowed = false): array
     {
         $rows = [];
 
@@ -514,7 +568,10 @@ final class AmoTestSweeper
                 }
 
                 if ($page === self::MAX_PAGES) {
-                    $this->report['warnings'][] = "{$label}: скан упёрся в потолок ".self::MAX_PAGES.' страниц — хвосты могли остаться, прогоните свип повторно';
+                    $advice = $windowed
+                        ? 'сузьте окно (--days), повторный прогон вернёт те же страницы'
+                        : 'прогоните свип повторно';
+                    $this->report['warnings'][] = "{$label}: скан упёрся в потолок ".self::MAX_PAGES." страниц — хвосты могли остаться, {$advice}";
                 }
             }
         } catch (Throwable $e) {
@@ -550,12 +607,14 @@ final class AmoTestSweeper
 
     /**
      * @param  array{
+     *     account: int,
      *     marker: string,
      *     window: array{days: int, from: int, to: int},
      *     purged: array<string, int>,
      *     trashed: array<string, int>,
      *     unverified: array<string, int>,
-     *     failed: list<array{type: string, id: int, reason: string}>,
+     *     stale: list<array{type: string, ref: string}>,
+     *     failed: list<array{type: string, ref: string, reason: string}>,
      *     scanned: array<string, int>,
      *     warnings: list<string>
      * }  $report
@@ -563,10 +622,14 @@ final class AmoTestSweeper
     public static function render(array $report): string
     {
         $out = [];
-        $out[] = 'Свип amo — маркер '.$report['marker'].', окно '.$report['window']['days'].' сут.';
+        $out[] = 'Свип amo — аккаунт '.$report['account'].', маркер '.$report['marker'].', окно '.$report['window']['days'].' сут.';
         $out[] = '';
 
-        $out[] = 'Удалено насовсем:';
+        /*
+         * «Насовсем» пишется только там, где физическое стирание доказано
+         * повторной выборкой. Сегодня это один тип — вебхуки.
+         */
+        $out[] = 'Удалено насовсем (стирание подтверждено эмпирикой):';
         $out[] = self::renderBucket($report['purged']);
 
         /*
@@ -578,13 +641,28 @@ final class AmoTestSweeper
         $out[] = 'Отправлено в корзину (is_deleted=true, purge недоступен нигде):';
         $out[] = self::renderBucket($report['trashed']);
 
-        $out[] = 'Механизм отработал, жёсткость удаления не проверена:';
+        $out[] = 'amo подтвердил удаление, физическое стирание не доказано:';
         $out[] = self::renderBucket($report['unverified']);
+
+        /*
+         * Сущность, которую свип видел в обычной выборке, но amo на удаление
+         * ответил «её уже нет». По §8.5 удалённая в обычную выборку не
+         * приходит, значит это не идемпотентный повтор, а расхождение:
+         * права, гонка с параллельным прогоном или неверный тип. Печатаем
+         * отдельно — в буфер «удалено» такое класть нельзя.
+         */
+        if ($report['stale'] !== []) {
+            $out[] = 'amo ответил «уже нет» о сущности, которую свип видел живой — проверьте:';
+            foreach ($report['stale'] as $entry) {
+                $out[] = '  '.$entry['type'].' '.$entry['ref'];
+            }
+            $out[] = '';
+        }
 
         if ($report['failed'] !== []) {
             $out[] = 'Не удалось снести:';
             foreach ($report['failed'] as $failure) {
-                $out[] = '  '.$failure['type'].' '.$failure['id'].' — '.$failure['reason'];
+                $out[] = '  '.$failure['type'].' '.$failure['ref'].' — '.$failure['reason'];
             }
             $out[] = '';
         }
@@ -610,8 +688,11 @@ final class AmoTestSweeper
          * Без этой строки отчёт «удалено 0» читается как «в аккаунте чисто»,
          * что неверно: часть типов не сметается по устройству самого API.
          */
-        $out[] = 'Не сметается по устройству API (§7.6): shortLinks — в ответе create() нет id, адресовать нечем;';
-        $out[] = 'unsorted — decline()/accept() единственные переходы, порождённый лид сразу лежит в корзине (§7.5).';
+        $out[] = 'Не сметается (§7.5, §7.6):';
+        $out[] = '  shortLinks       — в ответе create() нет id, адресовать нечем';
+        $out[] = '  unsorted         — decline()/accept() единственные переходы, порождённый лид сразу в корзине';
+        $out[] = '  примечания на покупателях — коллекции customers/notes в либе нет, дискавери им не располагает';
+        $out[] = '                     (активного хвоста нет: тесты их не создают)';
 
         return implode(PHP_EOL, $out).PHP_EOL;
     }

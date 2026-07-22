@@ -199,20 +199,25 @@ class AmoTestSweeperTest extends TestCase
     public function test_report_names_trash_and_deletion_differently(): void
     {
         $rendered = AmoTestSweeper::render([
+            'account' => 16117840,
             'marker' => AmoTestSweeper::TEST_MARKER,
             'window' => ['days' => 3, 'from' => 0, 'to' => 0],
-            'purged' => ['tasks' => 3],
+            'purged' => ['webhooks' => 2],
             'trashed' => ['leads' => 4],
-            'unverified' => ['customers' => 1],
+            'unverified' => ['tasks' => 3],
+            'stale' => [],
             'failed' => [],
             'scanned' => ['tasks' => 120, 'leads' => 4],
             'warnings' => [],
         ]);
 
-        $this->assertStringContainsString('Удалено насовсем:', $rendered);
+        $this->assertStringContainsString('Удалено насовсем (стирание подтверждено эмпирикой):', $rendered);
         $this->assertStringContainsString('Отправлено в корзину', $rendered);
         $this->assertStringContainsString('purge недоступен нигде', $rendered);
-        $this->assertStringContainsString('жёсткость удаления не проверена', $rendered);
+        $this->assertStringContainsString('физическое стирание не доказано', $rendered);
+
+        /* Инструмент удаляет в боевой CRM — из выхлопа должно быть видно, в какой. */
+        $this->assertStringContainsString('аккаунт 16117840', $rendered);
     }
 
     /**
@@ -222,11 +227,13 @@ class AmoTestSweeperTest extends TestCase
     public function test_empty_report_does_not_read_as_a_clean_account(): void
     {
         $rendered = AmoTestSweeper::render([
+            'account' => 16117840,
             'marker' => AmoTestSweeper::TEST_MARKER,
             'window' => ['days' => 3, 'from' => 0, 'to' => 0],
             'purged' => [],
             'trashed' => [],
             'unverified' => [],
+            'stale' => [],
             'failed' => [],
             'scanned' => [],
             'warnings' => [],
@@ -238,5 +245,61 @@ class AmoTestSweeperTest extends TestCase
          * иначе пустой отчёт читается как доказательство чистоты аккаунта. */
         $this->assertStringContainsString('shortLinks', $rendered);
         $this->assertStringContainsString('unsorted', $rendered);
+        $this->assertStringContainsString('примечания на покупателях', $rendered);
+    }
+
+    /**
+     * В teardown ответ «уже нет» штатен — сущность мог удалить сам тест. В
+     * свипе нет: он видел её в обычной выборке секунду назад, а туда удалённая
+     * не приходит вовсе (§8.5). Записать такое в «удалено» — соврать об уборке.
+     */
+    public function test_stale_answer_is_reported_separately_from_deleted(): void
+    {
+        $rendered = AmoTestSweeper::render([
+            'account' => 16117840,
+            'marker' => AmoTestSweeper::TEST_MARKER,
+            'window' => ['days' => 3, 'from' => 0, 'to' => 0],
+            'purged' => [],
+            'trashed' => [],
+            'unverified' => [],
+            'stale' => [['type' => 'leads', 'ref' => '33286485']],
+            'failed' => [['type' => 'webhooks', 'ref' => 'https://example.com/hook', 'reason' => 'HTTP 500']],
+            'scanned' => ['leads' => 1],
+            'warnings' => [],
+        ]);
+
+        $this->assertStringContainsString('которую свип видел живой', $rendered);
+        $this->assertStringContainsString('leads 33286485', $rendered);
+
+        /* Вебхук адресуется destination'ом: «webhooks 0 — причина» не даёт
+         * оператору того, чем добивать руками. */
+        $this->assertStringContainsString('webhooks https://example.com/hook — HTTP 500', $rendered);
+    }
+
+    /**
+     * «Насовсем» разрешено писать только там, где физическое стирание
+     * доказано повторной выборкой (сегодня — один тип, вебхуки). Ответ amo
+     * «ок» доказательством не является: §7.7 про tasks/notes, §8.6 про
+     * «no note» у примечаний. Отчёт об уборке — единственное место, где мы
+     * обещаем результат, и над-обещание здесь стоит дороже всего.
+     */
+    public function test_only_empirically_proven_deletion_is_called_permanent(): void
+    {
+        $semanticFor = new ReflectionMethod(AmoTestSweeper::class, 'semanticFor');
+        $sweeper = new AmoTestSweeper;
+
+        $this->assertSame(AmoTestSweeper::SEMANTIC_PURGED, $semanticFor->invoke($sweeper, 'webhooks'));
+
+        foreach (['leads', 'contacts', 'companies'] as $type) {
+            $this->assertSame(AmoTestSweeper::SEMANTIC_TRASHED, $semanticFor->invoke($sweeper, $type));
+        }
+
+        foreach (['tasks', 'notes', 'calls', 'catalogs', 'catalogElements', 'pipelines', 'sources', 'customers'] as $type) {
+            $this->assertSame(
+                AmoTestSweeper::SEMANTIC_UNVERIFIED,
+                $semanticFor->invoke($sweeper, $type),
+                "{$type}: физическое стирание не доказано, «насовсем» про него писать нельзя"
+            );
+        }
     }
 }
