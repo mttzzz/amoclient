@@ -36,7 +36,17 @@ abstract class AbstractModel
     }
 
     /**
-     * @return array<string, mixed>
+     * Форма ответа зависит от эндпойнта, и тип обязан это признавать.
+     *
+     * При наличии `_embedded` отдаётся первая вложенная коллекция — СПИСОК
+     * сущностей с целочисленными ключами; без него — сам объект ответа, со
+     * строковыми. Раньше здесь стояло `array<string, mixed>`, и это было
+     * враньём ровно в первом, самом частом случае: inline-аннотация заставляла
+     * phpstan верить в строковые ключи там, где их нет. Враньё успело стоить
+     * одного обхода гардом в страховочной сетке — тип, который приходится
+     * обходить, хуже отсутствующего.
+     *
+     * @return array<mixed>
      *
      * @throws AmoCustomException
      */
@@ -62,9 +72,6 @@ abstract class AbstractModel
                 return [];
             }
 
-            /* amo API отдаёт JSON-объект — ключи всегда строки, но json()
-             * типизирован как mixed, is_array() даёт лишь array<mixed>. */
-            /** @var array<string, mixed> $embeddedData */
             return $embeddedData;
             // @codeCoverageIgnoreStart
         } catch (RequestException $e) {

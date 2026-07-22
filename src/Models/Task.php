@@ -142,14 +142,59 @@ class Task extends AbstractModel
 
     public function orderByCompleteDesc(): self
     {
-        $this->order['complete_till'] = 'desc';
-
-        return $this;
+        return $this->orderBy('complete_till', 'desc');
     }
 
     public function orderByCompleteAsc(): self
     {
-        $this->order['complete_till'] = 'asc';
+        return $this->orderBy('complete_till', 'asc');
+    }
+
+    /**
+     * Сортировка по updated_at. Нужна не для красоты: дискавери свипа идёт
+     * окном по updated_at с потолком в 10 страниц, порядок выдачи амо
+     * возрастающий, а созданное тестами всегда самое свежее — то есть на
+     * нагруженном аккаунте наш собственный мусор систематически ложится в
+     * отрезаемый хвост.
+     *
+     * ⚠️ Для роута задач направление НЕ снято зондом (§8.7 проверял
+     * `/leads/notes`). Амо на неподдерживаемую сортировку отвечает 200 и молча
+     * отдаёт порядок по умолчанию, поэтому если `order[updated_at]` тут не
+     * поддерживается, метод окажется тихим no-op, а не ошибкой. До зонда
+     * считать это непроверенным.
+     */
+    public function orderByUpdatedAtDesc(): self
+    {
+        return $this->orderBy('updated_at', 'desc');
+    }
+
+    /**
+     * См. предупреждение у orderByUpdatedAtDesc(): направление для роута задач
+     * зондом не подтверждено.
+     */
+    public function orderByUpdatedAtAsc(): self
+    {
+        return $this->orderBy('updated_at', 'asc');
+    }
+
+    /**
+     * Сортировка у амо ровно одна, поэтому каждый вызов ЗАМЕЩАЕТ предыдущий,
+     * а не добавляется к нему. Раньше `orderByCompleteDesc()
+     * ->orderByUpdatedAtDesc()` отправил бы два ключа, и какой из них амо
+     * учтёт — оставалось бы на его усмотрение, молча. Теперь побеждает
+     * последний вызов, и это решение принимаем мы.
+     *
+     * Направление не параметр публичного API: методы перечислены поимённо
+     * именно потому, что амо не валидирует `order` — на `order[updated_at]=
+     * nonsense` он отвечает 200 и сортирует по умолчанию. Опечатка в строке
+     * не проявилась бы ни ошибкой, ни предупреждением, только тихой
+     * деградацией уборки, поэтому строке взяться неоткуда.
+     *
+     * @param  'asc'|'desc'  $direction
+     */
+    private function orderBy(string $field, string $direction): self
+    {
+        $this->order = [$field => $direction];
 
         return $this;
     }
