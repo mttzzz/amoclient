@@ -14,7 +14,7 @@ namespace mttzzz\AmoClient\Tests\Support;
  */
 class TestEntityRegistry
 {
-    /* @var array<string, array{type: string, id: int|string}> */
+    /** @var array<string, array{type: string, id: int|string}> */
     private array $entries = [];
 
     public function track(string $type, int|string $id): void
@@ -28,7 +28,7 @@ class TestEntityRegistry
     }
 
     /**
-     * @return array<int, array{type: string, id: int|string}>
+     * @return list<array{type: string, id: int|string}>
      */
     public function all(): array
     {

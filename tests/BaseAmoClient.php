@@ -90,10 +90,14 @@ abstract class BaseAmoClient extends TestCase
 
     private static bool $shutdownHookRegistered = false;
 
-    /* Счётчик попыток сноса на сущность: реестр общий на прогон, значит
+    /**
+     * Счётчик попыток сноса на сущность: реестр общий на прогон, значит
      * неудавшийся снос доживёт до следующего класса и будет повторён. Без
      * счётчика каждый повтор читался бы как новый провал, а их число — как
-     * число хвостов. @var array<string, int> */
+     * число хвостов.
+     *
+     * @var array<string, int>
+     */
     private static array $sweepAttempts = [];
 
     /**
@@ -101,16 +105,51 @@ abstract class BaseAmoClient extends TestCase
      */
     protected function assertCustomerDeleteAccepted(array $response): void
     {
-        $this->assertIsArray($response);
-        $this->assertArrayHasKey('response', $response);
-        $this->assertArrayHasKey('customers', $response['response']);
-        $this->assertArrayHasKey('delete', $response['response']['customers']);
-        $this->assertArrayHasKey('errors', $response['response']['customers']['delete']);
+        $errors = $this->amoResponsePath($response, ['response', 'customers', 'delete', 'errors']);
 
-        foreach ($response['response']['customers']['delete']['errors'] as $error) {
-            $this->assertSame(404, $error['code']);
-            $this->assertSame('Error 282.', $error['message']);
+        foreach ($errors as $error) {
+            if (! is_array($error)) {
+                $this->fail('ответ amo: элемент errors[] ожидался массивом, пришло '.get_debug_type($error));
+            }
+
+            $this->assertSame(404, $error['code'] ?? null);
+            $this->assertSame('Error 282.', $error['message'] ?? null);
         }
+    }
+
+    /**
+     * Спуск по вложенному ключу сырого ответа amo с проваливанием теста на
+     * первом же уровне, которого нет или который не массив.
+     *
+     * Нужен потому, что ответ amo для анализатора — `mixed` на каждом шаге, а
+     * `assertArrayHasKey()` тип не сужает: расширения `phpstan/phpstan-phpunit`
+     * в проекте нет. Гард здесь не косметика — он превращает «amo прислал
+     * другую форму» из непроверяемого обращения к ключу в понятный провал с
+     * названным уровнем.
+     *
+     * @param  array<mixed>  $payload
+     * @param  list<string>  $path
+     * @return array<mixed>
+     */
+    private function amoResponsePath(array $payload, array $path): array
+    {
+        $cursor = $payload;
+
+        foreach ($path as $key) {
+            $this->assertArrayHasKey($key, $cursor);
+
+            $next = $cursor[$key];
+
+            if (! is_array($next)) {
+                /* Скобки обязательны: «»» после $key — байт ≥ 0x80, PHP
+                 * считает его частью имени переменной. */
+                $this->fail("ответ amo: по ключу «{$key}» ожидался массив, пришло ".get_debug_type($next));
+            }
+
+            $cursor = $next;
+        }
+
+        return $cursor;
     }
 
     protected function skipIfCustomersUnavailable(AmoCustomException $e): void
@@ -122,6 +161,9 @@ abstract class BaseAmoClient extends TestCase
         }
     }
 
+    /**
+     * @param  list<string>  $needles
+     */
     protected function skipIfUnsupportedAmoResponse(AmoCustomException $e, array $needles, string $reason): void
     {
         foreach ($needles as $needle) {

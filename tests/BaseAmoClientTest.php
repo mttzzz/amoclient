@@ -28,7 +28,12 @@ class BaseAmoClientTest extends BaseAmoClient
          * свип — гейт уборки не имеет права сам оставлять хвост. */
         $lead->name = $this->marked(self::PROBE_NAME);
 
-        $leadId = $this->track('leads', $lead->createGetId());
+        /* track() отдаёт id обратно (int|string — из-за строково-адресуемых
+         * вебхуков), но здесь он заведомо int: createGetId() иначе не умеет.
+         * Держим переменную отдельно, чтобы тип не расширялся на весь тест и
+         * #[Depends]-потребители получали int. */
+        $leadId = $lead->createGetId();
+        $this->track('leads', $leadId);
 
         $this->assertContains(
             ['type' => 'leads', 'id' => $leadId],
@@ -89,20 +94,30 @@ class BaseAmoClientTest extends BaseAmoClient
          * is_deleted, updated_at и account_id, а name, price и status_id
          * приходят null. Ассерт на имя или на маркер здесь упал бы не потому,
          * что уборка сломалась, а потому что amo не хранит их для удалённого. */
-        $deleted = $this->amoClient->leads->withOnlyDeleted()->filterId($leadId)->get();
+        /* array_values(): get() отдаёт список сущностей, но объявлен как
+         * array<string, mixed> — по этому типу обращение к [0] непроверяемо. */
+        $deleted = array_values($this->amoClient->leads->withOnlyDeleted()->filterId($leadId)->get());
 
         $this->assertNotSame(
             [],
             $deleted,
             "лид $leadId не виден и в корзине — семантика удаления в amo изменилась, ресёрч §7.3 устарел"
         );
+
+        $trashed = $deleted[0] ?? null;
+
+        if (! is_array($trashed)) {
+            $this->fail("корзина отдала не сущность по фильтру id=$leadId: ".get_debug_type($trashed));
+        }
+
         $this->assertSame(
             $leadId,
-            $deleted[0]['id'] ?? null,
+            $trashed['id'] ?? null,
             "в корзине по фильтру id=$leadId лежит не тот лид"
         );
-        $this->assertTrue(
-            (bool) ($deleted[0]['is_deleted'] ?? false),
+        $this->assertSame(
+            true,
+            $trashed['is_deleted'] ?? null,
             "лид $leadId найден среди удалённых, но без is_deleted=true"
         );
     }
