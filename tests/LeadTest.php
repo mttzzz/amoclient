@@ -57,7 +57,7 @@ class LeadTest extends BaseAmoClient
 
         $created = $response['_embedded']['leads'][0];
 
-        return $created['id'];
+        return $this->track('leads', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -145,6 +145,7 @@ class LeadTest extends BaseAmoClient
 
         $this->lead->setCF(449487, 879413, true);
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $found = $this->amoClient->leads->find($id)->toArray();
         $this->assertIsInt($id);
 
@@ -183,12 +184,15 @@ class LeadTest extends BaseAmoClient
     public function test_lead_set_entities()
     {
         $contactId = $this->amoClient->contacts->entityData(['name' => 'test'])->createGetId();
+        $this->track('contacts', $contactId);
         $companyId = $this->amoClient->companies->entityData(['name' => 'test'])->createGetId();
+        $this->track('companies', $companyId);
 
         $this->lead->setContact($this->amoClient->contacts->entity($contactId));
         $this->lead->setCompany($this->amoClient->companies->entity($companyId));
         $this->lead->name = 'testLeadSetEntities';
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
 
         $lead = $this->amoClient->leads->withContacts()->find($id);
         $contactId2 = $lead->getMainContactId();
@@ -221,6 +225,7 @@ class LeadTest extends BaseAmoClient
 
         $this->lead->name = 'testLeadGetContactsIdsException';
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
 
         $lead = $this->amoClient->leads->find($id);
         $this->expectException(Exception::class);
@@ -238,6 +243,7 @@ class LeadTest extends BaseAmoClient
     {
         $this->lead->name = 'testLeadGetMainContactIdException';
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
 
         $lead = $this->amoClient->leads->find($id);
         $this->expectException(Exception::class);
@@ -254,6 +260,7 @@ class LeadTest extends BaseAmoClient
     {
         $this->lead->name = 'testLeadGetMainContactIdNotFound';
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $lead = $this->amoClient->leads->withContacts()->find($id);
         $contactId = $lead->getMainContactId();
         $this->assertNull($contactId);
@@ -271,6 +278,7 @@ class LeadTest extends BaseAmoClient
         $catalogElements2 = $this->amoClient->catalogs->find($catalogId2)->elements->get();
         $this->lead->name = 'testLeadGetCatalogElementIds';
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $leadEntity = $this->amoClient->leads->entity($id);
         $leadEntity->links->catalogElement($catalogElements[0]['id'], $catalogId)->link();
         $leadEntity->links->catalogElement($catalogElements2[0]['id'], $catalogId2)->link();
@@ -290,6 +298,7 @@ class LeadTest extends BaseAmoClient
         $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
         $this->lead->name = 'testLeadGetCatalogQuantity';
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $this->amoClient->leads->entity($id)->links->catalogElement($catalogElements[0]['id'], $catalogId)->link();
 
         $lead = $this->amoClient->leads->withCatalogElements()->find($id);
@@ -307,6 +316,7 @@ class LeadTest extends BaseAmoClient
         $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
         $this->lead->name = 'testLeadGetCatalogElementQuantity';
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $this->amoClient->leads->entity($id)->links->catalogElement($catalogElements[0]['id'], $catalogId, 10)->link();
 
         $lead = $this->amoClient->leads->withCatalogElements()->find($id);
@@ -327,6 +337,7 @@ class LeadTest extends BaseAmoClient
         $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
         $this->lead->name = 'testLeadGetCatalogElementFloatQuantity';
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $this->amoClient->leads->entity($id)->links->catalogElement($catalogElements[0]['id'], $catalogId, 11.5)->link();
 
         $lead = $this->amoClient->leads->withCatalogElements()->find($id);

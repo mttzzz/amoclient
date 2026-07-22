@@ -8,8 +8,11 @@ class ShortLinkTest extends BaseAmoClient
     {
 
         $contactId = $this->amoClient->contacts->entityData(['name' => 'test'])->createGetId();
+        $this->track('contacts', $contactId);
         $shortLink = $this->amoClient->shortLinks->entity()->url('https://ya.ru')->setContactId($contactId);
         $response = $shortLink->create();
+        /* create() у shortLinks не возвращает id (только url) — трекать нечего,
+         * см. §7.6 research doc и разбор в tests-entities.md. */
         $this->assertArrayHasKey('url', $response['_embedded']['short_links'][0]);
         $url = $shortLink->createGetUrl();
         $this->assertIsString($url);

@@ -40,7 +40,7 @@ class NoteTest extends BaseAmoClient
         $created = $response['_embedded']['leads'][0];
         $this->lead->id = $created['id'];
 
-        return $created['id'];
+        return $this->track('leads', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -67,7 +67,7 @@ class NoteTest extends BaseAmoClient
         $this->assertIsArray($filtered2);
         $this->assertEmpty($filtered2);
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -90,7 +90,9 @@ class NoteTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $filtered[0]);
         $this->assertEquals($created['id'], $filtered[0]['id']);
 
-        return $created['id'];
+        /* callIn()/callOut() создают note с note_type=call_in|call_out — семантически "звонок",
+         * в контракте track() отдельный тип 'calls', см. §7.6 research doc. */
+        return $this->track('calls', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -113,7 +115,7 @@ class NoteTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $filtered[0]);
         $this->assertEquals($created['id'], $filtered[0]['id']);
 
-        return $created['id'];
+        return $this->track('calls', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -131,7 +133,7 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -149,7 +151,7 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -167,7 +169,7 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -185,7 +187,7 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -203,7 +205,7 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -228,6 +230,7 @@ class NoteTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $response['_embedded']['notes'][0]);
 
         $created = $response['_embedded']['notes'][0];
+        $this->track('notes', $created['id']);
 
         $filtered2 = $lead->notes->filterUpdatedAt(time() - 1000, time() + 1000)->get();
         $this->assertIsArray($filtered2);

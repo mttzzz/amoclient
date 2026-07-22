@@ -50,7 +50,7 @@ class PipelineTest extends BaseAmoClient
         $pipelineEntityWithId = $this->amoClient->pipelines->entity($created['id']);
         $this->assertInstanceOf(Pipeline::class, $pipelineEntityWithId);
 
-        return $created['id'];
+        return $this->track('pipelines', $created['id']);
     }
 
     public function test_pipeline_change_default_statuses()
@@ -64,6 +64,7 @@ class PipelineTest extends BaseAmoClient
         $pipeline->changeSuccessStatus('test_success');
         $pipeline->changeFailStatus('test_fail');
         $pipelineId = $pipeline->create()['_embedded']['pipelines'][0]['id'];
+        $this->track('pipelines', $pipelineId);
 
         $pipeline = $this->amoClient->pipelines->find($pipelineId)->toArray();
         $statuses = $pipeline['_embedded']['statuses'];

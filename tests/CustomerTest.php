@@ -51,7 +51,7 @@ class CustomerTest extends BaseAmoClient
 
         $created = $response['_embedded']['customers'][0];
 
-        return $created['id'];
+        return $this->track('customers', $created['id']);
     }
 
     #[Depends('test_customer_create')]
@@ -142,6 +142,7 @@ class CustomerTest extends BaseAmoClient
     public function test_customer_create_get_id()
     {
         $id = $this->customer->createGetId();
+        $this->track('customers', $id);
         $this->assertIsInt($id);
 
         $response = $this->amoClient->ajax->postJson('/ajax/v1/customers/set/', ['request' => ['customers' => ['delete' => [$id]]]]);

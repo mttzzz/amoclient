@@ -40,7 +40,7 @@ class TaskTest extends BaseAmoClient
         $created = $response['_embedded']['leads'][0];
         $this->lead->id = $created['id'];
 
-        return $created['id'];
+        return $this->track('leads', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -68,7 +68,7 @@ class TaskTest extends BaseAmoClient
 
         $created = $response['_embedded']['tasks'][0];
 
-        return $created['id'];
+        return $this->track('tasks', $created['id']);
     }
 
     #[Depends('test_task_add')]
@@ -97,6 +97,7 @@ class TaskTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $response['_embedded']['tasks'][0]);
 
         $created = $response['_embedded']['tasks'][0];
+        $this->track('tasks', $created['id']);
 
         $aId = 16117840;
         $clientId = '00a140c1-7c52-4563-8b36-03f23754d255';
@@ -138,8 +139,10 @@ class TaskTest extends BaseAmoClient
                 'name' => 'Test Customer',
                 'next_date' => 1270000,
             ])->create();
-            $this->amoClient->customers
+            $this->track('customers', $customer['_embedded']['customers'][0]['id']);
+            $customerTask = $this->amoClient->customers
                 ->entity($customer['_embedded']['customers'][0]['id'])->tasks->add('test');
+            $this->track('tasks', $customerTask['_embedded']['tasks'][0]['id']);
 
             $filtered8 = $this->amoClient->tasks->filterCustomer()->get();
             $this->assertEquals($filtered8[0]['entity_type'], 'customers');
@@ -207,7 +210,7 @@ class TaskTest extends BaseAmoClient
 
         $created = $response['_embedded']['tasks'][0];
 
-        return $created['id'];
+        return $this->track('tasks', $created['id']);
     }
 
     #[Depends('test_lead_create')]

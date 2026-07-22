@@ -6,6 +6,11 @@ class WebhookTest extends BaseAmoClient
 {
     public function test_webhook()
     {
+        /* webhooks в amo адресуются строкой destination, числового id у сущности нет
+         * (Entities\Webhook — ни find(), ни unSubscribe() не оперируют id). Контракт
+         * track(string $type, int $id) под это не подходит — трекать нечем, а не забыто:
+         * тот же гап независимо всплыл у teardown-core и lib-delete (см. их .tmp/scratch/sp0/*.md),
+         * ждём от лида решения по механизму для строково-адресуемых сущностей. */
         $destination = 'https://webhook.site/a895608c-8b4a-453e-8359-4ed5d42bb454';
         $entity = $this->amoClient->webhooks->entity($destination);
         $entity->responsibleLead();

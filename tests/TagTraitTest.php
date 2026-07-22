@@ -10,6 +10,7 @@ class TagTraitTest extends BaseAmoClient
         $lead = $this->amoClient->leads->entity();
         $lead->tag($tag);
         $leadId = $lead->createGetId();
+        $this->track('leads', $leadId);
         $found = $this->amoClient->leads->find($leadId);
         $foundTags = array_column($found->toArray()['_embedded']['tags'], 'name');
         $this->assertContains($tag, $foundTags);
@@ -24,6 +25,7 @@ class TagTraitTest extends BaseAmoClient
         $lead = $this->amoClient->leads->entity();
         $lead->tag($tags);
         $leadId = $lead->createGetId();
+        $this->track('leads', $leadId);
         $found = $this->amoClient->leads->find($leadId);
         $foundTags = array_column($found->toArray()['_embedded']['tags'], 'name');
         foreach ($tags as $tag) {
@@ -39,6 +41,7 @@ class TagTraitTest extends BaseAmoClient
         $lead = $this->amoClient->leads->entity();
         $lead->tag(null);
         $leadId = $lead->createGetId();
+        $this->track('leads', $leadId);
         $found = $this->amoClient->leads->find($leadId);
         $this->assertEmpty($found->toArray()['_embedded']['tags']);
 

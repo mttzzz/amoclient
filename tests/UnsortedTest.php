@@ -9,6 +9,9 @@ class UnsortedTest extends BaseAmoClient
 {
     public function test_create_sip_entity()
     {
+        /* unsorted не в списке трекаемых типов track() и не входит в него намеренно: сам по себе
+         * неудаляем публично (decline()/accept() — единственные переходы), см. §7.6 research doc.
+         * Трекать здесь нечего — это не пропуск, а следствие эмпирики. */
         $sipEntity = $this->amoClient->unsorted->sip();
         $sipEntity->source_name = 'sipEntity';
         $sipEntity->source_uid = 'sipEntity';
@@ -80,6 +83,10 @@ class UnsortedTest extends BaseAmoClient
     #[Depends('test_filter_pipeline_id')]
     public function test_decline($created)
     {
+        /* decline() порождает лид, но он сразу лежит в корзине (is_deleted=true) — живой цикл
+         * во второй волне ресёрча (§7.5, опровергает более раннюю спайк-гипотезу) показал, что
+         * отдельная уборка не нужна и невозможна (повторное удаление отдаёт fail, §7.4). Ответ
+         * decline() к тому же отдаёт только uid, id порождённого лида физически недоступен. */
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $declined = $this->amoClient->unsorted->decline($created['_embedded']['unsorted'][0]['uid'], 0);
         $this->assertEquals($created['_embedded']['unsorted'][0]['uid'], $declined['uid']);
@@ -118,9 +125,14 @@ class UnsortedTest extends BaseAmoClient
             strtotime($sortedDesc[0]['created_at'])
         );
 
+        /* accept(), в отличие от decline(), отдаёт настоящий id лида в ответе — трекаем сразу,
+         * до ассертов ниже: упавший assert оставил бы созданный лид без ручной уборки (она —
+         * дальше по коду, не в try/finally). */
         $accepted1 = $this->amoClient->unsorted->accept($created1['_embedded']['unsorted'][0]['uid'], 0, 16141420);
+        $this->track('leads', $accepted1['_embedded']['leads'][0]['id']);
         $this->assertArrayHasKey('id', $accepted1['_embedded']['leads'][0]);
         $accepted2 = $this->amoClient->unsorted->accept($created2['_embedded']['unsorted'][0]['uid'], 0, 16141420);
+        $this->track('leads', $accepted2['_embedded']['leads'][0]['id']);
         $this->assertArrayHasKey('id', $accepted2['_embedded']['leads'][0]);
 
         // Удаление созданных лидов
@@ -159,6 +171,7 @@ class UnsortedTest extends BaseAmoClient
     #[Depends('test_create_form_entity')]
     public function test_decline_form($created)
     {
+        /* см. комментарий в test_decline — та же эмпирика, тот же вывод: трекать нечего. */
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
         $declined = $this->amoClient->unsorted->decline($created['_embedded']['unsorted'][0]['uid'], 0);
         $this->assertEquals($created['_embedded']['unsorted'][0]['uid'], $declined['uid']);
