@@ -4,6 +4,7 @@ namespace mttzzz\AmoClient\Entities;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Arr;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
 
@@ -36,14 +37,14 @@ class Company extends AbstractEntity
      * @param  array<mixed>  $cf
      * @param  array<mixed>  $enums
      */
-    public function __construct(array $data, PendingRequest $http, array $cf, array $enums)
+    public function __construct(array $data, PendingRequest $http, array $cf, array $enums, Deleter $deleter)
     {
         parent::__construct($data, $http);
         $this->entity = 'companies';
         $this->cf = $cf;
         $this->enums = $enums;
         // TODO:  сделать одинаково
-        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
+        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id, $deleter);
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
     }

@@ -3,22 +3,48 @@
 namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
+use mttzzz\AmoClient\Exceptions\AmoUnexpectedResponseException;
 
 class Note extends AbstractModel
 {
     protected ?int $entityId;
 
-    public function __construct(PendingRequest $http, string $entity, ?int $entityId)
+    protected Deleter $deleter;
+
+    public function __construct(PendingRequest $http, string $entity, ?int $entityId, Deleter $deleter)
     {
         $this->entity = $entity.'/notes';
         $this->entityId = $entityId;
+        $this->deleter = $deleter;
         parent::__construct($http);
     }
 
     public function entity(?int $id = null): Entities\Note
     {
         return new Entities\Note(['id' => $id], $this->http, $this->entity, $this->entityId);
+    }
+
+    /**
+     * Удаление примечаний. Публичного механизма нет (v4 отдаёт 405) — работает
+     * только приватный роут, ярус semver третий: «ломается громко и чинится
+     * patch-ом».
+     *
+     * ВАЖНО: родитель в этом вызове не участвует, амо резолвит его по id
+     * примечания. То есть `$amo->leads->notes->delete($id)` удалит и примечание
+     * контакта — путь, которым получена коллекция, на удаление не влияет.
+     * Это свойство роута амо, а не недосмотр библиотеки.
+     *
+     * @param  int|list<int>  $ids
+     *
+     * @throws AmoCustomException
+     * @throws AmoUnexpectedResponseException
+     */
+    public function delete(int|array $ids): bool
+    {
+        return $this->deleter->notes($ids);
     }
 
     public function filterId(int $id): self

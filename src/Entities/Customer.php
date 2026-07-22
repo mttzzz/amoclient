@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Entities;
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
@@ -43,14 +44,14 @@ class Customer extends AbstractEntity
      * @param  array<string, mixed>  $data
      * @param  array<mixed>  $cf
      */
-    public function __construct(array $data, PendingRequest $http, array $cf)
+    public function __construct(array $data, PendingRequest $http, array $cf, Deleter $deleter)
     {
         parent::__construct($data, $http);
         $this->entity = 'customers';
         $this->cf = $cf;
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
-        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
+        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id, $deleter);
     }
 
     /**

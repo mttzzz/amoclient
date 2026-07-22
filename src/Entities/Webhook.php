@@ -2,7 +2,9 @@
 
 namespace mttzzz\AmoClient\Entities;
 
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Webhook extends AbstractEntity
@@ -19,6 +21,17 @@ class Webhook extends AbstractEntity
     public string $destination;
 
     public int $sort;
+
+    private Deleter $deleter;
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function __construct(array $data, PendingRequest $http, Deleter $deleter)
+    {
+        parent::__construct($data, $http);
+        $this->deleter = $deleter;
+    }
 
     /**
      * @return array<mixed>
@@ -37,15 +50,20 @@ class Webhook extends AbstractEntity
         }
     }
 
+    /**
+     * Отписка — настоящий hard delete, а не отключение.
+     *
+     * Возврат `null` сохранён как есть: метод отгружен в этой форме. Пакетная
+     * и информативная форма — `$amo->webhooks->delete($destinations): bool`;
+     * обе ходят через один Deleter, разойтись им негде.
+     *
+     * @throws AmoCustomException
+     */
     public function unSubscribe(): null
     {
-        try {
-            $this->http->delete($this->entity, ['destination' => $this->destination])->throw()->json();
+        $this->deleter->webhooks($this->destination);
 
-            return null;
-        } catch (RequestException $e) {
-            throw new AmoCustomException($e);
-        }
+        return null;
     }
 
     public function responsibleLead(): self

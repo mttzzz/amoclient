@@ -3,17 +3,38 @@
 namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
+use mttzzz\AmoClient\Exceptions\AmoUnexpectedResponseException;
 use mttzzz\AmoClient\Traits;
 
 class Task extends AbstractModel
 {
     use Traits\CrudTrait;
 
-    public function __construct(PendingRequest $http)
+    protected Deleter $deleter;
+
+    public function __construct(PendingRequest $http, Deleter $deleter)
     {
         parent::__construct($http);
         $this->entity = 'tasks';
+        $this->deleter = $deleter;
+    }
+
+    /**
+     * Удаление задач. Публичного механизма у амо нет — работает только
+     * приватный роут, поэтому ярус semver третий: обещается не «работает
+     * всегда», а «ломается громко и чинится patch-ом» (детали — в Deleter).
+     *
+     * @param  int|list<int>  $ids
+     *
+     * @throws AmoCustomException
+     * @throws AmoUnexpectedResponseException
+     */
+    public function delete(int|array $ids): bool
+    {
+        return $this->deleter->tasks($ids);
     }
 
     public function entity(?int $id = null): Entities\Task

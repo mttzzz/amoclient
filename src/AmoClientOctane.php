@@ -56,6 +56,13 @@ class AmoClientOctane
 
     public Ajax $ajax;
 
+    /**
+     * Удаление сущностей: единственная реализация таблицы «тип → механизм».
+     * Публична, потому что снос по паре (тип, id) — штатная нужда свипа,
+     * у которого на руках реестр, а не готовая коллекция.
+     */
+    public Deleter $deleter;
+
     public Unsorted $unsorted;
 
     public Call $calls;
@@ -236,22 +243,28 @@ class AmoClientOctane
         // @codeCoverageIgnoreEnd
         $this->accountId = $aId;
         $this->http = $http;
-        $this->account = new Account($http, $aId);
-        $this->leads = new Lead($http, $lazyCf);
-        $this->customers = new Customer($http, $lazyCf);
-        $this->contacts = new Contact($http, $octaneAccount, $lazyCf);
-        $this->companies = new Company($http, $octaneAccount, $lazyCf);
-        $this->catalogs = new Catalog($http);
-        $this->users = new User($http);
-        $this->pipelines = new Pipeline($http);
-        $this->tasks = new Task($http);
-        $this->events = new Event($http);
+        /*
+         * ajax и deleter собираются ДО моделей: приватные роуты удаления живут
+         * на корне домена, а не на /api/v4, поэтому модели получают канал
+         * готовым, а не конструируют его сами.
+         */
         $this->ajax = new Ajax($octaneAccount, $http);
+        $this->deleter = new Deleter($this->ajax, $http);
+        $this->account = new Account($http, $aId);
+        $this->leads = new Lead($http, $lazyCf, $this->deleter);
+        $this->customers = new Customer($http, $lazyCf, $this->deleter);
+        $this->contacts = new Contact($http, $octaneAccount, $lazyCf, $this->deleter);
+        $this->companies = new Company($http, $octaneAccount, $lazyCf, $this->deleter);
+        $this->catalogs = new Catalog($http, $this->deleter);
+        $this->users = new User($http);
+        $this->pipelines = new Pipeline($http, $this->deleter);
+        $this->tasks = new Task($http, $this->deleter);
+        $this->events = new Event($http);
         $this->unsorted = new Unsorted($http);
-        $this->calls = new Call($http);
-        $this->webhooks = new Webhook($http);
+        $this->calls = new Call($http, $this->deleter);
+        $this->webhooks = new Webhook($http, $this->deleter);
         $this->shortLinks = new ShortLink($http);
-        $this->sources = new Source($http);
+        $this->sources = new Source($http, $this->deleter);
     }
 
     private function convertToOctaneAccount(stdClass $data): OctaneAccount

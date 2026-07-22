@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\DB;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
@@ -79,7 +80,7 @@ class Lead extends AbstractEntity
      * @param  array<mixed>  $cf
      * @param  array<mixed>  $enums
      */
-    public function __construct(array $data, PendingRequest $http, array $cf, array $enums)
+    public function __construct(array $data, PendingRequest $http, array $cf, array $enums, Deleter $deleter)
     {
         parent::__construct($data, $http);
         $this->entity = 'leads';
@@ -87,7 +88,7 @@ class Lead extends AbstractEntity
         $this->enums = $enums;
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
-        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
+        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id, $deleter);
     }
 
     /**
