@@ -26,10 +26,12 @@ class Webhook extends AbstractEntity
     public function subscribe(): array
     {
         try {
-            return $this->http->post($this->entity, [
+            $result = $this->http->post($this->entity, [
                 'destination' => $this->destination,
                 'settings' => $this->settings,
             ])->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
@@ -38,7 +40,9 @@ class Webhook extends AbstractEntity
     public function unSubscribe(): null
     {
         try {
-            return $this->http->delete($this->entity, ['destination' => $this->destination])->throw()->json();
+            $this->http->delete($this->entity, ['destination' => $this->destination])->throw()->json();
+
+            return null;
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }

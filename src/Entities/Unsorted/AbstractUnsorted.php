@@ -48,7 +48,9 @@ abstract class AbstractUnsorted
     public function create(): array
     {
         try {
-            return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
+            $result = $this->http->post($this->entity, [$this->toArray()])->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
@@ -57,14 +59,26 @@ abstract class AbstractUnsorted
     /**
      * Convert the object to an array.
      *
+     * $http/$entity — служебные поля, не часть API-payload; строим массив
+     * вручную через get_object_vars() вместо unset()+(array)-каста, чтобы не
+     * трогать typed-свойства (level: max ругается на unset возможно
+     * хукнутого свойства, PHP 8.4 property hooks).
+     *
      * @return array<string, mixed>
      */
     public function toArray(): array
     {
-        unset($this->http);
-        unset($this->entity);
+        $item = [];
 
-        return (array) $this;
+        foreach (get_object_vars($this) as $key => $value) {
+            if (in_array($key, ['http', 'entity'], true)) {
+                continue;
+            }
+
+            $item[(string) $key] = $value;
+        }
+
+        return $item;
     }
 
     public function addLead(Lead $lead): void

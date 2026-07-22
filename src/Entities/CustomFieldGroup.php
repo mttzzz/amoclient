@@ -16,7 +16,7 @@ class CustomFieldGroup extends AbstractEntity
     public int $sort;
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      */
     public function __construct(array $data, PendingRequest $http, string $entity)
     {

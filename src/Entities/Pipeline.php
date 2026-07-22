@@ -15,7 +15,7 @@ class Pipeline extends AbstractEntity
     protected string $entity = 'leads/pipelines';
 
     /**
-     * @var array<mixed>
+     * @var array<string, array<int, array<string, mixed>>>
      */
     public array $_embedded = [];
 
@@ -36,7 +36,10 @@ class Pipeline extends AbstractEntity
     {
 
         if (! isset($this->_embedded['statuses'])) {
-            return collect();
+            /** @var Collection<int, array<string, mixed>> $empty */
+            $empty = collect();
+
+            return $empty;
         }
 
         /** @var array<int, array<string, mixed>> $statusesArray */
@@ -56,7 +59,9 @@ class Pipeline extends AbstractEntity
     public function update(): array
     {
         try {
-            return $this->http->patch("$this->entity/$this->id", $this->toArray())->throw()->json();
+            $result = $this->http->patch("$this->entity/$this->id", $this->toArray())->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
         }

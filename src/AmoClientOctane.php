@@ -102,6 +102,10 @@ class AmoClientOctane
 
         $accountData = $mainResult[0];
 
+        if (! $accountData instanceof stdClass) {
+            throw new Exception("Account ($aId) not found");
+        }
+
         // Проверяем, что виджет установлен
         if (! $accountData->access_token) {
             /** @var Widget|null $widget */
@@ -110,7 +114,8 @@ class AmoClientOctane
                 throw new Exception("Widget ($this->clientId) not found");
             }
             // @codeCoverageIgnoreStart
-            throw new Exception("Widget ($widget->name) doesn't installed in account ($accountData->subdomain)");
+            $subdomain = is_scalar($accountData->subdomain) ? (string) $accountData->subdomain : '';
+            throw new Exception("Widget ($widget->name) doesn't installed in account ($subdomain)");
             // @codeCoverageIgnoreEnd
         }
 
@@ -119,10 +124,10 @@ class AmoClientOctane
         $lazyCf = new LazyCustomFields($aId);
 
         // Остальные параметры из конфига, если они есть.
-        $timeout = Config::get('amoclient.timeout') ?? 60;
-        $connectTimeout = Config::get('amoclient.connectTimeout') ?? 10;
-        $retries = Config::get('amoclient.retries') ?? 3;
-        $retryDelay = Config::get('amoclient.retryDelay') ?? 2000;
+        $timeout = self::configInt('amoclient.timeout', 60);
+        $connectTimeout = self::configInt('amoclient.connectTimeout', 10);
+        $retries = self::configInt('amoclient.retries', 3);
+        $retryDelay = self::configInt('amoclient.retryDelay', 2000);
         $verify = Config::get('amoclient.verify');
 
         $baseUrl = $octaneAccount->domain === 'com'
@@ -252,13 +257,25 @@ class AmoClientOctane
     private function convertToOctaneAccount(stdClass $data): OctaneAccount
     {
         $octaneAccount = new OctaneAccount;
-        $octaneAccount->id = $data->id;
-        $octaneAccount->subdomain = $data->subdomain;
-        $octaneAccount->domain = $data->domain;
-        $octaneAccount->access_token = $data->access_token;
-        $octaneAccount->contact_phone_field_id = $data->contact_phone_field_id ?? 0;
-        $octaneAccount->contact_email_field_id = $data->contact_email_field_id ?? 0;
+        $octaneAccount->id = is_numeric($data->id) ? (int) $data->id : 0;
+        $octaneAccount->subdomain = is_scalar($data->subdomain) ? (string) $data->subdomain : '';
+        $octaneAccount->domain = is_scalar($data->domain) ? (string) $data->domain : '';
+        $octaneAccount->access_token = is_scalar($data->access_token) ? (string) $data->access_token : '';
+        $octaneAccount->contact_phone_field_id = is_numeric($data->contact_phone_field_id ?? null) ? (int) $data->contact_phone_field_id : 0;
+        $octaneAccount->contact_email_field_id = is_numeric($data->contact_email_field_id ?? null) ? (int) $data->contact_email_field_id : 0;
 
         return $octaneAccount;
+    }
+
+    /**
+     * Читает числовой конфиг amoclient.* с фолбэком на дефолт: значения из
+     * Config::get() приходят как mixed, поэтому гардим is_numeric() перед
+     * кастом (level: max запрещает cast mixed → int напрямую).
+     */
+    private static function configInt(string $key, int $default): int
+    {
+        $value = Config::get($key);
+
+        return is_numeric($value) ? (int) $value : $default;
     }
 }

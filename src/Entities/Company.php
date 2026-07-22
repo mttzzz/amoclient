@@ -19,7 +19,7 @@ class Company extends AbstractEntity
     public array $custom_fields_values = [];
 
     /**
-     * @var array<mixed>
+     * @var array<string, array<int, array<string, mixed>>>
      */
     public array $_embedded = [];
 
@@ -32,7 +32,7 @@ class Company extends AbstractEntity
     public int $created_by;
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      * @param  array<mixed>  $cf
      * @param  array<mixed>  $enums
      */
@@ -53,8 +53,13 @@ class Company extends AbstractEntity
      */
     public function getLeadIds(): array
     {
-        $leadIds = $this->toArray()['_embedded']['leads'] ?? [];
+        $embedded = $this->toArray()['_embedded'] ?? [];
+        $leads = is_array($embedded) ? ($embedded['leads'] ?? []) : [];
 
-        return count($leadIds) ? Arr::pluck($leadIds, 'id') : [];
+        if (! is_array($leads) || ! count($leads)) {
+            return [];
+        }
+
+        return array_map(static fn ($id) => is_numeric($id) ? (int) $id : 0, Arr::pluck($leads, 'id'));
     }
 }

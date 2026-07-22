@@ -51,7 +51,7 @@ abstract class AbstractEntity
     public int $catalog_id;
 
     /**
-     * @var array<mixed>
+     * @var array<string, array<int, array<string, mixed>>>
      **/
     public array $_embedded = [];
 
@@ -61,7 +61,7 @@ abstract class AbstractEntity
     public array $metadata = [];
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      **/
     public function __construct(array $data, PendingRequest $http)
     {
@@ -70,7 +70,7 @@ abstract class AbstractEntity
     }
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      **/
     protected function setData(array $data): void
     {
@@ -80,7 +80,7 @@ abstract class AbstractEntity
             $data['custom_fields_values'] = empty($data['custom_fields_values']) ? [] : $data['custom_fields_values'];
 
             foreach ($data as $key => $item) {
-                $value = (in_array($key, $intFields, true) && $item) ? (int) $item : $item;
+                $value = (in_array($key, $intFields, true) && $item && is_numeric($item)) ? (int) $item : $item;
 
                 if (property_exists($this, $key)) {
                     $this->{$key} = $value;
@@ -119,12 +119,17 @@ abstract class AbstractEntity
      */
     public function toArray(): array
     {
+        /** @var array<string, mixed> $item */
         $item = [];
 
         $except = ['http', 'cf', 'entity', 'notes', '_links', 'closest_task_at', 'updated_by',
             'fieldPhoneId', 'fieldEmailId', 'tasks', 'links', 'enums', 'attributes'];
 
         foreach (get_object_vars($this) as $key => $value) {
+            /* get_object_vars() ключи в рантайме — всегда имена свойств (string),
+             * но у phpstan-стаба тип array<mixed> (int|string) — кастуем явно. */
+            $key = (string) $key;
+
             if (! in_array($key, $except)) {
                 $item[$key] = $value;
             }

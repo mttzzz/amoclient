@@ -46,7 +46,9 @@ class Call extends AbstractEntity
     public function create(): array
     {
         try {
-            return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
+            $result = $this->http->post($this->entity, [$this->toArray()])->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }

@@ -34,7 +34,9 @@ class Source extends AbstractEntity
     public function delete(): null
     {
         try {
-            return $this->http->delete($this->entity.'/'.$this->id)->throw()->json();
+            $this->http->delete($this->entity.'/'.$this->id)->throw()->json();
+
+            return null;
             // @codeCoverageIgnoreStart
         } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);

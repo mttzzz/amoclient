@@ -35,12 +35,12 @@ class Customer extends AbstractEntity
     public array $custom_fields_values = [];
 
     /**
-     * @var array<mixed>
+     * @var array<string, array<int, array<string, mixed>>>
      */
     public array $_embedded = [];
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      * @param  array<mixed>  $cf
      */
     public function __construct(array $data, PendingRequest $http, array $cf)
@@ -59,7 +59,9 @@ class Customer extends AbstractEntity
     public function complex(): array
     {
         try {
-            return $this->http->post($this->entity.'/complex', [$this->toArray()])->throw()->json();
+            $result = $this->http->post($this->entity.'/complex', [$this->toArray()])->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
@@ -81,8 +83,10 @@ class Customer extends AbstractEntity
             throw new Exception('add withContacts() before call this function');
         }
         foreach ($this->_embedded['contacts'] as $contact) {
-            if ($contact['is_main']) {
-                return $contact['id'];
+            if ($contact['is_main'] ?? false) {
+                $id = $contact['id'] ?? null;
+
+                return is_numeric($id) ? (int) $id : null;
             }
         }
 
@@ -91,7 +95,9 @@ class Customer extends AbstractEntity
 
     public function getCompanyId(): ?int
     {
-        return $this->_embedded['companies'][0]['id'] ?? null;
+        $companyId = $this->_embedded['companies'][0]['id'] ?? null;
+
+        return is_numeric($companyId) ? (int) $companyId : null;
     }
 
     /**
@@ -104,7 +110,10 @@ class Customer extends AbstractEntity
         }
         $ids = [];
         foreach ($this->_embedded['contacts'] as $contact) {
-            $ids[] = $contact['id'];
+            $id = $contact['id'] ?? null;
+            if (is_numeric($id)) {
+                $ids[] = (int) $id;
+            }
         }
 
         return $ids;
