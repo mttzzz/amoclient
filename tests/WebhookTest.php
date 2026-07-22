@@ -6,12 +6,10 @@ class WebhookTest extends BaseAmoClient
 {
     public function test_webhook()
     {
-        /* webhooks в amo адресуются строкой destination, числового id у сущности нет
-         * (Entities\Webhook — ни find(), ни unSubscribe() не оперируют id). Контракт
-         * track(string $type, int $id) под это не подходит — трекать нечем, а не забыто:
-         * тот же гап независимо всплыл у teardown-core и lib-delete (см. их .tmp/scratch/sp0/*.md),
-         * ждём от лида решения по механизму для строково-адресуемых сущностей. */
-        $destination = 'https://webhook.site/a895608c-8b4a-453e-8359-4ed5d42bb454';
+        /* webhooks адресуются строкой destination, числового id у сущности нет — контракт
+         * track() расширен лидом до int|string специально под этот случай (маркер тоже
+         * кладём в тот же destination — он и есть адресуемый ключ). */
+        $destination = $this->marked('https://webhook.site/a895608c-8b4a-453e-8359-4ed5d42bb454');
         $entity = $this->amoClient->webhooks->entity($destination);
         $entity->responsibleLead();
         $entity->responsibleContact();
@@ -42,6 +40,9 @@ class WebhookTest extends BaseAmoClient
         $entity->noteCompany();
         $entity->noteCustomer();
         $entity->subscribe();
+        /* трекаем сразу после subscribe(), до ассертов ниже: упавший assert между subscribe()
+         * и unSubscribe() (не в try/finally) оставил бы живую подписку на боевом аккаунте. */
+        $this->track('webhooks', $destination);
         $find = $this->amoClient->webhooks->find($destination);
         $this->assertEquals($find->destination, $destination);
         $unsubscribe = $entity->unSubscribe();

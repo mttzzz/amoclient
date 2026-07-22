@@ -21,7 +21,7 @@ class TaskTest extends BaseAmoClient
         parent::setUp();
 
         $this->lead = $this->amoClient->leads->entity();
-        $this->lead->name = 'Test Lead';
+        $this->lead->name = $this->marked('Test Lead');
         $this->lead->price = 1000;
         $this->lead->status_id = 142;
     }
@@ -57,7 +57,7 @@ class TaskTest extends BaseAmoClient
     public function test_task_add(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->tasks->add('Test Task', null, time() + 3600, 3600, 1);
+        $response = $lead->tasks->add($this->marked('Test Task'), null, time() + 3600, 3600, 1);
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -87,7 +87,7 @@ class TaskTest extends BaseAmoClient
 
         $lead = $this->amoClient->leads->entity($leadId);
         $lead->tasks->setResultText('sss');
-        $response = $lead->tasks->add('Test Task', null, time() + 3600, 3600, 1);
+        $response = $lead->tasks->add($this->marked('Test Task'), null, time() + 3600, 3600, 1);
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -136,12 +136,12 @@ class TaskTest extends BaseAmoClient
         $this->amoClient = new AmoClientOctane($aId, $clientId);
         try {
             $customer = $this->amoClient->customers->entityData([
-                'name' => 'Test Customer',
+                'name' => $this->marked('Test Customer'),
                 'next_date' => 1270000,
             ])->create();
             $this->track('customers', $customer['_embedded']['customers'][0]['id']);
             $customerTask = $this->amoClient->customers
-                ->entity($customer['_embedded']['customers'][0]['id'])->tasks->add('test');
+                ->entity($customer['_embedded']['customers'][0]['id'])->tasks->add($this->marked('test'));
             $this->track('tasks', $customerTask['_embedded']['tasks'][0]['id']);
 
             $filtered8 = $this->amoClient->tasks->filterCustomer()->get();
@@ -199,7 +199,7 @@ class TaskTest extends BaseAmoClient
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $lead->tasks->setResultText('sss');
-        $response = $lead->tasks->add('Test Task', null, time() + 3600, 3600, 1);
+        $response = $lead->tasks->add($this->marked('Test Task'), null, time() + 3600, 3600, 1);
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);

@@ -18,7 +18,7 @@ class PipelineTest extends BaseAmoClient
         parent::setUp();
 
         $this->data = [
-            'name' => 'Test Pipeline',
+            'name' => $this->marked('Test Pipeline'),
             'sort' => 10,
             'is_main' => false,
         ];
@@ -57,7 +57,7 @@ class PipelineTest extends BaseAmoClient
     {
 
         $pipeline = $this->amoClient->pipelines->entity();
-        $pipeline->name = 'testPipelineChangeSuccessStatus';
+        $pipeline->name = $this->marked('testPipelineChangeSuccessStatus');
         $pipeline->sort = 10;
         $pipeline->is_main = false;
         $pipeline->addStatus('статус 1', 1, '#fffeb2');
@@ -81,7 +81,7 @@ class PipelineTest extends BaseAmoClient
     public function test_pipeline_update(int $pipelineId)
     {
         $pipeline = $this->amoClient->pipelines->entity($pipelineId);
-        $newName = 'Test Pipeline2';
+        $newName = $this->marked('Test Pipeline2');
         $pipeline->name = $newName;
         $response = $pipeline->update();
         $this->assertEquals($newName, $response['name']);

@@ -7,7 +7,7 @@ class sourceTest extends BaseAmoClient
     public function test_source()
     {
         $sourceEntity = $this->amoClient->sources->entity();
-        $sourceEntity->name = 'test';
+        $sourceEntity->name = $this->marked('test');
         $sourceEntity->external_id = '111111';
         $createdId = $sourceEntity->createGetId();
         $this->track('sources', $createdId);

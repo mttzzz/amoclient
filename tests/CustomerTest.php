@@ -18,7 +18,7 @@ class CustomerTest extends BaseAmoClient
         parent::setUp();
 
         $this->data = [
-            'name' => 'Test Customer',
+            'name' => $this->marked('Test Customer'),
             'next_date' => 1270000,
 
         ];
@@ -57,7 +57,7 @@ class CustomerTest extends BaseAmoClient
     #[Depends('test_customer_create')]
     public function test_customer_update(int $customerId)
     {
-        $newName = 'Test Customer 2';
+        $newName = $this->marked('Test Customer 2');
         $this->customer->id = $customerId;
         $this->customer->name = $newName;
 

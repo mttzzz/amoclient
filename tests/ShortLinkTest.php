@@ -7,7 +7,7 @@ class ShortLinkTest extends BaseAmoClient
     public function test_short_link()
     {
 
-        $contactId = $this->amoClient->contacts->entityData(['name' => 'test'])->createGetId();
+        $contactId = $this->amoClient->contacts->entityData(['name' => $this->marked('test')])->createGetId();
         $this->track('contacts', $contactId);
         $shortLink = $this->amoClient->shortLinks->entity()->url('https://ya.ru')->setContactId($contactId);
         $response = $shortLink->create();

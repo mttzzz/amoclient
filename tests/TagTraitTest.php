@@ -8,6 +8,7 @@ class TagTraitTest extends BaseAmoClient
     {
         $tag = 'test1';
         $lead = $this->amoClient->leads->entity();
+        $lead->name = $this->marked('testTagSingle');
         $lead->tag($tag);
         $leadId = $lead->createGetId();
         $this->track('leads', $leadId);
@@ -23,6 +24,7 @@ class TagTraitTest extends BaseAmoClient
     {
         $tags = ['test1', 'test2'];
         $lead = $this->amoClient->leads->entity();
+        $lead->name = $this->marked('testTagArray');
         $lead->tag($tags);
         $leadId = $lead->createGetId();
         $this->track('leads', $leadId);
@@ -39,6 +41,7 @@ class TagTraitTest extends BaseAmoClient
     public function test_tag_null()
     {
         $lead = $this->amoClient->leads->entity();
+        $lead->name = $this->marked('testTagNull');
         $lead->tag(null);
         $leadId = $lead->createGetId();
         $this->track('leads', $leadId);

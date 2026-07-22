@@ -95,15 +95,20 @@ class UnsortedTest extends BaseAmoClient
     #[Depends('test_decline')]
     public function test_create_and_accept_sip_entity()
     {
+        /* unsorted сам не в списке маркируемых типов (см. комментарий в test_create_sip_entity),
+         * но accept() ниже превращает эти sip-сущности в настоящие трекаемые leads, а accept()
+         * не даёт параметра имени — source_name amo переносит в название лида, это ближайший
+         * контролируемый нами аналог "leads → name". source_uid не трогаем: технический
+         * дедуп-ключ, менять его формат — отдельный риск не по этой задаче. */
         $sipEntity1 = $this->amoClient->unsorted->sip();
-        $sipEntity1->source_name = 'sipEntity1';
+        $sipEntity1->source_name = $this->marked('sipEntity1');
         $sipEntity1->source_uid = 'sipEntity1';
         $sipEntity1->addMetadata(rand(), rand(0, 100), 'ssssss', 'https://ya.com', '11111111111', 0, '6666666', false);
 
         $created1 = $sipEntity1->create();
 
         $sipEntity2 = $this->amoClient->unsorted->sip();
-        $sipEntity2->source_name = 'sipEntity2';
+        $sipEntity2->source_name = $this->marked('sipEntity2');
         $sipEntity2->source_uid = 'sipEntity2';
         $sipEntity2->addMetadata(rand(), rand(0, 100), 'ssssss', 'https://ya.com', '22222222222', 0, '7777777', false);
 

@@ -19,7 +19,7 @@ class NoteTest extends BaseAmoClient
         parent::setUp();
 
         $this->lead = $this->amoClient->leads->entity();
-        $this->lead->name = 'Test Lead';
+        $this->lead->name = $this->marked('Test Lead');
         $this->lead->price = 1000;
         $this->lead->status_id = 142;
 
@@ -47,7 +47,7 @@ class NoteTest extends BaseAmoClient
     public function test_note_common_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->common('test text');
+        $response = $lead->notes->entity()->common($this->marked('test text'));
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -74,7 +74,9 @@ class NoteTest extends BaseAmoClient
     public function test_note_call_in_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->callIn('unique_id', 120, 'http://example.com', '1234567890');
+        /* у callIn()/callOut() нет отдельного params.text — маркер кладём в params.link,
+         * второй из допустимых по контракту вариантов (§ marked()-требование от лида). */
+        $response = $lead->notes->entity()->callIn('unique_id', 120, $this->marked('http://example.com'), '1234567890');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -99,7 +101,7 @@ class NoteTest extends BaseAmoClient
     public function test_note_call_out_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->callOut('unique_id', 120, 'http://example.com', '1234567890');
+        $response = $lead->notes->entity()->callOut('unique_id', 120, $this->marked('http://example.com'), '1234567890');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -122,7 +124,7 @@ class NoteTest extends BaseAmoClient
     public function test_note_service_message_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->serviceMessage('Текст для примечания', 'Сервис для примера');
+        $response = $lead->notes->entity()->serviceMessage($this->marked('Текст для примечания'), 'Сервис для примера');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -140,7 +142,7 @@ class NoteTest extends BaseAmoClient
     public function test_note_message_cashier_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->messageCashier('created', 'test text');
+        $response = $lead->notes->entity()->messageCashier('created', $this->marked('test text'));
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -158,7 +160,7 @@ class NoteTest extends BaseAmoClient
     public function test_note_invoice_paid_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->invoicePaid('test text', 'test service', 'http://example.com/icon.png');
+        $response = $lead->notes->entity()->invoicePaid($this->marked('test text'), 'test service', 'http://example.com/icon.png');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -176,7 +178,7 @@ class NoteTest extends BaseAmoClient
     public function test_note_geolocation_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->geolocation('test text', 'test address', '123.456', '78.910');
+        $response = $lead->notes->entity()->geolocation($this->marked('test text'), 'test address', '123.456', '78.910');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -194,7 +196,7 @@ class NoteTest extends BaseAmoClient
     public function test_note_sms_in_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->smsIn('test text', '1234567890');
+        $response = $lead->notes->entity()->smsIn($this->marked('test text'), '1234567890');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -220,7 +222,7 @@ class NoteTest extends BaseAmoClient
     public function test_note_sms_out_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->smsOut('test text', '1234567890');
+        $response = $lead->notes->entity()->smsOut($this->marked('test text'), '1234567890');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
