@@ -8,19 +8,21 @@ use Throwable;
 
 /**
  * Последняя сетка от хвостов: находит в аккаунте сущности, помеченные
- * маркером тестов, и сносит их механизмами из docs/research/amo-delete-mechanisms.md §7.6.
+ * маркером тестов, и сносит их через Deleter — единственное место в либе,
+ * где живёт таблица «тип → механизм удаления» (docs/research/amo-delete-mechanisms.md §7.6).
  *
  * Свип — не замена teardown'у, а страховка на случай, когда teardown не
- * отработал: фатал в PHP, убитый по Ctrl-C прогон, упавший на сети процесс.
- * Поэтому он ищет по маркеру в самом amo, а не по реестру созданного в
- * текущем процессе (реестра к этому моменту уже нет).
+ * отработал: фатал в PHP, убитый по Ctrl-C прогон, оборванный на сети
+ * процесс. Поэтому он ищет по маркеру в самом amo, а не по реестру
+ * созданного в текущем процессе — реестра к этому моменту уже нет.
  */
 final class AmoTestSweeper
 {
     /*
-     * Маркер тестовых сущностей. Всё, что содержит эту строку в своём
-     * «маркерном» поле (см. MARKER_FIELDS), считается созданным нашими
-     * тестами и подлежит сносу; всё остальное свип не трогает.
+     * Маркер тестовых сущностей — ЕДИНСТВЕННОЕ место, где живёт эта строка.
+     * Тесты берут её отсюда через BaseAmoClient::marked(), а не хардкодят:
+     * три разошедшиеся на букву копии маркера означали бы свип, находящий две
+     * трети хвостов и молчащий об остальных.
      *
      * Почему именно такой маркер, а не «test» / «Test lead» / «sweep-probe»:
      * аккаунт 16117840 — БОЕВОЙ, в нём живут настоящие клиентские сделки,
@@ -49,16 +51,18 @@ final class AmoTestSweeper
     /* Насовсем: запись физически исчезает из аккаунта. */
     public const SEMANTIC_PURGED = 'purged';
 
-    /* В корзину: запись остаётся с is_deleted=true, purge недоступен. */
+    /* В корзину: запись остаётся с is_deleted=true, purge недоступен нигде. */
     public const SEMANTIC_TRASHED = 'trashed';
 
     /* Механизм отвечает «ок», но жёсткость удаления эмпирически не снята. */
     public const SEMANTIC_UNVERIFIED = 'unverified';
 
     /*
-     * Семантика удаления по типам — из §7.6 + решения владельца №2.
-     * Таблица заодно работает allow-list'ом: тип, которого здесь нет, свипу
-     * неизвестен и снести его нечем (см. semanticFor()).
+     * Семантика удаления по типам — §7.6 плюс решение владельца №2.
+     * Состав словаря обязан совпадать с Deleter::TYPES и типами
+     * TestEntityRegistry: тип, известный контракту, но забытый здесь, не
+     * ищется вовсе — и тогда «свип отработал, ноль находок» неотличимо от
+     * «свип не искал».
      *
      * customers помечены UNVERIFIED честно: §7.6 приводит механизм «из прежних
      * тестов», но семантику (насовсем или в корзину) никто не снимал.
@@ -77,51 +81,30 @@ final class AmoTestSweeper
         'calls' => self::SEMANTIC_PURGED,
         'catalogs' => self::SEMANTIC_PURGED,
         'catalogElements' => self::SEMANTIC_PURGED,
+        'pipelines' => self::SEMANTIC_PURGED,
         'webhooks' => self::SEMANTIC_PURGED,
         'sources' => self::SEMANTIC_PURGED,
         'customers' => self::SEMANTIC_UNVERIFIED,
     ];
 
     /*
-     * Поле, в котором тест ОБЯЗАН оставить маркер, — по одному на тип.
-     *
-     * Гард смотрит только сюда, а не по всему payload'у. Разница несущая:
-     * поиск маркера в json_encode(payload) расширяет гард до «сущность
-     * где-то упоминает маркер» — под это подпадает, например, реальная
-     * клиентская сделка, к которой наш тест прицепил примечание с маркером.
-     * Сама сделка при этом чужая, и сносить её нельзя. Поле-носитель делает
-     * гард узким: помечен именно этот объект, а не его окружение.
-     */
-    private const MARKER_FIELDS = [
-        'leads' => 'name',
-        'contacts' => 'name',
-        'companies' => 'name',
-        'catalogs' => 'name',
-        'catalogElements' => 'name',
-        'customers' => 'name',
-        'sources' => 'name',
-        'tasks' => 'text',
-        'notes' => 'params',
-        'calls' => 'params',
-        'webhooks' => 'destination',
-    ];
-
-    /*
      * Потолок удалений за один свип. Это не оптимизация, а ограничитель
      * радиуса поражения: если дискавери когда-нибудь начнёт возвращать лишнее
-     * (сменился формат ответа amo, кто-то расширил фильтр), свип остановится
+     * (сменился формат ответа amo, кто-то расширил выборку), свип остановится
      * на этом числе и напишет об этом в отчёт, вместо того чтобы методично
      * вычистить аккаунт. Нормальный прогон укладывается в единицы удалений.
      */
     private const DELETE_BUDGET = 200;
 
-    /* Страниц по 150 на тип — потолок скана, чтобы свип не превращался в выкачивание аккаунта. */
+    /* Страниц по 150 на скан — потолок, чтобы свип не превращался в выкачивание аккаунта. */
     private const MAX_PAGES = 10;
 
     /*
      * Пауза между запросами на удаление. У amo лимит ~7 запросов в секунду на
-     * аккаунт, а свип бежит по живому аккаунту клиента: упереться в 429 (и
-     * дальше в 403 с блокировкой) уборкой мусора — недопустимая цена.
+     * аккаунт, а часть типов сносится строго по одному (каталоги, воронки,
+     * задачи, примечания — списочной формы у их роутов нет), то есть свип
+     * генерирует ровно N запросов подряд. Упереться в 429 → 403 уборкой
+     * мусора и заблокировать боевой аккаунт целиком — недопустимая цена.
      */
     private const DELETE_THROTTLE_US = 150000;
 
@@ -133,7 +116,7 @@ final class AmoTestSweeper
      *     trashed: array<string, int>,
      *     unverified: array<string, int>,
      *     failed: list<array{type: string, id: int, reason: string}>,
-     *     refused: list<array{type: string, id: int}>,
+     *     scanned: array<string, int>,
      *     warnings: list<string>
      * }
      */
@@ -155,12 +138,14 @@ final class AmoTestSweeper
      *     trashed: array<string, int>,
      *     unverified: array<string, int>,
      *     failed: list<array{type: string, id: int, reason: string}>,
-     *     refused: list<array{type: string, id: int}>,
+     *     scanned: array<string, int>,
      *     warnings: list<string>
      * }
      */
     public function sweep(AmoClientOctane $amo): array
     {
+        $this->assertTablesAgree();
+
         $to = time() + 3600; /* запас на расхождение часов с amo */
         $from = $to - ($this->windowDays * 86400);
 
@@ -172,70 +157,71 @@ final class AmoTestSweeper
             'trashed' => [],
             'unverified' => [],
             'failed' => [],
-            'refused' => [],
+            'scanned' => [],
             'warnings' => [],
         ];
 
         /*
-         * Порядок намеренный: сначала дети (задачи/примечания/звонки/элементы),
-         * потом родители. Обратный порядок терял бы детей из выборок — они
-         * уходят из обычных ответов вместе с ушедшим в корзину родителем, и
-         * свип отчитался бы «удалено 0» там, где на самом деле не увидел.
+         * Порядок несущий, а не косметический:
+         *
+         * 1) задачи/примечания/звонки — раньше своих родителей: они уходят из
+         *    обычных выборок вместе с ушедшим в корзину лидом, и свип
+         *    отчитался бы «удалено 0» там, где на самом деле не увидел;
+         * 2) элементы списков — раньше самих списков (удаление каталога
+         *    уносит элементы каскадом и тем прячет их от подсчёта);
+         * 3) сделки/контакты/компании — до воронок: удаление воронки уносит
+         *    лежащие в ней сделки, и они пропали бы из выборки непосчитанными;
+         * 4) воронки — после сделок, на пустой воронке удаление предсказуемо;
+         * 5) вебхуки/источники/покупатели ни от кого не зависят — в конце.
          */
         $this->sweepTasks($amo, $from, $to);
         $this->sweepNotesAndCalls($amo, $from, $to);
         $this->sweepCatalogs($amo);
-        $this->sweepWebhooks($amo);
-        $this->sweepSources($amo);
-        $this->sweepCustomers($amo);
         $this->sweepQueryable($amo, 'leads');
         $this->sweepQueryable($amo, 'contacts');
         $this->sweepQueryable($amo, 'companies');
+        $this->sweepPipelines($amo);
+        $this->sweepWebhooks($amo);
+        $this->sweepSources($amo);
+        $this->sweepCustomers($amo);
 
         return $this->report;
     }
 
     /**
-     * Единственная дверь к удалению. Принимает не «id», а ровно тот payload,
-     * который вернуло amo, и сама достаёт из него и id, и маркерное поле.
-     * Поэтому снести непомеченное нельзя, ошибившись в фильтре дискавери:
-     * для этого пришлось бы подделать ответ amo.
-     *
-     * @param  array<string, mixed>  $payload  как вернул amo, без правок
-     * @param  callable(int, array<string, mixed>): void  $delete  получает уже провалидированный id
+     * Единственная дверь к удалению. Принимает SweepTarget, а SweepTarget
+     * невозможно получить для непомеченной сущности (см. его приватный
+     * конструктор): промах фильтра дискавери здесь не превращается в снос
+     * чужих данных.
      */
-    private function deleteMarked(string $type, array $payload, callable $delete): void
+    private function delete(AmoClientOctane $amo, SweepTarget $target): void
     {
-        $semantic = $this->semanticFor($type);
-        $id = is_numeric($payload['id'] ?? null) ? (int) $payload['id'] : 0;
-
-        if (! $this->isMarked($type, $payload)) {
-            /*
-             * Сюда попадать не должно: дискавери обязана отдавать только
-             * помеченное. Непустой refused в отчёте — сигнал, что выборка
-             * шире маркера, и её надо чинить, а не «оно и так не удалилось».
-             */
-            $this->report['refused'][] = ['type' => $type, 'id' => $id];
-
-            return;
-        }
-
-        if ($id <= 0) {
-            $this->report['warnings'][] = "{$type}: помеченная сущность без пригодного id — пропущена";
-
-            return;
-        }
-
         if ($this->deleted >= self::DELETE_BUDGET) {
             return;
         }
 
+        $semantic = $this->semanticFor($target->type);
+
         try {
-            $delete($id, $payload);
+            /*
+             * Возврат Deleter'а сознательно игнорируется. false означает «amo
+             * явно сказал, что сущности уже нет» — ровно та цель, ради которой
+             * свип и звался; при этом «уже нет» приходит тремя разными
+             * формами (400 status:fail, 200 «Недостаточно прав», errors[].code
+             * 404), и различать их — работа Deleter'а, а не уборщика.
+             * Отчитываемся о результате, а не о механике вызова; различаем то,
+             * что реально различно, — насовсем против корзины.
+             */
+            $amo->deleter->byType($target->type, $target->handle);
+
             $this->deleted++;
-            $this->report[$semantic][$type] = ($this->report[$semantic][$type] ?? 0) + 1;
+            $this->report[$semantic][$target->type] = ($this->report[$semantic][$target->type] ?? 0) + 1;
         } catch (Throwable $e) {
-            $this->report['failed'][] = ['type' => $type, 'id' => $id, 'reason' => $this->reason($e)];
+            $this->report['failed'][] = [
+                'type' => $target->type,
+                'id' => $target->id,
+                'reason' => $this->reason($e),
+            ];
         }
 
         usleep(self::DELETE_THROTTLE_US);
@@ -246,25 +232,34 @@ final class AmoTestSweeper
     }
 
     /**
-     * @param  array<string, mixed>  $payload
+     * Свип держится на трёх таблицах типов: SEMANTICS здесь,
+     * SweepTarget::MARKER_FIELDS и Deleter::TYPES в самой либе. Разъехавшись,
+     * они дают не падение, а тихую дыру в покрытии — тип просто перестаёт
+     * искаться, а отчёт по-прежнему выглядит успешным (так однажды выпали
+     * pipelines). Первые две сверяются здесь, на старте свипа, до единого
+     * запроса в amo.
+     *
+     * Третью, Deleter::TYPES, сверить нечем: она приватная и интроспекции у
+     * Deleter'а нет. Расхождение с ней проявится громко — byType() бросит
+     * InvalidArgumentException на неизвестный тип.
      */
-    private function isMarked(string $type, array $payload): bool
+    private function assertTablesAgree(): void
     {
-        $field = self::MARKER_FIELDS[$type] ?? null;
+        $withSemantics = array_keys(self::SEMANTICS);
+        $withMarkerField = SweepTarget::knownTypes();
 
-        if ($field === null) {
-            return false;
+        sort($withSemantics);
+        sort($withMarkerField);
+
+        if ($withSemantics === $withMarkerField) {
+            return;
         }
 
-        $value = $payload[$field] ?? null;
-
-        /* params у примечаний/звонков — подмассив (text/source/link/uniq). */
-        if (is_array($value)) {
-            $value = json_encode($value, JSON_UNESCAPED_UNICODE);
-        }
-
-        /* Сравнение регистрозависимое и по точной подстроке: маркер машинный, «почти совпало» здесь не бывает. */
-        return is_string($value) && str_contains($value, self::TEST_MARKER);
+        throw new \LogicException(sprintf(
+            'Таблицы типов разъехались: без поля-носителя [%s], без семантики [%s]',
+            implode(', ', array_diff($withSemantics, $withMarkerField)),
+            implode(', ', array_diff($withMarkerField, $withSemantics))
+        ));
     }
 
     private function semanticFor(string $type): string
@@ -274,8 +269,8 @@ final class AmoTestSweeper
         if ($semantic === null) {
             /*
              * Тип вне таблицы §7.6 — механизма удаления для него не
-             * установлено. Молча «ну попробуем» здесь означало бы стрелять
-             * непроверенным вызовом по боевому аккаунту.
+             * установлено. Молчаливое «ну попробуем» здесь означало бы
+             * стрелять непроверенным вызовом по боевому аккаунту.
              */
             throw new \LogicException("Свип не знает типа '{$type}': нет строки в SEMANTICS");
         }
@@ -290,8 +285,8 @@ final class AmoTestSweeper
     /**
      * leads/contacts/companies ищутся полнотекстовым query — маркер длиннее
      * трёхсимвольного минимума amo, так что выборка приходит уже узкой. Но
-     * query у amo нечёткий (ищет по многим полям и по подстрокам), поэтому
-     * авторитетом остаётся гард, а не сервер.
+     * query у amo нечёткий (ищет по многим полям и подстрокам), поэтому
+     * авторитетом остаётся гард SweepTarget, а не сервер.
      */
     private function sweepQueryable(AmoClientOctane $amo, string $type): void
     {
@@ -302,21 +297,15 @@ final class AmoTestSweeper
             default => throw new \LogicException("sweepQueryable не умеет '{$type}'"),
         };
 
-        foreach ($this->scanMarked($type, $type, $model) as $payload) {
-            $this->deleteMarked($type, $payload, function (int $id) use ($amo, $type): void {
-                $amo->ajax->postForm("/ajax/{$type}/multiple/delete/", ['ID' => [$id]]);
-            });
+        foreach ($this->targets($type, $type, $model) as $target) {
+            $this->delete($amo, $target);
         }
     }
 
     private function sweepTasks(AmoClientOctane $amo, int $from, int $to): void
     {
-        $model = $amo->tasks->filterUpdatedAt($from, $to);
-
-        foreach ($this->scanMarked('tasks', 'tasks', $model) as $payload) {
-            $this->deleteMarked('tasks', $payload, function (int $id) use ($amo): void {
-                $amo->ajax->postForm('/private/notes/edit2.php', ['ID' => $id, 'ACTION' => 'TASK_DELETE']);
-            });
+        foreach ($this->targets('tasks', 'tasks', $amo->tasks->filterUpdatedAt($from, $to)) as $target) {
+            $this->delete($amo, $target);
         }
     }
 
@@ -334,32 +323,35 @@ final class AmoTestSweeper
         ];
 
         foreach ($collections as $parent => $notes) {
-            /* Маркерное поле у примечания и звонка одно (params), поэтому
-             * дискавери общая, а тип уточняется по note_type уже здесь. */
-            foreach ($this->scanMarked("notes:{$parent}", 'notes', $notes->filterUpdatedAt($from, $to)) as $payload) {
+            foreach ($this->scanAll("notes:{$parent}", $notes->filterUpdatedAt($from, $to)) as $payload) {
                 $noteType = is_string($payload['note_type'] ?? null) ? $payload['note_type'] : '';
                 $type = in_array($noteType, ['call_in', 'call_out'], true) ? 'calls' : 'notes';
 
-                $this->deleteMarked($type, $payload, function (int $id) use ($amo): void {
-                    $amo->ajax->postForm('/private/notes/edit2.php', ['ID' => $id, 'ACTION' => 'NOTE_DELETE']);
-                });
+                /* Маркерное поле у примечания и звонка одно (params), тип уточняется здесь. */
+                $target = $this->target($type, $payload);
+
+                if ($target !== null) {
+                    $this->delete($amo, $target);
+                }
             }
         }
     }
 
     /**
      * Каталог сносится целиком и уносит свои элементы каскадом (§2), поэтому
-     * помеченные каталоги обрабатываем первыми, а внутрь непомеченных лезем
-     * отдельно: тест мог создать элемент в чужом, настоящем каталоге — сам
-     * каталог при этом трогать нельзя.
+     * внутрь непомеченных каталогов лезем отдельно: тест мог создать элемент
+     * в чужом, настоящем каталоге — сам каталог при этом трогать нельзя.
+     *
+     * Помеченные каталоги идут после элементов: сначала выносим то, что можно
+     * увидеть и посчитать, потом сам каталог с его каскадом.
      */
     private function sweepCatalogs(AmoClientOctane $amo): void
     {
+        $markedCatalogs = [];
+
         foreach ($this->scanAll('catalogs', $amo->catalogs) as $payload) {
-            if ($this->isMarked('catalogs', $payload)) {
-                $this->deleteMarked('catalogs', $payload, function (int $id) use ($amo): void {
-                    $amo->ajax->postForm('/ajax/v1/catalogs/set/', ['request' => ['catalogs' => ['delete' => $id]]]);
-                });
+            if (SweepTarget::isMarked('catalogs', $payload)) {
+                $markedCatalogs[] = $payload;
 
                 continue;
             }
@@ -372,34 +364,43 @@ final class AmoTestSweeper
 
             $elements = $amo->catalogs->entity($catalogId)->elements->query(self::TEST_MARKER);
 
-            foreach ($this->scanMarked("catalogElements:{$catalogId}", 'catalogElements', $elements) as $element) {
-                $this->deleteMarked('catalogElements', $element, function (int $id) use ($amo): void {
-                    $amo->ajax->postForm('/ajax/v1/catalog_elements/set/', [
-                        'request' => ['catalog_elements' => ['delete' => [$id]]],
-                    ]);
-                });
+            foreach ($this->targets("catalogElements:{$catalogId}", 'catalogElements', $elements) as $target) {
+                $this->delete($amo, $target);
             }
+        }
+
+        foreach ($markedCatalogs as $payload) {
+            $target = $this->target('catalogs', $payload);
+
+            if ($target !== null) {
+                $this->delete($amo, $target);
+            }
+        }
+    }
+
+    /**
+     * Воронки — публичный v4 DELETE (§7.6), настоящее удаление, не корзина.
+     * Полнотекстового query у этого эндпойнта нет, но список воронок аккаунта
+     * короткий, поэтому обычного скана хватает.
+     */
+    private function sweepPipelines(AmoClientOctane $amo): void
+    {
+        foreach ($this->targets('pipelines', 'pipelines', $amo->pipelines) as $target) {
+            $this->delete($amo, $target);
         }
     }
 
     private function sweepWebhooks(AmoClientOctane $amo): void
     {
-        foreach ($this->scanMarked('webhooks', 'webhooks', $amo->webhooks) as $payload) {
-            /* Вебхук адресуется destination'ом, а не id: v4 DELETE /webhooks
-             * принимает адрес в теле. id из гарда нужен только отчёту. */
-            $this->deleteMarked('webhooks', $payload, function (int $id, array $row) use ($amo): void {
-                $destination = is_string($row['destination'] ?? null) ? $row['destination'] : '';
-                $amo->webhooks->entity($destination)->unSubscribe();
-            });
+        foreach ($this->targets('webhooks', 'webhooks', $amo->webhooks) as $target) {
+            $this->delete($amo, $target);
         }
     }
 
     private function sweepSources(AmoClientOctane $amo): void
     {
-        foreach ($this->scanMarked('sources', 'sources', $amo->sources) as $payload) {
-            $this->deleteMarked('sources', $payload, function (int $id) use ($amo): void {
-                $amo->sources->entity($id)->delete();
-            });
+        foreach ($this->targets('sources', 'sources', $amo->sources) as $target) {
+            $this->delete($amo, $target);
         }
     }
 
@@ -413,12 +414,8 @@ final class AmoTestSweeper
      */
     private function sweepCustomers(AmoClientOctane $amo): void
     {
-        foreach ($this->scanMarked('customers', 'customers', $amo->customers) as $payload) {
-            $this->deleteMarked('customers', $payload, function (int $id) use ($amo): void {
-                $amo->ajax->postJson('/ajax/v1/customers/set/', [
-                    'request' => ['customers' => ['delete' => [$id]]],
-                ]);
-            });
+        foreach ($this->targets('customers', 'customers', $amo->customers) as $target) {
+            $this->delete($amo, $target);
         }
     }
 
@@ -427,8 +424,47 @@ final class AmoTestSweeper
     /* ---------------------------------------------------------------- */
 
     /**
+     * Скан + гард: наружу выходят только цели, которые разрешено сносить.
+     *
+     * @return list<SweepTarget>
+     */
+    private function targets(string $label, string $type, AbstractModel $model): array
+    {
+        $targets = [];
+
+        foreach ($this->scanAll($label, $model) as $payload) {
+            $target = $this->target($type, $payload);
+
+            if ($target !== null) {
+                $targets[] = $target;
+            }
+        }
+
+        return $targets;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function target(string $type, array $payload): ?SweepTarget
+    {
+        $target = SweepTarget::fromMarked($type, $payload);
+
+        if ($target === null && SweepTarget::isMarked($type, $payload)) {
+            /*
+             * Помечено нашим маркером, но адресовать нечем (нет id, у вебхука
+             * пустой destination). Тихо пропустить — значит оставить свой же
+             * хвост в боевом аккаунте и отчитаться «чисто».
+             */
+            $this->report['warnings'][] = "{$type}: помеченная сущность без пригодного адреса — не снесена, разберитесь руками";
+        }
+
+        return $target;
+    }
+
+    /**
      * Постраничный скан с потолком. Ошибка amo не роняет свип: тип уходит в
-     * warnings, остальные типы всё равно должны быть убраны — иначе один
+     * warnings, остальные всё равно должны быть убраны — иначе один
      * отключённый в аккаунте раздел оставлял бы хвосты по всем остальным.
      *
      * @return list<array<string, mixed>>
@@ -464,33 +500,29 @@ final class AmoTestSweeper
             $this->report['warnings'][] = "{$label}: скан не выполнен — ".$this->reason($e);
         }
 
+        $type = strtok($label, ':');
+        $this->report['scanned'][$type === false ? $label : $type] = ($this->report['scanned'][$type === false ? $label : $type] ?? 0) + count($rows);
+
         return $rows;
     }
 
     /**
-     * То же, но наружу выходит только помеченное. Гард в deleteMarked()
-     * перепроверяет ещё раз — здесь фильтр стоит для того, чтобы чужие
-     * сущности вообще не попадали в остальной код свипа.
+     * Причина отказа в одну строку.
      *
-     * @return list<array<string, mixed>>
+     * strip_tags здесь несущий: на 500 amo отдаёт не JSON, а полноценную
+     * HTML-страницу, и она приезжает внутрь сообщения исключения. Без чистки
+     * отчёт об уборке превращается в вывалившуюся вёрстку, за которой не
+     * видно ни одной настоящей причины.
      */
-    private function scanMarked(string $label, string $markerType, AbstractModel $model): array
-    {
-        $marked = [];
-
-        foreach ($this->scanAll($label, $model) as $row) {
-            if ($this->isMarked($markerType, $row)) {
-                $marked[] = $row;
-            }
-        }
-
-        return $marked;
-    }
-
     private function reason(Throwable $e): string
     {
-        $message = trim($e->getMessage());
+        $message = strip_tags($e->getMessage());
         $message = preg_replace('/\s+/', ' ', $message) ?? $message;
+        $message = trim($message);
+
+        if ($message === '') {
+            $message = get_class($e);
+        }
 
         return mb_substr($message, 0, 300);
     }
@@ -503,7 +535,7 @@ final class AmoTestSweeper
      *     trashed: array<string, int>,
      *     unverified: array<string, int>,
      *     failed: list<array{type: string, id: int, reason: string}>,
-     *     refused: list<array{type: string, id: int}>,
+     *     scanned: array<string, int>,
      *     warnings: list<string>
      * }  $report
      */
@@ -536,14 +568,6 @@ final class AmoTestSweeper
             $out[] = '';
         }
 
-        if ($report['refused'] !== []) {
-            $out[] = 'ГАРД ОТКЛОНИЛ (дискавери вернула непомеченное — чинить выборку):';
-            foreach ($report['refused'] as $refusal) {
-                $out[] = '  '.$refusal['type'].' '.$refusal['id'];
-            }
-            $out[] = '';
-        }
-
         if ($report['warnings'] !== []) {
             $out[] = 'Предупреждения:';
             foreach ($report['warnings'] as $warning) {
@@ -551,6 +575,15 @@ final class AmoTestSweeper
             }
             $out[] = '';
         }
+
+        /*
+         * Сколько сущностей свип вообще посмотрел. Без этой строки «удалено 0»
+         * не отличить от «не искал»: пустой результат по типу — это либо
+         * чистый аккаунт, либо мёртвая дискавери, и цифра просмотренного
+         * разводит эти два случая.
+         */
+        $out[] = 'Просмотрено: '.self::renderScanned($report['scanned']);
+        $out[] = '';
 
         /*
          * Без этой строки отчёт «удалено 0» читается как «в аккаунте чисто»,
@@ -579,5 +612,24 @@ final class AmoTestSweeper
         }
 
         return implode(PHP_EOL, $lines).PHP_EOL;
+    }
+
+    /**
+     * @param  array<string, int>  $scanned
+     */
+    private static function renderScanned(array $scanned): string
+    {
+        if ($scanned === []) {
+            return 'ничего (дискавери не отработала)';
+        }
+
+        ksort($scanned);
+        $parts = [];
+
+        foreach ($scanned as $type => $count) {
+            $parts[] = $type.' '.$count;
+        }
+
+        return implode(', ', $parts);
     }
 }
