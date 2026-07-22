@@ -3,6 +3,7 @@
 namespace mttzzz\AmoClient\Tests\Support;
 
 use mttzzz\AmoClient\AmoClientOctane;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Models\AbstractModel;
 use Throwable;
 
@@ -163,7 +164,7 @@ final class AmoTestSweeper
      */
     public function sweep(AmoClientOctane $amo): array
     {
-        $this->assertTablesAgree();
+        $this->assertTablesAgree($amo->deleter);
 
         $to = time() + 3600; /* запас на расхождение часов с amo */
         $from = $to - ($this->windowDays * 86400);
@@ -264,32 +265,34 @@ final class AmoTestSweeper
 
     /**
      * Свип держится на трёх таблицах типов: SEMANTICS здесь,
-     * SweepTarget::MARKER_FIELDS и Deleter::TYPES в самой либе. Разъехавшись,
-     * они дают не падение, а тихую дыру в покрытии — тип просто перестаёт
-     * искаться, а отчёт по-прежнему выглядит успешным (так однажды выпали
-     * pipelines). Первые две сверяются здесь, на старте свипа, до единого
-     * запроса в amo.
+     * SweepTarget::MARKER_FIELDS рядом и Deleter::types() в самой либе.
+     * Разъехавшись, они дают не падение, а тихую дыру в покрытии — тип просто
+     * перестаёт искаться, а отчёт по-прежнему выглядит успешным (так однажды
+     * выпали pipelines).
      *
-     * Третью, Deleter::TYPES, сверить нечем: она приватная и интроспекции у
-     * Deleter'а нет. Расхождение с ней проявится громко — byType() бросит
-     * InvalidArgumentException на неизвестный тип.
+     * Сверяются все три и до единого запроса в amo: пока источником истины
+     * был продублированный руками список, дыра ловилась внимательностью, а
+     * теперь — построением.
      */
-    private function assertTablesAgree(): void
+    private function assertTablesAgree(Deleter $deleter): void
     {
+        $contract = $deleter->types();
         $withSemantics = self::coveredTypes();
         $withMarkerField = SweepTarget::knownTypes();
 
+        sort($contract);
         sort($withSemantics);
         sort($withMarkerField);
 
-        if ($withSemantics === $withMarkerField) {
+        if ($contract === $withSemantics && $contract === $withMarkerField) {
             return;
         }
 
         throw new \LogicException(sprintf(
-            'Таблицы типов разъехались: без поля-носителя [%s], без семантики [%s]',
-            implode(', ', array_diff($withSemantics, $withMarkerField)),
-            implode(', ', array_diff($withMarkerField, $withSemantics))
+            'Таблицы типов разъехались с контрактом Deleter: свип не ищет [%s]; ищет неизвестное либе [%s]; без поля-носителя [%s]',
+            implode(', ', array_diff($contract, $withSemantics)),
+            implode(', ', array_diff($withSemantics, $contract)),
+            implode(', ', array_diff($withSemantics, $withMarkerField))
         ));
     }
 
@@ -563,6 +566,20 @@ final class AmoTestSweeper
                     }
                 }
 
+                /*
+                 * Самопроверка сортировки — по данным, а не по форме запроса.
+                 * Переход оконной дискавери на desc непроверяем изнутри: amo
+                 * отвечает 200 на любое направление и молча сортирует по
+                 * умолчанию (§8.7). Если ключ или направление однажды
+                 * разъедутся, свип не упадёт и не предупредит — он просто
+                 * снова начнёт отрезать свежий хвост, то есть терять ровно
+                 * свой мусор. Данные первой страницы уже в руках, лишнего
+                 * запроса это не стоит.
+                 */
+                if ($windowed && $page === 1 && self::looksDescending($rows) === false) {
+                    $this->report['warnings'][] = "{$label}: выдача идёт по возрастанию — сортировка desc не применилась, свежие хвосты могут быть за потолком страниц; сузьте окно (--days)";
+                }
+
                 if (count($chunk) < 150) {
                     break;
                 }
@@ -582,6 +599,28 @@ final class AmoTestSweeper
         $this->report['scanned'][$type === false ? $label : $type] = ($this->report['scanned'][$type === false ? $label : $type] ?? 0) + count($rows);
 
         return $rows;
+    }
+
+    /**
+     * Идёт ли выдача от свежего к старому.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return bool|null null — судить не по чему: меньше двух строк или в них нет updated_at
+     */
+    private static function looksDescending(array $rows): ?bool
+    {
+        if (count($rows) < 2) {
+            return null;
+        }
+
+        $first = $rows[0]['updated_at'] ?? null;
+        $last = $rows[count($rows) - 1]['updated_at'] ?? null;
+
+        if (! is_numeric($first) || ! is_numeric($last)) {
+            return null;
+        }
+
+        return (int) $first >= (int) $last;
     }
 
     /**

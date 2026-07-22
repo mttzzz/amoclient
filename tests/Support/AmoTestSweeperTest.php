@@ -2,7 +2,11 @@
 
 namespace mttzzz\AmoClient\Tests\Support;
 
+use Illuminate\Http\Client\PendingRequest;
 use LogicException;
+use mttzzz\AmoClient\Ajax;
+use mttzzz\AmoClient\Deleter;
+use mttzzz\AmoClient\Helpers\OctaneAccount;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -21,16 +25,20 @@ use RuntimeException;
 class AmoTestSweeperTest extends TestCase
 {
     /**
-     * Типы, которые обещает контракт удаления (Deleter::TYPES + реестр).
-     * Список продублирован здесь намеренно: он тут в роли ожидания теста, а не
-     * источника истины — иначе сверка сравнивала бы значение само с собой.
-     *
-     * @var list<string>
+     * Живой Deleter — источник истины по типам. Собирается без приложения:
+     * ни Ajax, ни PendingRequest контейнера не требуют, а запросов конструктор
+     * не делает.
      */
-    private const CONTRACT_TYPES = [
-        'leads', 'contacts', 'companies', 'customers', 'catalogs', 'catalogElements',
-        'tasks', 'notes', 'calls', 'pipelines', 'sources', 'webhooks',
-    ];
+    private static function deleter(): Deleter
+    {
+        $account = new OctaneAccount;
+        $account->subdomain = 'test';
+        $account->domain = 'ru';
+
+        $http = new PendingRequest;
+
+        return new Deleter(new Ajax($account, $http), $http);
+    }
 
     /**
      * @return iterable<string, array{string, array<string, mixed>, bool}>
@@ -136,13 +144,18 @@ class AmoTestSweeperTest extends TestCase
      */
     public function test_sweep_covers_every_type_of_the_delete_contract(): void
     {
+        $contract = self::deleter()->types();
         $covered = AmoTestSweeper::coveredTypes();
-        sort($covered);
+        $withMarkerField = SweepTarget::knownTypes();
 
-        $contract = self::CONTRACT_TYPES;
         sort($contract);
+        sort($covered);
+        sort($withMarkerField);
 
-        $this->assertSame($contract, $covered);
+        /* Источник истины — сама либа, а не список, переписанный в тест:
+         * иначе сверка сравнивала бы копию с копией. */
+        $this->assertSame($contract, $covered, 'свип не ищет тип, который либа умеет удалять');
+        $this->assertSame($contract, $withMarkerField, 'у типа контракта нет поля-носителя маркера');
     }
 
     public function test_semantics_and_marker_fields_agree(): void
@@ -167,6 +180,45 @@ class AmoTestSweeperTest extends TestCase
         $this->expectException(LogicException::class);
 
         $semanticFor->invoke(new AmoTestSweeper, 'shortLinks');
+    }
+
+    /**
+     * @return iterable<string, array{list<array<string, mixed>>, bool|null}>
+     */
+    public static function orderCases(): iterable
+    {
+        yield 'выдача от свежего к старому' => [
+            [['id' => 2, 'updated_at' => 200], ['id' => 1, 'updated_at' => 100]],
+            true,
+        ];
+        yield 'выдача по возрастанию — сортировка не применилась' => [
+            [['id' => 1, 'updated_at' => 100], ['id' => 2, 'updated_at' => 200]],
+            false,
+        ];
+        yield 'одинаковые метки — не возрастание' => [
+            [['id' => 1, 'updated_at' => 100], ['id' => 2, 'updated_at' => 100]],
+            true,
+        ];
+        yield 'одна строка — судить не по чему' => [[['id' => 1, 'updated_at' => 100]], null];
+        yield 'пустая страница' => [[], null];
+        yield 'нет updated_at' => [[['id' => 1], ['id' => 2]], null];
+    }
+
+    /**
+     * amo отвечает 200 на любое направление сортировки и молча сортирует по
+     * умолчанию (§8.7). Значит проверить, что desc применился, можно только по
+     * данным: если первая запись страницы старше последней, выдача идёт по
+     * возрастанию — и наши свежие хвосты лежат за потолком страниц. Гард обязан
+     * стоять там, где последствие, а не там, где формируется запрос.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     */
+    #[DataProvider('orderCases')]
+    public function test_ascending_order_is_detected_from_the_data(array $rows, ?bool $expected): void
+    {
+        $looksDescending = new ReflectionMethod(AmoTestSweeper::class, 'looksDescending');
+
+        $this->assertSame($expected, $looksDescending->invoke(null, $rows));
     }
 
     /**
