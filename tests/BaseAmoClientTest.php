@@ -2,6 +2,7 @@
 
 namespace mttzzz\AmoClient\Tests;
 
+use mttzzz\AmoClient\Tests\Support\AmoTestSweeper;
 use PHPUnit\Framework\Attributes\Depends;
 
 /**
@@ -18,15 +19,14 @@ use PHPUnit\Framework\Attributes\Depends;
  */
 class BaseAmoClientTest extends BaseAmoClient
 {
-    /* Имя-маркер: по нему созданное этим гейтом добирает финальный свип, если
-     * снос почему-то не прошёл. Маркер свипа держит sweeper-ci — разойдётся,
-     * меняется здесь одной строкой. */
     private const PROBE_NAME = 'sweep-probe teardown-gate';
 
     public function test_sweep_deletes_tracked_lead_and_drains_registry(): int
     {
         $lead = $this->amoClient->leads->entity();
-        $lead->name = self::PROBE_NAME;
+        /* Через marked(): если снос вдруг не пройдёт, зонд заберёт финальный
+         * свип — гейт уборки не имеет права сам оставлять хвост. */
+        $lead->name = $this->marked(self::PROBE_NAME);
 
         $leadId = $this->track('leads', $lead->createGetId());
 
@@ -93,6 +93,55 @@ class BaseAmoClientTest extends BaseAmoClient
             (bool) ($deleted[0]['is_deleted'] ?? false),
             "лид $leadId найден среди удалённых, но без is_deleted=true"
         );
+    }
+
+    /*
+     * Ниже — чистая строковая логика marked(), в amo не ходит.
+     * Помечает ВСЁ, что тесты создают в боевом аккаунте: свип не имеет права
+     * трогать сущность, в чьём payload маркера нет, поэтому дырка в marked() —
+     * это ровно те хвосты, которые свип потом не увидит.
+     */
+
+    public function test_marked_appends_sweep_marker(): void
+    {
+        $marked = $this->marked('Test Lead');
+
+        $this->assertStringContainsString(
+            AmoTestSweeper::TEST_MARKER,
+            $marked,
+            'без маркера в payload финальный свип не имеет права трогать сущность'
+        );
+        $this->assertStringStartsWith(
+            'Test Lead',
+            $marked,
+            'маркер дописывается, а не заменяет: тесты сравнивают отправленное имя с полученным'
+        );
+    }
+
+    public function test_marked_is_idempotent(): void
+    {
+        $once = $this->marked('Test Lead');
+
+        $this->assertSame(
+            $once,
+            $this->marked($once),
+            'повторная пометка клеит маркер дважды — значение разъезжается с тем, что ассертит тест'
+        );
+    }
+
+    public function test_marked_keeps_url_valid_for_webhook_destination(): void
+    {
+        /* destination вебхука — настоящий URL, amo его валидирует. Пробел с
+         * суффиксом сделал бы подписку неотправляемой, а вебхук как раз тот
+         * тип, где хвост живёт вечно: у него hard delete и нет числового id. */
+        $destination = 'https://webhook.site/a895608c-8b4a-453e-8359-4ed5d42bb454';
+
+        $marked = $this->marked($destination);
+
+        $this->assertStringContainsString(AmoTestSweeper::TEST_MARKER, $marked);
+        $this->assertStringNotContainsString(' ', $marked, 'URL с пробелом amo не примет');
+        $this->assertNotFalse(filter_var($marked, FILTER_VALIDATE_URL), "помеченный destination перестал быть URL: $marked");
+        $this->assertSame($marked, $this->marked($marked), 'повторная пометка URL обязана быть no-op');
     }
 
     /**

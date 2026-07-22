@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Tests;
 use Illuminate\Support\Facades\Config;
 use mttzzz\AmoClient\AmoClientOctane;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
+use mttzzz\AmoClient\Tests\Support\AmoTestSweeper;
 use mttzzz\AmoClient\Tests\Support\TestEntityRegistry;
 use Orchestra\Testbench\TestCase;
 use RuntimeException;
@@ -13,6 +14,14 @@ use Throwable;
 abstract class BaseAmoClient extends TestCase
 {
     protected AmoClientOctane $amoClient;
+
+    /* Боевой аккаунт под тесты — один на всю команду. Константами, а не
+     * литералами в setUp: тем же аккаунтом строится клиент для сноса, когда
+     * инстанса теста уже нет (shutdown-хук), и разъехавшиеся значения означали
+     * бы уборку не в том аккаунте. */
+    protected const ACCOUNT_ID = 16117840;
+
+    protected const CLIENT_ID = '00a140c1-7c52-4563-8b36-03f23754d255';
 
     /*
      * Порядок сноса: дети раньше родителей.
@@ -76,9 +85,19 @@ abstract class BaseAmoClient extends TestCase
      */
     private static ?TestEntityRegistry $registry = null;
 
+    /* Клиент для сноса строится ЛЕНИВО и один раз на прогон (постройка = запрос
+     * в octane за токеном, платить им на каждый класс незачем). Лениво, а не из
+     * $this->amoClient: tearDownAfterClass() и shutdown-хук статические, живого
+     * инстанса теста в них нет. */
     private static ?AmoClientOctane $sweepClient = null;
 
     private static bool $shutdownHookRegistered = false;
+
+    /* Счётчик попыток сноса на сущность: реестр общий на прогон, значит
+     * неудавшийся снос доживёт до следующего класса и будет повторён. Без
+     * счётчика каждый повтор читался бы как новый провал, а их число — как
+     * число хвостов. @var array<string, int> */
+    private static array $sweepAttempts = [];
 
     /**
      * @param  array<mixed>  $response
@@ -123,7 +142,7 @@ abstract class BaseAmoClient extends TestCase
      * не заводя временную переменную и не оставляя ветку, где сущность создана,
      * но не затрекана.
      */
-    protected function track(string $type, int $id): int
+    protected function track(string $type, int|string $id): int|string
     {
         self::registry()->track($type, $id);
 
@@ -133,6 +152,40 @@ abstract class BaseAmoClient extends TestCase
     protected static function registry(): TestEntityRegistry
     {
         return self::$registry ??= new TestEntityRegistry;
+    }
+
+    /**
+     * Дописывает к значению маркер, по которому финальный свип опознаёт наш
+     * мусор в боевом аккаунте.
+     *
+     * Маркер обязан физически лежать в данных сущности (name / text /
+     * params.text / destination) — свип не имеет права трогать то, в чьём
+     * payload его нет. Хардкодить строку по тест-файлам нельзя: разойдётся на
+     * символ — и свип начнёт находить две трети хвостов МОЛЧА, потому что
+     * «ничего не найдено» неотличимо от «всё чисто».
+     *
+     * Дописывает, а не заменяет: тесты сравнивают отправленное имя с
+     * полученным, суффикс такие ассерты переживает. Идемпотентно — повторный
+     * вызов не клеит маркер дважды.
+     */
+    protected function marked(string $value): string
+    {
+        if (str_contains($value, AmoTestSweeper::TEST_MARKER)) {
+            return $value;
+        }
+
+        if ($value === '') {
+            return AmoTestSweeper::TEST_MARKER;
+        }
+
+        /* URL (destination вебхука) обязан остаться валидным URL — пробел с
+         * суффиксом его ломает, amo такую подписку не примет. Вешаем маркер
+         * query-параметром: строка в payload есть, адрес цел. */
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://')) {
+            return $value.(str_contains($value, '?') ? '&' : '?').AmoTestSweeper::TEST_MARKER;
+        }
+
+        return $value.' '.AmoTestSweeper::TEST_MARKER;
     }
 
     /**
@@ -149,31 +202,92 @@ abstract class BaseAmoClient extends TestCase
     protected static function sweepTrackedEntities(): void
     {
         $registry = self::$registry;
-        $client = self::$sweepClient;
 
-        if ($registry === null || $client === null) {
+        if ($registry === null || $registry->all() === []) {
+            return;
+        }
+
+        $client = self::sweepClient();
+
+        if ($client === null) {
             return;
         }
 
         foreach (self::inTeardownOrder($registry->all()) as $entry) {
+            $key = $entry['type'].':'.$entry['id'];
+
             try {
                 self::deleteTrackedEntity($client, $entry['type'], $entry['id']);
                 $registry->forget($entry['type'], $entry['id']);
+
+                if (isset(self::$sweepAttempts[$key])) {
+                    fwrite(STDERR, sprintf(
+                        "\n[teardown] %s id=%s снесён с попытки %d\n",
+                        $entry['type'],
+                        (string) $entry['id'],
+                        self::$sweepAttempts[$key] + 1
+                    ));
+                    unset(self::$sweepAttempts[$key]);
+                }
             } catch (Throwable $e) {
                 if (self::isAlreadyGone($e)) {
                     $registry->forget($entry['type'], $entry['id']);
+                    unset(self::$sweepAttempts[$key]);
 
                     continue;
                 }
 
+                $attempt = self::$sweepAttempts[$key] = (self::$sweepAttempts[$key] ?? 0) + 1;
+
+                /* Повтор помечен явно: реестр общий на прогон, и та же
+                 * сущность будет пробоваться в каждом следующем классе. Без
+                 * пометки десять строк про один хвост читались бы как десять
+                 * хвостов. */
                 fwrite(STDERR, sprintf(
-                    "\n[teardown] ХВОСТ В AMO: %s id=%d НЕ УДАЛЁН — %s: %s\n",
+                    "\n[teardown] %s: %s id=%s НЕ УДАЛЁН (попытка %d) — %s: %s\n",
+                    $attempt === 1 ? 'ХВОСТ В AMO' : 'ПОВТОР',
                     $entry['type'],
-                    $entry['id'],
+                    (string) $entry['id'],
+                    $attempt,
                     $e::class,
                     $e->getMessage()
                 ));
             }
+        }
+    }
+
+    /**
+     * Клиент для сноса: лениво, один раз на прогон.
+     *
+     * Постройка может упасть сама (например, shutdown-хук после нормального
+     * прогона работает уже по разобранному приложению Testbench — фасады DB и
+     * Config мертвы). Это не повод молчать: реестр в этот момент непуст, значит
+     * в боевом аккаунте лежит хвост, и его id надо назвать.
+     */
+    private static function sweepClient(): ?AmoClientOctane
+    {
+        if (self::$sweepClient instanceof AmoClientOctane) {
+            return self::$sweepClient;
+        }
+
+        try {
+            return self::$sweepClient = new AmoClientOctane(self::ACCOUNT_ID, self::CLIENT_ID);
+        } catch (Throwable $e) {
+            fwrite(STDERR, sprintf(
+                "\n[teardown] КЛИЕНТ НЕ СОБРАН, уборка не выполнена — %s: %s\n",
+                $e::class,
+                $e->getMessage()
+            ));
+
+            foreach (self::registry()->all() as $entry) {
+                fwrite(STDERR, sprintf(
+                    "[teardown] ХВОСТ В AMO: %s id=%s\n",
+                    $entry['type'],
+                    (string) $entry['id']
+                ));
+            }
+
+            return null;
         }
     }
 
@@ -187,7 +301,7 @@ abstract class BaseAmoClient extends TestCase
      * честно кричит в STDERR по каждой затреканной сущности, а не делает вид,
      * что прибрал.
      */
-    private static function deleteTrackedEntity(AmoClientOctane $client, string $type, int $id): void
+    private static function deleteTrackedEntity(AmoClientOctane $client, string $type, int|string $id): void
     {
         throw new RuntimeException(
             "контракт удаления lib-delete ещё не подключён — тип '$type' не снесён"
@@ -195,8 +309,8 @@ abstract class BaseAmoClient extends TestCase
     }
 
     /**
-     * @param  array<int, array{type: string, id: int}>  $entries
-     * @return array<int, array{type: string, id: int}>
+     * @param  array<int, array{type: string, id: int|string}>  $entries
+     * @return array<int, array{type: string, id: int|string}>
      */
     private static function inTeardownOrder(array $entries): array
     {
@@ -249,13 +363,7 @@ abstract class BaseAmoClient extends TestCase
         Config::set('amoclient.retryDelay', 1000);
 
         // Создать экземпляр AmoClientOctane
-        $aId = 16117840;
-        $clientId = '00a140c1-7c52-4563-8b36-03f23754d255';
-        $this->amoClient = new AmoClientOctane($aId, $clientId);
-
-        self::registry();
-        /* Клиент переживает инстанс теста: им сносит и shutdown-хук. */
-        self::$sweepClient = $this->amoClient;
+        $this->amoClient = new AmoClientOctane(self::ACCOUNT_ID, self::CLIENT_ID);
 
         if (! self::$shutdownHookRegistered) {
             self::$shutdownHookRegistered = true;
