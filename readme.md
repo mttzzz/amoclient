@@ -54,6 +54,8 @@ $leads = $amo->leads
 ->get();
 $lead = $amo->leads->find(27211533);
 ```
+Методы `orderBy…` перечислены как каталог доступного, а не как рабочая цепочка: каждый вызов
+**замещает** предыдущий, применяется последний.
 
 ### filter
 ``` php
@@ -153,10 +155,10 @@ $amo->leads->update($leads);
 
 ### delete
 ``` php
-not work
+$amo->leads->delete(27211595);
+$amo->leads->delete([27211595, 27211597]);
 ```
-
-
+Возвращает `bool`: `true` — удалено этим вызовом, `false` — сущности уже не было.
 
 ##Contact
 ### get
@@ -165,8 +167,8 @@ $leads = $amo->contacts
 ->page(2)
 ->limit(10)
 ->query('test')
-->orderByCreatedAtAsc()
-->orderByCreatedAtDesc()
+->orderByNameAsc()
+->orderByNameDesc()
 ->orderByUpdatedAtAsc()
 ->orderByUpdatedAtDesc()
 ->orderByIdAsc()
@@ -177,6 +179,9 @@ $leads = $amo->contacts
 ->get();
 $contact = $amo->contacts->find(43680761);
 ```
+Методы `orderBy…` перечислены как каталог доступного, а не как рабочая цепочка: каждый вызов
+**замещает** предыдущий, применяется последний. Сортировки по `created_at` у контактов и компаний
+нет — amo её не применяет; ближайшая замена — `orderByIdAsc()`/`orderByIdDesc()`.
 
 ### createOne
 ``` php
@@ -238,8 +243,13 @@ $amo->leads->update($leads);
 
 ### delete
 ``` php
-not work
+$amo->contacts->delete(43680761);
+$amo->contacts->delete([43680761, 43680763]);
 ```
+`delete()` есть на 12 моделях: `leads`, `contacts`, `companies`, `customers`, `catalogs`,
+`catalogElements`, `tasks`, `notes`, `calls`, `pipelines`, `sources`, `webhooks`. Диспетчер по типу —
+`$amo->deleter->byType('contacts', $ids)`.
+
 ##Task
 ### create
 ``` php
