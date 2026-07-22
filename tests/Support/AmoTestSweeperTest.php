@@ -183,25 +183,43 @@ class AmoTestSweeperTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{list<array<string, mixed>>, bool|null}>
+     * @return iterable<string, array{list<array<string, mixed>>, string, bool|null}>
      */
     public static function orderCases(): iterable
     {
-        yield 'выдача от свежего к старому' => [
+        yield 'примечания от свежего к старому' => [
             [['id' => 2, 'updated_at' => 200], ['id' => 1, 'updated_at' => 100]],
+            'updated_at',
             true,
         ];
-        yield 'выдача по возрастанию — сортировка не применилась' => [
+        yield 'примечания по возрастанию — сортировка не применилась' => [
             [['id' => 1, 'updated_at' => 100], ['id' => 2, 'updated_at' => 200]],
+            'updated_at',
             false,
         ];
         yield 'одинаковые метки — не возрастание' => [
             [['id' => 1, 'updated_at' => 100], ['id' => 2, 'updated_at' => 100]],
+            'updated_at',
             true,
         ];
-        yield 'одна строка — судить не по чему' => [[['id' => 1, 'updated_at' => 100]], null];
-        yield 'пустая страница' => [[], null];
-        yield 'нет updated_at' => [[['id' => 1], ['id' => 2]], null];
+
+        /* Задачи: роут игнорирует order[updated_at] целиком (§8.8), свежесть у
+         * них выражена id — проверка по updated_at ложно срабатывала бы каждый
+         * прогон, а всегда горящий варнинг перестают читать. */
+        yield 'задачи по убыванию id' => [
+            [['id' => 200, 'updated_at' => 100], ['id' => 100, 'updated_at' => 900]],
+            'id',
+            true,
+        ];
+        yield 'задачи по возрастанию id' => [
+            [['id' => 100, 'updated_at' => 900], ['id' => 200, 'updated_at' => 100]],
+            'id',
+            false,
+        ];
+
+        yield 'одна строка — судить не по чему' => [[['id' => 1, 'updated_at' => 100]], 'updated_at', null];
+        yield 'пустая страница' => [[], 'updated_at', null];
+        yield 'поля нет в строках' => [[['id' => 1], ['id' => 2]], 'updated_at', null];
     }
 
     /**
@@ -214,11 +232,11 @@ class AmoTestSweeperTest extends TestCase
      * @param  list<array<string, mixed>>  $rows
      */
     #[DataProvider('orderCases')]
-    public function test_ascending_order_is_detected_from_the_data(array $rows, ?bool $expected): void
+    public function test_ascending_order_is_detected_from_the_data(array $rows, string $key, ?bool $expected): void
     {
         $looksDescending = new ReflectionMethod(AmoTestSweeper::class, 'looksDescending');
 
-        $this->assertSame($expected, $looksDescending->invoke(null, $rows));
+        $this->assertSame($expected, $looksDescending->invoke(null, $rows, $key));
     }
 
     /**
@@ -257,6 +275,7 @@ class AmoTestSweeperTest extends TestCase
             'purged' => ['webhooks' => 2],
             'trashed' => ['leads' => 4],
             'unverified' => ['tasks' => 3],
+            'unprovable' => ['notes' => 5],
             'stale' => [],
             'failed' => [],
             'scanned' => ['tasks' => 120, 'leads' => 4],
@@ -266,7 +285,8 @@ class AmoTestSweeperTest extends TestCase
         $this->assertStringContainsString('Удалено насовсем (стирание подтверждено эмпирикой):', $rendered);
         $this->assertStringContainsString('Отправлено в корзину', $rendered);
         $this->assertStringContainsString('purge недоступен нигде', $rendered);
-        $this->assertStringContainsString('физическое стирание не доказано', $rendered);
+        $this->assertStringContainsString('стирание не проверено (проверка возможна', $rendered);
+        $this->assertStringContainsString('проверить нечем (адресного запроса у типа нет)', $rendered);
 
         /* Инструмент удаляет в боевой CRM — из выхлопа должно быть видно, в какой. */
         $this->assertStringContainsString('аккаунт 16117840', $rendered);
@@ -285,6 +305,7 @@ class AmoTestSweeperTest extends TestCase
             'purged' => [],
             'trashed' => [],
             'unverified' => [],
+            'unprovable' => [],
             'stale' => [],
             'failed' => [],
             'scanned' => [],
@@ -314,6 +335,7 @@ class AmoTestSweeperTest extends TestCase
             'purged' => [],
             'trashed' => [],
             'unverified' => [],
+            'unprovable' => [],
             'stale' => [['type' => 'leads', 'ref' => '33286485']],
             'failed' => [['type' => 'webhooks', 'ref' => 'https://example.com/hook', 'reason' => 'HTTP 500']],
             'scanned' => ['leads' => 1],
@@ -346,11 +368,21 @@ class AmoTestSweeperTest extends TestCase
             $this->assertSame(AmoTestSweeper::SEMANTIC_TRASHED, $semanticFor->invoke($sweeper, $type));
         }
 
-        foreach (['tasks', 'notes', 'calls', 'catalogs', 'catalogElements', 'pipelines', 'sources', 'customers'] as $type) {
+        /* Доказательство добываемо (у типа есть find()), но не снято — это задача. */
+        foreach (['tasks', 'catalogs', 'catalogElements', 'pipelines', 'sources', 'customers'] as $type) {
             $this->assertSame(
                 AmoTestSweeper::SEMANTIC_UNVERIFIED,
                 $semanticFor->invoke($sweeper, $type),
-                "{$type}: физическое стирание не доказано, «насовсем» про него писать нельзя"
+                "{$type}: стирание не доказано, «насовсем» про него писать нельзя"
+            );
+        }
+
+        /* Доказывать нечем: адресного запроса нет вовсе — это свойство API, а не долг. */
+        foreach (['notes', 'calls'] as $type) {
+            $this->assertSame(
+                AmoTestSweeper::SEMANTIC_UNPROVABLE,
+                $semanticFor->invoke($sweeper, $type),
+                "{$type}: у модели нет find(), отсутствие в выборке родителя не отличает стирание от скрытия"
             );
         }
     }

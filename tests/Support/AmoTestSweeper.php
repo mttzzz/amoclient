@@ -55,8 +55,11 @@ final class AmoTestSweeper
     /* В корзину: запись остаётся с is_deleted=true, purge недоступен нигде. */
     public const SEMANTIC_TRASHED = 'trashed';
 
-    /* amo подтвердил удаление, физическое стирание не доказано. */
+    /* amo подтвердил удаление; доказательство добываемо, но не снято. */
     public const SEMANTIC_UNVERIFIED = 'unverified';
+
+    /* amo подтвердил удаление; доказывать нечем — у типа нет адресного запроса. */
+    public const SEMANTIC_UNPROVABLE = 'unprovable';
 
     /*
      * Семантика удаления по типам. Правило одно: в PURGED попадает только то,
@@ -71,7 +74,7 @@ final class AmoTestSweeper
      * leads/contacts/companies — TRASHED, и это тоже доказано: §7.3/§8.5,
      * запись живёт с is_deleted=true и находится через withOnlyDeleted().
      *
-     * Всё остальное — UNVERIFIED, и это не осторожность ради осторожности:
+     * Всё остальное — не PURGED, и это не осторожность ради осторожности:
      * §7.7 прямо оговаривает, что {"status":"ok"} и пропажа из выборок — не
      * доказательство стирания, аналога withOnlyDeleted() у этих типов нет.
      * §8.6 добавляет к tasks/notes/calls деталь: повтор удаления примечания
@@ -79,6 +82,16 @@ final class AmoTestSweeper
      * «стёрто физически». Решение владельца №2 про корзину касалось
      * leads/contacts/companies и о задачах с примечаниями не говорит ничего,
      * ссылаться на него здесь нельзя.
+     *
+     * Недоказанное разведено на два разных случая, потому что это разные вещи
+     * для читателя отчёта: «не проверили» — задача, которую можно поставить;
+     * «проверить нечем» — свойство API, задачей не закрывается. Признак
+     * объективный и проверяемый по коду: есть ли у типа адресный запрос
+     * «отдай вот эту сущность». У tasks/catalogs/catalogElements/pipelines/
+     * sources/customers есть find(), то есть перепроверку после удаления
+     * можно поставить задачей — это UNVERIFIED. У notes и calls его нет
+     * вовсе (Models\Note и Models\Call не имеют find()), а отсутствие в
+     * выборке родителя не отличает стирание от скрытия — это UNPROVABLE.
      *
      * Отчёт свипа — единственное место, где мы обещаем результат уборки;
      * над-обещание именно здесь стоит дороже всего.
@@ -94,8 +107,8 @@ final class AmoTestSweeper
         'contacts' => self::SEMANTIC_TRASHED,
         'companies' => self::SEMANTIC_TRASHED,
         'tasks' => self::SEMANTIC_UNVERIFIED,
-        'notes' => self::SEMANTIC_UNVERIFIED,
-        'calls' => self::SEMANTIC_UNVERIFIED,
+        'notes' => self::SEMANTIC_UNPROVABLE,
+        'calls' => self::SEMANTIC_UNPROVABLE,
         'catalogs' => self::SEMANTIC_UNVERIFIED,
         'catalogElements' => self::SEMANTIC_UNVERIFIED,
         'pipelines' => self::SEMANTIC_UNVERIFIED,
@@ -132,6 +145,7 @@ final class AmoTestSweeper
      *     purged: array<string, int>,
      *     trashed: array<string, int>,
      *     unverified: array<string, int>,
+     *     unprovable: array<string, int>,
      *     stale: list<array{type: string, ref: string}>,
      *     failed: list<array{type: string, ref: string, reason: string}>,
      *     scanned: array<string, int>,
@@ -156,6 +170,7 @@ final class AmoTestSweeper
      *     purged: array<string, int>,
      *     trashed: array<string, int>,
      *     unverified: array<string, int>,
+     *     unprovable: array<string, int>,
      *     stale: list<array{type: string, ref: string}>,
      *     failed: list<array{type: string, ref: string, reason: string}>,
      *     scanned: array<string, int>,
@@ -178,6 +193,7 @@ final class AmoTestSweeper
             'purged' => [],
             'trashed' => [],
             'unverified' => [],
+            'unprovable' => [],
             'stale' => [],
             'failed' => [],
             'scanned' => [],
@@ -358,17 +374,21 @@ final class AmoTestSweeper
     }
 
     /**
-     * ЗНАЕМЫЙ ПРОБЕЛ: задачи идут в порядке amo по умолчанию, то есть по
-     * возрастанию (§8.7). Наши записи всегда самые свежие, поэтому лежат
-     * ровно в хвосте, который отрезает потолок страниц: на пустом аккаунте
-     * незаметно, на нагруженном — систематический промах именно по своему
-     * мусору. Лечится `desc`, но у Models\Task нет OrderTrait — он заказан
-     * lib-delete; как появится, здесь добавляется orderByUpdatedAtDesc(), как
-     * уже сделано у примечаний. До тех пор страховка — узкое окно (--days).
+     * Свежесть задач выражается через id, а не updated_at: роут задач
+     * order[updated_at] ИГНОРИРУЕТ целиком — три противоположных значения
+     * дают побайтово одну страницу, и всё это при HTTP 200 (§8.8). id
+     * монотонны, поэтому наши записи при desc идут первыми и не попадают в
+     * хвост, отрезаемый потолком страниц.
+     *
+     * Поддержка сортировки у amo не единообразна между роутами, а «200 в
+     * ответ» не значит «параметр применён» — поэтому и порядок выдачи
+     * проверяется по данным, и проверяется именно по id.
      */
     private function sweepTasks(AmoClientOctane $amo, int $from, int $to): void
     {
-        foreach ($this->targets('tasks', 'tasks', $amo->tasks->filterUpdatedAt($from, $to), true) as $target) {
+        $windowed = $amo->tasks->filterUpdatedAt($from, $to)->orderByIdDesc();
+
+        foreach ($this->targets('tasks', 'tasks', $windowed, 'id') as $target) {
             $this->delete($amo, $target);
         }
     }
@@ -395,9 +415,13 @@ final class AmoTestSweeper
         ];
 
         foreach ($collections as $parent => $notes) {
+            /* ИМЯ ВРЕМЕННОЕ. Models\Note сейчас живёт со старой формой
+             * orderUpdatedAtDesc(); трейтовая orderByUpdatedAtDesc() заказана
+             * lib-delete и уже стоит в вызовах tests/NoteTest.php. Как модель
+             * переименуют — правится эта строка (и падает стан, если забыть). */
             $windowed = $notes->filterUpdatedAt($from, $to)->orderUpdatedAtDesc();
 
-            foreach ($this->scanAll("notes:{$parent}", $windowed, true) as $payload) {
+            foreach ($this->scanAll("notes:{$parent}", $windowed, 'updated_at') as $payload) {
                 $noteType = is_string($payload['note_type'] ?? null) ? $payload['note_type'] : '';
                 $type = in_array($noteType, ['call_in', 'call_out'], true) ? 'calls' : 'notes';
 
@@ -502,11 +526,11 @@ final class AmoTestSweeper
      *
      * @return list<SweepTarget>
      */
-    private function targets(string $label, string $type, AbstractModel $model, bool $windowed = false): array
+    private function targets(string $label, string $type, AbstractModel $model, ?string $freshnessKey = null): array
     {
         $targets = [];
 
-        foreach ($this->scanAll($label, $model, $windowed) as $payload) {
+        foreach ($this->scanAll($label, $model, $freshnessKey) as $payload) {
             $target = $this->target($type, $payload);
 
             if ($target !== null) {
@@ -541,13 +565,14 @@ final class AmoTestSweeper
      * warnings, остальные всё равно должны быть убраны — иначе один
      * отключённый в аккаунте раздел оставлял бы хвосты по всем остальным.
      *
-     * @param  bool  $windowed  выборка ограничена окном updated_at (tasks/notes/calls).
-     *                          От этого зависит совет в предупреждении: повторный
-     *                          прогон оконной дискавери вернёт ровно те же первые
-     *                          страницы, помочь может только сужение окна
+     * @param  string|null  $freshnessKey  поле, по убыванию которого обязана идти
+     *                                      выдача оконной дискавери: `updated_at` у
+     *                                      примечаний, `id` у задач (роут задач
+     *                                      order[updated_at] игнорирует целиком, §8.8).
+     *                                      null — выборка не оконная, проверять нечего
      * @return list<array<string, mixed>>
      */
-    private function scanAll(string $label, AbstractModel $model, bool $windowed = false): array
+    private function scanAll(string $label, AbstractModel $model, ?string $freshnessKey = null): array
     {
         $rows = [];
 
@@ -576,8 +601,8 @@ final class AmoTestSweeper
                  * свой мусор. Данные первой страницы уже в руках, лишнего
                  * запроса это не стоит.
                  */
-                if ($windowed && $page === 1 && self::looksDescending($rows) === false) {
-                    $this->report['warnings'][] = "{$label}: выдача идёт по возрастанию — сортировка desc не применилась, свежие хвосты могут быть за потолком страниц; сузьте окно (--days)";
+                if ($freshnessKey !== null && $page === 1 && self::looksDescending($rows, $freshnessKey) === false) {
+                    $this->report['warnings'][] = "{$label}: выдача идёт по возрастанию {$freshnessKey} — сортировка desc не применилась, свежие хвосты могут быть за потолком страниц; сузьте окно (--days)";
                 }
 
                 if (count($chunk) < 150) {
@@ -585,7 +610,7 @@ final class AmoTestSweeper
                 }
 
                 if ($page === self::MAX_PAGES) {
-                    $advice = $windowed
+                    $advice = $freshnessKey !== null
                         ? 'сузьте окно (--days), повторный прогон вернёт те же страницы'
                         : 'прогоните свип повторно';
                     $this->report['warnings'][] = "{$label}: скан упёрся в потолок ".self::MAX_PAGES." страниц — хвосты могли остаться, {$advice}";
@@ -604,17 +629,23 @@ final class AmoTestSweeper
     /**
      * Идёт ли выдача от свежего к старому.
      *
+     * Поле сравнения задаётся вызывающим, потому что «свежесть» на разных
+     * роутах выражена по-разному: у примечаний это updated_at, у задач — id
+     * (их роут order[updated_at] игнорирует целиком, §8.8). Проверять задачи
+     * по updated_at значило бы ложно срабатывать каждый прогон, а варнинг,
+     * который всегда горит, перестают читать.
+     *
      * @param  list<array<string, mixed>>  $rows
-     * @return bool|null null — судить не по чему: меньше двух строк или в них нет updated_at
+     * @return bool|null null — судить не по чему: меньше двух строк или поля в них нет
      */
-    private static function looksDescending(array $rows): ?bool
+    private static function looksDescending(array $rows, string $key): ?bool
     {
         if (count($rows) < 2) {
             return null;
         }
 
-        $first = $rows[0]['updated_at'] ?? null;
-        $last = $rows[count($rows) - 1]['updated_at'] ?? null;
+        $first = $rows[0][$key] ?? null;
+        $last = $rows[count($rows) - 1][$key] ?? null;
 
         if (! is_numeric($first) || ! is_numeric($last)) {
             return null;
@@ -652,6 +683,7 @@ final class AmoTestSweeper
      *     purged: array<string, int>,
      *     trashed: array<string, int>,
      *     unverified: array<string, int>,
+     *     unprovable: array<string, int>,
      *     stale: list<array{type: string, ref: string}>,
      *     failed: list<array{type: string, ref: string, reason: string}>,
      *     scanned: array<string, int>,
@@ -680,8 +712,18 @@ final class AmoTestSweeper
         $out[] = 'Отправлено в корзину (is_deleted=true, purge недоступен нигде):';
         $out[] = self::renderBucket($report['trashed']);
 
-        $out[] = 'amo подтвердил удаление, физическое стирание не доказано:';
+        /*
+         * Два разных «не доказано». Первое — задача, которую можно поставить:
+         * у типа есть адресный запрос, и перепроверка после удаления делается.
+         * Второе — свойство API: проверять нечем, задачей это не закрывается.
+         * Печатать их одной строкой значит либо завести вечно висящий долг,
+         * либо тихо согласиться его игнорировать.
+         */
+        $out[] = 'amo подтвердил удаление, стирание не проверено (проверка возможна — есть адресный запрос):';
         $out[] = self::renderBucket($report['unverified']);
+
+        $out[] = 'amo подтвердил удаление, проверить нечем (адресного запроса у типа нет):';
+        $out[] = self::renderBucket($report['unprovable']);
 
         /*
          * Сущность, которую свип видел в обычной выборке, но amo на удаление
