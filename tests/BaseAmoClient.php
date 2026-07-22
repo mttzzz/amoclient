@@ -8,7 +8,6 @@ use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Tests\Support\AmoTestSweeper;
 use mttzzz\AmoClient\Tests\Support\TestEntityRegistry;
 use Orchestra\Testbench\TestCase;
-use RuntimeException;
 use Throwable;
 
 abstract class BaseAmoClient extends TestCase
@@ -57,17 +56,15 @@ abstract class BaseAmoClient extends TestCase
     ];
 
     /*
-     * Ответы amo, означающие «сущности уже нет», а не «удалить не вышло».
-     *
-     * Текст про права здесь дезинформирует: по §7.4 ресёрча (проверено на
-     * заведомо свежеудалённом лиде под admin-правами) amo отдаёт именно его на
-     * попытку удалить сделку, УЖЕ лежащую в корзине. Трактовать это как ошибку
-     * нельзя — иначе идемпотентный снос (shutdown-хук после tearDownAfterClass,
-     * повторный прогон свипа) начнёт ложно шуметь и прятать настоящие хвосты.
+     * Знание «какой ответ amo означает „уже нет“» здесь НЕ живёт и заводиться
+     * не должно: оно принадлежит операции удаления (src/Deleter.php). Teardown
+     * не разбирает ни текстов, ни кодов — он читает bool контракта
+     * deleter->byType() (true — подтверждено, false — известная «уже нет»-причина,
+     * исключение — реальная ошибка). Список формулировок амо, продублированный
+     * здесь, обязан был бы оставаться синхронным с Deleter — и разъехался бы на
+     * первой же смене текста в амо, после чего уборка молча считала бы
+     * неудалённое удалённым.
      */
-    private const ALREADY_GONE_NEEDLES = [
-        'Недостаточно прав для удаления сделки',
-    ];
 
     /*
      * Реестр и клиент — статические, и это не удобство, а требование двух
@@ -213,47 +210,114 @@ abstract class BaseAmoClient extends TestCase
             return;
         }
 
-        foreach (self::inTeardownOrder($registry->all()) as $entry) {
-            $key = $entry['type'].':'.$entry['id'];
+        foreach (self::groupedInTeardownOrder($registry->all()) as $group) {
+            $type = $group['type'];
 
             try {
-                self::deleteTrackedEntity($client, $entry['type'], $entry['id']);
-                $registry->forget($entry['type'], $entry['id']);
+                /* Пакетом на тип: боевой аккаунт один на всю команду, и лишние
+                 * запросы — прямая дорога к 429 → 403. Раскладку на пакетные и
+                 * поштучные эндпойнты делает Deleter, это его знание. */
+                $confirmed = $client->deleter->byType($type, $group['ids']);
 
-                if (isset(self::$sweepAttempts[$key])) {
-                    fwrite(STDERR, sprintf(
-                        "\n[teardown] %s id=%s снесён с попытки %d\n",
-                        $entry['type'],
-                        (string) $entry['id'],
-                        self::$sweepAttempts[$key] + 1
-                    ));
-                    unset(self::$sweepAttempts[$key]);
+                foreach ($group['ids'] as $id) {
+                    $registry->forget($type, $id);
+                    self::reportSwept($type, $id, $confirmed);
                 }
             } catch (Throwable $e) {
-                if (self::isAlreadyGone($e)) {
-                    $registry->forget($entry['type'], $entry['id']);
-                    unset(self::$sweepAttempts[$key]);
-
-                    continue;
-                }
-
-                $attempt = self::$sweepAttempts[$key] = (self::$sweepAttempts[$key] ?? 0) + 1;
-
-                /* Повтор помечен явно: реестр общий на прогон, и та же
-                 * сущность будет пробоваться в каждом следующем классе. Без
-                 * пометки десять строк про один хвост читались бы как десять
-                 * хвостов. */
-                fwrite(STDERR, sprintf(
-                    "\n[teardown] %s: %s id=%s НЕ УДАЛЁН (попытка %d) — %s: %s\n",
-                    $attempt === 1 ? 'ХВОСТ В AMO' : 'ПОВТОР',
-                    $entry['type'],
-                    (string) $entry['id'],
-                    $attempt,
-                    $e::class,
-                    $e->getMessage()
-                ));
+                self::sweepOneByOne($client, $registry, $type, $group['ids'], $e);
             }
         }
+    }
+
+    /**
+     * Разбор пакета, упавшего целиком.
+     *
+     * Пакетный ответ не говорит, какие id прошли, а какие нет, — а требование
+     * ровно обратное: хвост должен быть назван поимённо. Переспрашиваем
+     * поштучно; повторный снос безопасен, потому что уже удалённое по контракту
+     * Deleter даёт false, а не исключение.
+     *
+     * @param  list<int|string>  $ids
+     */
+    private static function sweepOneByOne(
+        AmoClientOctane $client,
+        TestEntityRegistry $registry,
+        string $type,
+        array $ids,
+        Throwable $batchError
+    ): void {
+        if (count($ids) === 1) {
+            /* Пакет из одного — переспрашивать нечего, это был тот же вызов. */
+            self::reportFailure($type, $ids[0], $batchError);
+
+            return;
+        }
+
+        foreach ($ids as $id) {
+            try {
+                $confirmed = $client->deleter->byType($type, $id);
+                $registry->forget($type, $id);
+                self::reportSwept($type, $id, $confirmed);
+            } catch (Throwable $e) {
+                self::reportFailure($type, $id, $e);
+            }
+        }
+    }
+
+    /**
+     * Успешный снос молчит — кроме двух случаев, когда молчание врёт.
+     *
+     * $confirmed === false значит: amo не подтвердил удаление, но назвал
+     * известную «уже нет»-причину (её распознаёт Deleter, не мы). Цель уборки
+     * достигнута, запись забывается — но неоднозначность видна, иначе разница
+     * между «снесли» и «его и так не было» пропадёт бесследно.
+     */
+    private static function reportSwept(string $type, int|string $id, bool $confirmed): void
+    {
+        $key = $type.':'.$id;
+        $attempts = self::$sweepAttempts[$key] ?? 0;
+        unset(self::$sweepAttempts[$key]);
+
+        if (! $confirmed) {
+            fwrite(STDERR, sprintf(
+                "\n[teardown] %s id=%s — снос неоднозначен: amo не подтвердил удаление, но отказал по известной «уже нет»-причине\n",
+                $type,
+                (string) $id
+            ));
+
+            return;
+        }
+
+        if ($attempts > 0) {
+            fwrite(STDERR, sprintf(
+                "\n[teardown] %s id=%s снесён с попытки %d\n",
+                $type,
+                (string) $id,
+                $attempts + 1
+            ));
+        }
+    }
+
+    /**
+     * Запись НЕ забывается: следующий tearDownAfterClass и shutdown-хук дадут
+     * ей ещё попытку. Повтор помечен явно — реестр общий на прогон, и та же
+     * сущность будет пробоваться в каждом следующем классе; без пометки десять
+     * строк про один хвост читались бы как десять хвостов.
+     */
+    private static function reportFailure(string $type, int|string $id, Throwable $e): void
+    {
+        $key = $type.':'.$id;
+        $attempt = self::$sweepAttempts[$key] = (self::$sweepAttempts[$key] ?? 0) + 1;
+
+        fwrite(STDERR, sprintf(
+            "\n[teardown] %s: %s id=%s НЕ УДАЛЁН (попытка %d) — %s: %s\n",
+            $attempt === 1 ? 'ХВОСТ В AMO' : 'ПОВТОР',
+            $type,
+            (string) $id,
+            $attempt,
+            $e::class,
+            $e->getMessage()
+        ));
     }
 
     /**
@@ -292,20 +356,26 @@ abstract class BaseAmoClient extends TestCase
     }
 
     /**
-     * Снос одной сущности МЕТОДАМИ БИБЛИОТЕКИ (решение владельца №1: удаление —
-     * штатная поверхность либы, а не сырой ajax в тестах; две реализации одной
-     * логики неизбежно разъезжаются).
+     * Сгруппированные по типу id в порядке сноса: один вызов deleter на тип.
      *
-     * TODO(teardown-core): тело ждёт контракт удаления от тиммейта lib-delete —
-     * это единственная контракт-зависимая точка файла. До подключения снос
-     * честно кричит в STDERR по каждой затреканной сущности, а не делает вид,
-     * что прибрал.
+     * @param  array<int, array{type: string, id: int|string}>  $entries
+     * @return list<array{type: string, ids: list<int|string>}>
      */
-    private static function deleteTrackedEntity(AmoClientOctane $client, string $type, int|string $id): void
+    private static function groupedInTeardownOrder(array $entries): array
     {
-        throw new RuntimeException(
-            "контракт удаления lib-delete ещё не подключён — тип '$type' не снесён"
-        );
+        $grouped = [];
+
+        foreach (self::inTeardownOrder($entries) as $entry) {
+            $grouped[$entry['type']][] = $entry['id'];
+        }
+
+        $groups = [];
+
+        foreach ($grouped as $type => $ids) {
+            $groups[] = ['type' => (string) $type, 'ids' => $ids];
+        }
+
+        return $groups;
     }
 
     /**
@@ -333,23 +403,6 @@ abstract class BaseAmoClient extends TestCase
         return $rank === false ? count(self::TEARDOWN_ORDER) : $rank;
     }
 
-    private static function isAlreadyGone(Throwable $e): bool
-    {
-        /* AmoCustomException кладёт HTTP-статус в code: 404 — сущности нет,
-         * значит цель уборки достигнута, а не провалена. */
-        if ((int) $e->getCode() === 404) {
-            return true;
-        }
-
-        foreach (self::ALREADY_GONE_NEEDLES as $needle) {
-            if (str_contains($e->getMessage(), $needle)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -370,9 +423,9 @@ abstract class BaseAmoClient extends TestCase
 
             /* Фатал (OOM, segfault, exit) обходит и tearDown, и
              * tearDownAfterClass — shutdown-функция единственная, кто ещё
-             * выполнится. Идемпотентность даёт forget() при успехе и
-             * isAlreadyGone() при повторе, так что двойной снос не выглядит
-             * провалом.
+             * выполнится. Идемпотентность держится на forget() при успехе и на
+             * контракте Deleter (уже удалённое даёт false, а не исключение),
+             * так что двойной снос не выглядит провалом.
              *
              * Известная граница: после НОРМАЛЬНОГО прогона хук отрабатывает уже
              * по разобранному приложению Testbench, и запрос через фасады может
