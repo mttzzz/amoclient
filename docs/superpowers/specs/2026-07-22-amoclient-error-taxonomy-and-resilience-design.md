@@ -90,7 +90,7 @@ AmoCRM отвечает не по контракту (см. кейсы выше)
 | `AmoValidationException` | ❌ | ❌ | настоящий bad request (есть `validation-errors`) — наш баг, алертить |
 | `AmoUnknownException` | ❌ | ❌ | **не классифицировано — громкая тревога (см. 2.3)** |
 
-**Дискриминаторы 400** (подтверждены кодом офф. SDK, см. 2.5): настоящий bad request несёт массив **`validation-errors`** в теле → `AmoValidationException`; 400 **без** `validation-errors`, но с `detail` ≈ «повторите попытку/системная ошибка» → `AmoSystemRetryException` (код врёт). Повод всегда берём из поля **`detail`**.
+**Дискриминаторы 400** (подтверждены кодом офф. SDK, см. 2.5, и нашим production, см. Appendix): настоящий bad request несёт массив **`validation-errors`** → `AmoValidationException`; 400 **без** `validation-errors`, но с `detail` ≈ «повторите попытку/системная ошибка» → `AmoSystemRetryException` (код врёт). Отдельное измерение — **внутренний `errors[0].code`**: `226` = «лид удалён/недоступен», амо шлёт 400 вместо 404 → benign `AmoNotFoundException`-подобный. Повод всегда берём из поля **`detail`**. Классификатор смотрит связку **`(status, detail, validation-errors, errors[].code, Error NNN.-текст)`**, а не только HTTP-статус.
 
 ### 2.2 Два классификатора
 `PublicApiErrorClassifier` и `AjaxErrorClassifier` реализуют общий интерфейс `classify(status, body, headers, previous): AmoException`. Публичный работает с RFC-7807-подобными телами (`title/type/status/detail`, `validation-errors`); ajax — со своим диалектом (коды вида `Error 282.`/`Error 426.`, HTML, нестандартные обёртки). Классификаторы намеренно **раздельны** — семантика каналов не пересекается. Точка входа выбирает классификатор по каналу вызова.
@@ -196,3 +196,43 @@ Ref: `https://github.com/amocrm/amocrm-api-php/blob/master/src/AmoCRM/Client/Amo
 
 ## 7. Следующий шаг
 Спек SP0 → детальный план реализации (skill `writing-plans`). SP1–SP4 получают свои спеки по мере продвижения.
+
+---
+
+## Appendix — Каталог известных ошибок амо (production seed для фикстур/правил)
+
+Собрано из кода octane/masterm/amoclient, тестов и Sentry-истории (90д). Стартовый набор правил классификатора + фикстур; растёт через `AmoUnknownException`. **Не полагаться на документацию** — только реальные сигналы.
+
+### A.1 Public API v4 — по HTTP-статусу
+| Статус | Тело/сигнал | Наш тип | Источник |
+|---|---|---|---|
+| 401 | `detail` | `AmoAuthException` | AccountUpdateJob, AmoChatJob |
+| 402 | «Амо не оплачен» / «Аккаунт стал не оплаченным» (флапает ночью ~9 мин) | `AmoPaymentRequiredException` | MASTERM-35, Handler, DocumentCreateNoteJob |
+| 403 | | `AmoForbiddenException` | AccountUpdateJob |
+| 404 | сущность удалена/недоступна | `AmoNotFoundException` (benign) | shortLinks, anotherLeads, CopyValueFieldJob, documentPdf |
+| 429 | | `AmoRateLimitException` (+`retryAfter`) | офф. SDK |
+| 5xx (500/502/503/504) | часто **HTML**-тело | `AmoServerException` | 9R/9S/7B/68/97 |
+| 400 + `validation-errors` | массив ошибок полей | `AmoValidationException` | HFGeneralJob:720, офф. SDK |
+| 400 + `detail`≈«повторите попытку/системная ошибка» | нет `validation-errors` | `AmoSystemRetryException` (код врёт) | 9Q (21.07.2026) |
+| 400 + `errors[0].code === 226` | | benign (амо шлёт 400 вместо 404, «лид удалён») | DocumentCreateNoteJob:68/79 |
+
+### A.2 Внутренние коды `Error NNN.` (в message; ajax + часть v4)
+| Сигнал | Смысл | Наш тип | Источник |
+|---|---|---|---|
+| `Error 282.` (часто с HTTP 404) | сущность/задача уже удалена | `AmoNotFoundException` (benign) | masterm ChangeTaskJob, amoclient CustomerTest/BaseAmoClient |
+| `Error 426.` / «Customers disabled» | Customers API выключен для конфигурации аккаунта | feature-disabled (benign, silenceable) | amoclient EventTest/CustomerTest |
+
+### A.3 Chat (amojo) — отдельный диалект, **кандидат в 3-й классификатор**
+| Сигнал | Смысл | Реакция (текущая, octane AmoChatJob) |
+|---|---|---|
+| 403 + `message === 'sender blocked by receiver'` | клиент заблокировал | benign — НЕ fail |
+| 404 | чат удалён | fail |
+| 401 | некорректный токен | fail |
+
+Chat сейчас обрабатывается в octane (`AmoChatJob`), не через amoclient. В SP1 решить: заводить ли `ChatApiErrorClassifier` в либе или оставить проекту. Диалект amojo ≠ public-v4 ≠ ajax.
+
+### A.4 Источники, которые продолжаем майнить
+- **Sentry** (org `pushka-biz`, все проекты) — реальные тела ошибок; каждый новый `AmoUnknownException` → новая фикстура + правило.
+- **Офф. SDK** `amocrm-api-php` — только public-v4 baseline (см. 2.5).
+- **amoclient/tests** — уже содержат реальные `Error 282./426.`, «Customers disabled».
+- **git-история** октана/masterm — инцидент-рефы (OCTANE-*, MASTERM-35) с причинной моделью в коммитах.
