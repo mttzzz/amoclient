@@ -18,7 +18,8 @@ abstract class AbstractModel
 
     protected int $page = 1;
 
-    protected int $limit = 150;
+    /** Размер страницы по умолчанию — измеренный потолок амо, см. limit(). */
+    protected int $limit = 250;
 
     protected string $query = '';
 
