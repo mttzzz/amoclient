@@ -14,7 +14,9 @@ class SourceTest extends BaseAmoClient
         $found = $this->amoClient->sources->find($createdId);
         $this->assertEquals($createdId, $found->id);
         $deleted = $found->delete();
-        $this->assertNull($deleted);
+        /* delete() переведён с null на bool (lib-delete-2) — null был бы одинаково зелёным
+         * и при реальном удалении, и при молчаливом no-op, bool этого различия не прячет. */
+        $this->assertTrue($deleted);
 
     }
 }
