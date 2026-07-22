@@ -87,10 +87,21 @@ abstract class AbstractModel
         return $this;
     }
 
+    /**
+     * Потолок страницы — 250, и это ИЗМЕРЕННАЯ граница, а не цифра из доки:
+     * `limit=250` отдаёт 250, `limit=251` и `limit=500` — те же 250. Перебор
+     * амо не отвергает, а молча срезает, поэтому просить больше бессмысленно,
+     * а полагаться на «сколько попросили, столько и придёт» — опасно.
+     *
+     * Срезаем на своей стороне, чтобы вызывающий получал ровно то число, о
+     * котором договаривался, а не тихо усечённое амо.
+     *
+     * Было 150; при лимите 7 rps на интеграцию это те же данные за меньшее
+     * число запросов, то есть прямой запас по троттлингу.
+     */
     public function limit(int $limit): self
     {
-        $limit = $limit > 150 ? 150 : $limit;
-        $this->limit = $limit;
+        $this->limit = $limit > 250 ? 250 : $limit;
 
         return $this;
     }
@@ -168,10 +179,22 @@ abstract class AbstractModel
         return $result;
     }
 
-    public function each(callable $function, int $limit = 150): void
+    /**
+     * Обход постранично.
+     *
+     * Размер страницы прогоняется через `limit()`, а не присваивается напрямую,
+     * и сравнение ниже идёт по УРЕЗАННОМУ значению. Иначе `each($fn, 500)`
+     * обрывал обход на первой же странице: амо молча отдаёт 250, а условие
+     * `count($chunk) < 500` считает это последней страницей — и остаток данных
+     * пропадает без единого признака. Ровно та тихая деградация, от которой
+     * защищает потолок в `limit()`, поэтому в обход потолка ходить нельзя.
+     */
+    public function each(callable $function, int $limit = 250): void
     {
         $page = 1;
-        $this->limit = $limit;
+        $this->limit($limit);
+        $limit = $this->limit;
+
         while (true) {
             $chunk = $this->page($page++)->get();
             if (empty($chunk)) {
@@ -187,7 +210,7 @@ abstract class AbstractModel
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function allItems(int $limit = 150): array
+    public function allItems(int $limit = 250): array
     {
         $result = [];
         $this->each(function (array $items) use (&$result) {

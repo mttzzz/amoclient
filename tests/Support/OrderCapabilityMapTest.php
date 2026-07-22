@@ -8,6 +8,7 @@ use mttzzz\AmoClient\Models\Contact;
 use mttzzz\AmoClient\Models\Lead;
 use mttzzz\AmoClient\Models\Note;
 use mttzzz\AmoClient\Models\Task;
+use mttzzz\AmoClient\Models\Unsorted;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -47,8 +48,15 @@ use PHPUnit\Framework\TestCase;
  * и боевой аккаунт не трогает. Фактический порядок выдачи проверяет свип, на
  * данных.
  *
- * `Models\Unsorted` в карту намеренно не входит: его сортировка не замерялась,
- * в уборке он не участвует. Появится замер — появится строка.
+ * `Models\Unsorted` стоит в карте с ПУСТЫМ набором: замер (§9.7) показал, что
+ * роут игнорирует сортировку целиком — `asc`, `desc` и запрос вообще без
+ * параметра дают одну и ту же выдачу. Модель поставляла два метода, из которых
+ * первый был тихим no-op, а второй «работал» случайно, совпадая с порядком по
+ * умолчанию (от новых к старым). Пустая строка карты запрещает вернуть их.
+ *
+ * У `Unsorted` методы звались `orderCreatedAt…`, без `By`, поэтому карта их
+ * прямо не назвала бы. Проверка построена на трейтовых именах намеренно:
+ * возвращать сортировку сюда будут именно ими, общей формой.
  */
 class OrderCapabilityMapTest extends TestCase
 {
@@ -79,6 +87,7 @@ class OrderCapabilityMapTest extends TestCase
         yield 'companies' => [Company::class, ['id', 'updated_at', 'name']];
         yield 'tasks' => [Task::class, ['id', 'created_at', 'complete_till']];
         yield 'leads/notes' => [Note::class, ['id', 'updated_at']];
+        yield 'leads/unsorted' => [Unsorted::class, []];
     }
 
     /**

@@ -7,6 +7,18 @@ use Illuminate\Http\Client\RequestException;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
+/**
+ * Неразобранное.
+ *
+ * СОРТИРОВКИ У ЭТОГО РОУТА НЕТ — и её методов здесь тоже нет, намеренно. Замер
+ * (§9.7): `order[created_at]=asc`, `order[created_at]=desc` и запрос вообще без
+ * параметра дают одну и ту же выдачу. Раньше модель поставляла
+ * `orderCreatedAtAsc()` и `orderCreatedAtDesc()`; первый был тихим no-op, а
+ * второй «работал» случайно — просто совпадал с порядком по умолчанию.
+ *
+ * Порядок по умолчанию: ОТ НОВЫХ К СТАРЫМ (`created_at` убывает). На него
+ * можно рассчитывать при обходе, но задать другой нечем.
+ */
 class Unsorted extends AbstractModel
 {
     public function __construct(PendingRequest $http)
@@ -130,17 +142,4 @@ class Unsorted extends AbstractModel
         return $this;
     }
 
-    public function orderCreatedAtAsc(): self
-    {
-        $this->order['created_at'] = 'asc';
-
-        return $this;
-    }
-
-    public function orderCreatedAtDesc(): self
-    {
-        $this->order['created_at'] = 'desc';
-
-        return $this;
-    }
 }
