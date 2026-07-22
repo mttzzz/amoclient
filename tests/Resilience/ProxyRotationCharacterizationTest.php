@@ -2,6 +2,8 @@
 
 namespace mttzzz\AmoClient\Tests\Resilience;
 
+use GuzzleHttp\Exception\ConnectException as GuzzleConnectException;
+use GuzzleHttp\Psr7\Request as GuzzlePsrRequest;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\RequestException;
@@ -97,24 +99,96 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
         $this->assertSame([self::PROXY_ONE, self::PROXY_TWO, null], $this->proxiesUsed());
     }
 
-    public function test_5xx_also_rotates_proxy_today(): void
+    public function test_5xx_no_longer_rotates_proxy(): void
     {
         $this->fakeAttempts([
             Http::response(['title' => 'Bad Gateway'], 502),
             Http::response(['id' => self::ACCOUNT_ID], 200),
         ]);
 
+        try {
+            (new AmoClientOctane(self::ACCOUNT_ID))->http->get('account');
+            $this->fail('Ожидали RequestException: 502 больше не повторяется внутри запроса');
+        } catch (RequestException $e) {
+            $this->assertSame(502, $e->response->status());
+        }
+
+        /*
+         * Дефект, зафиксированный этим сьютом до 4.0, ИСПРАВЛЕН. Раньше здесь было
+         * [PROXY_ONE, PROXY_TWO]: 502 считался поводом сменить маршрут. Но у ответа
+         * есть HTTP-статус, значит запрос дошёл до амо, и второй заход через другой
+         * роутер уходит в тот же лежащий бэкенд — попытка сжигается впустую.
+         * Failover обязан жить НИЖЕ уровня, на котором статус существует
+         * (решение по архитектуре 4.0, п.5).
+         *
+         * Следствие, которое надо понимать: 5xx теперь вылетает из клиента с ПЕРВОЙ
+         * попытки. Это не потеря надёжности, а перенос ответственности — повтор
+         * делает очередь потребителя (Queue\RetriesTransientAmoErrors), где пауза
+         * измеряется минутами и переживает многоминутный сбой, а не миллисекундной
+         * задержкой внутри одного запроса.
+         */
+        $this->assertSame([self::PROXY_ONE], $this->proxiesUsed());
+    }
+
+    public function test_read_timeout_does_not_rotate_proxy(): void
+    {
+        /*
+         * Read-таймаут: соединение УСТАНОВЛЕНО (connect_time > 0), запрос принят,
+         * амо молчит. Самый дорогой случай ротации — каждый лишний заход стоит
+         * полного `timeout`, поэтому пул прокси умножал простой на свой размер,
+         * не давая ни одного шанса на успех: все три захода идут в один бэкенд.
+         */
+        $this->fakeAttempts([
+            fn () => throw new ConnectionException(
+                'cURL error 28: Operation timed out after 25001 milliseconds with 0 bytes received',
+                0,
+                new GuzzleConnectException(
+                    'cURL error 28: Operation timed out after 25001 milliseconds with 0 bytes received',
+                    new GuzzlePsrRequest('GET', 'https://example.amocrm.ru/api/v4/account'),
+                    null,
+                    ['errno' => 28, 'connect_time' => 0.042, 'total_time' => 25.001],
+                ),
+            ),
+            Http::response(['id' => self::ACCOUNT_ID], 200),
+        ]);
+
+        try {
+            (new AmoClientOctane(self::ACCOUNT_ID))->http->get('account');
+            $this->fail('Ожидали ConnectionException: read-таймаут больше не ротирует прокси');
+        } catch (ConnectionException) {
+            /* ожидаемо */
+        }
+
+        /* Одна попытка, маршрут не менялся. */
+        $this->assertSame([self::PROXY_ONE], $this->proxiesUsed());
+    }
+
+    public function test_unreachable_path_still_rotates_proxy(): void
+    {
+        /*
+         * Позитивный контроль к двум тестам выше: различитель обязан РАЗЛИЧАТЬ.
+         * Соединение не состоялось вовсе (connect_time = 0) — это ровно тот случай,
+         * ради которого пул прокси и существует, и здесь ротация обязана работать.
+         * Без этого теста «не ротирует» проходило бы и при полностью сломанном
+         * различителе, который не ротирует никогда.
+         */
+        $this->fakeAttempts([
+            fn () => throw new ConnectionException(
+                'cURL error 7: Failed to connect to proxy-one port 8080: Connection refused',
+                0,
+                new GuzzleConnectException(
+                    'cURL error 7: Failed to connect to proxy-one port 8080: Connection refused',
+                    new GuzzlePsrRequest('GET', 'https://example.amocrm.ru/api/v4/account'),
+                    null,
+                    ['errno' => 7, 'connect_time' => 0.0, 'total_time' => 0.003],
+                ),
+            ),
+            Http::response(['id' => self::ACCOUNT_ID], 200),
+        ]);
+
         $response = (new AmoClientOctane(self::ACCOUNT_ID))->http->get('account');
 
         $this->assertTrue($response->ok());
-
-        /*
-         * ЗАФИКСИРОВАННЫЙ ДЕФЕКТ: 502 — это лежащий бэкенд амо, а не битый прокси;
-         * смена прокси бьёт в тот же труп и сжигает попытку. В 4.0 ожидается
-         * [PROXY_ONE, PROXY_ONE] — когда тест покраснеет здесь, это ПЛАНОВОЕ
-         * изменение (решение по архитектуре 4.0, п.5: failover ниже уровня,
-         * на котором существует HTTP-статус).
-         */
         $this->assertSame([self::PROXY_ONE, self::PROXY_TWO], $this->proxiesUsed());
     }
 
