@@ -7,9 +7,14 @@ use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Entities;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Exceptions\AmoUnknownException;
+use mttzzz\AmoClient\Traits\Order;
 
 class Note extends AbstractModel
 {
+    /* Поля по замеру §9.4: у примечаний работают id и updated_at.
+     * created_at игнорируется, поэтому трейта ByCreatedAt здесь нет. */
+    use Order\ById, Order\ByUpdatedAt;
+
     protected ?int $entityId;
 
     protected Deleter $deleter;
@@ -107,38 +112,4 @@ class Note extends AbstractModel
         return $this;
     }
 
-    /**
-     * Имена приведены к общей форме `orderBy…` — были `orderUpdatedAt…` и
-     * `orderId…`, без `By`. Разнобой не косметический: искали трейтовую форму,
-     * не нашли и заключили, что сортировки у примечаний нет вовсе, — и на этом
-     * основании было выдано лишнее задание.
-     *
-     * `OrderTrait` целиком не подключён намеренно: он принёс бы ещё
-     * `created_at`, которого нет среди допустимых полей примечаний.
-     * Официальный справочник (§9) называет ровно два — `updated_at` и `id`, —
-     * они и выставлены; `updated_at` вдобавок подтверждён зондом (§8.7), а
-     * `id` — тестом, сверяющим фактический порядок выдачи, а не форму запроса.
-     * Пренебрежение этим списком уже стоило зонда на задачах: там
-     * `order[updated_at]` игнорируется при HTTP 200 (§8.8), то есть метод по
-     * неподтверждённому полю оказался бы тихим no-op.
-     */
-    public function orderByUpdatedAtAsc(): self
-    {
-        return $this->orderBy('updated_at', 'asc');
-    }
-
-    public function orderByUpdatedAtDesc(): self
-    {
-        return $this->orderBy('updated_at', 'desc');
-    }
-
-    public function orderByIdAsc(): self
-    {
-        return $this->orderBy('id', 'asc');
-    }
-
-    public function orderByIdDesc(): self
-    {
-        return $this->orderBy('id', 'desc');
-    }
 }

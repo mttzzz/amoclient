@@ -11,11 +11,15 @@ use mttzzz\AmoClient\Helpers\OctaneAccount;
 use mttzzz\AmoClient\LazyCustomFields;
 use mttzzz\AmoClient\Traits;
 use mttzzz\AmoClient\Traits\Filter;
+use mttzzz\AmoClient\Traits\Order;
 
 class Company extends AbstractModel
 {
     use Filter\Common, Filter\PhoneEmail;
-    use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
+    use Traits\CrudTrait, Traits\QueryTrait;
+    /* Поля по замеру §9.4: у компаний работают id, updated_at, name.
+     * created_at игнорируется — раньше поставлялся общим трейтом впустую. */
+    use Order\ById, Order\ByName, Order\ByUpdatedAt;
 
     private LazyCustomFields $lazyCf;
 

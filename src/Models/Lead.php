@@ -10,11 +10,14 @@ use mttzzz\AmoClient\Exceptions\AmoUnknownException;
 use mttzzz\AmoClient\LazyCustomFields;
 use mttzzz\AmoClient\Traits;
 use mttzzz\AmoClient\Traits\Filter;
+use mttzzz\AmoClient\Traits\Order;
 
 class Lead extends AbstractModel
 {
     use Filter\Common, Filter\Lead;
-    use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
+    use Traits\CrudTrait, Traits\QueryTrait;
+    /* Поля по замеру §9.4: у сделок работают id, updated_at, created_at. */
+    use Order\ByCreatedAt, Order\ById, Order\ByUpdatedAt;
 
     private LazyCustomFields $lazyCf;
 

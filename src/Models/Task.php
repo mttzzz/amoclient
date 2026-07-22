@@ -12,6 +12,10 @@ use mttzzz\AmoClient\Traits;
 class Task extends AbstractModel
 {
     use Traits\CrudTrait;
+    /* Поля по замеру §9.4: у задач работают id, created_at, complete_till.
+     * updated_at игнорируется — `asc` и `desc` дают одну и ту же страницу при
+     * HTTP 200, поэтому трейта ByUpdatedAt здесь нет и быть не должно. */
+    use Traits\Order\ByCompleteTill, Traits\Order\ByCreatedAt, Traits\Order\ById;
 
     protected Deleter $deleter;
 
@@ -140,50 +144,4 @@ class Task extends AbstractModel
         return $this;
     }
 
-    public function orderByCompleteDesc(): self
-    {
-        return $this->orderBy('complete_till', 'desc');
-    }
-
-    public function orderByCompleteAsc(): self
-    {
-        return $this->orderBy('complete_till', 'asc');
-    }
-
-    /**
-     * Сортировка по свежести — через id, а НЕ через updated_at.
-     *
-     * Нужна не для красоты: дискавери свипа идёт окном с потолком в 10 страниц
-     * по 150, порядок выдачи амо возрастающий, а созданное тестами всегда самое
-     * свежее — на нагруженном аккаунте наш собственный мусор систематически
-     * ложится в отрезаемый хвост.
-     *
-     * Почему id, а не updated_at: роут задач `order[updated_at]` ИГНОРИРУЕТ
-     * целиком — `asc`, `desc` и заведомый мусор дают побайтово одну и ту же
-     * выдачу, и все три при HTTP 200 (§8.8). Метода по updated_at здесь нет
-     * намеренно: он был бы тихим no-op, а отсутствие возможности честнее её
-     * видимости. У примечаний тот же параметр работает (§8.7) — поддержка
-     * сортировки у амо не единообразна между роутами.
-     *
-     * id монотонны, поэтому для «самые свежие первыми» этого достаточно.
-     * `created_at` даёт тот же порядок и ничего не добавляет; `complete_till`
-     * даёт другой и к свежести отношения не имеет.
-     *
-     * Официальный справочник (§9) сходится с зондом: у задач допустимы
-     * `created_at`, `complete_till`, `id` — `updated_at` в списке отсутствует.
-     * То есть документация была права, а неверным оказалось наше допущение по
-     * аналогии с примечаниями, где `updated_at` как раз работает.
-     */
-    public function orderByIdDesc(): self
-    {
-        return $this->orderBy('id', 'desc');
-    }
-
-    /**
-     * См. orderByIdDesc(): сортировка по свежести у задач идёт через id.
-     */
-    public function orderByIdAsc(): self
-    {
-        return $this->orderBy('id', 'asc');
-    }
 }
