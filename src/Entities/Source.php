@@ -41,22 +41,25 @@ class Source extends AbstractEntity
     }
 
     /**
-     * Удаление источника. Возврат `null` сохранён как есть: метод отгружен в
-     * этой форме, менять его сигнатуру ради косметики значит ломать
-     * потребителей на ровном месте. Информативная форма — `$amo->sources
-     * ->delete($ids): bool`, обе ходят через один Deleter, разойтись им негде.
+     * Удаление источника.
+     *
+     * Возврат сменился с `null` на `bool` осознанно: одна операция на двух
+     * уровнях (здесь и `$amo->sources->delete()`) обязана отвечать одинаково,
+     * иначе по этому шву поведение и разойдётся. Прежний `null` вдобавок
+     * нечего было проверять — `assertNull()` на удалении одинаково зелен и
+     * когда удалилось, и когда метод молча ничего не сделал.
+     *
+     * @return bool false — источника уже нет (404)
      *
      * @throws LogicException у сущности нет id — адресовать удаление нечем
      * @throws AmoCustomException
      */
-    public function delete(): null
+    public function delete(): bool
     {
         if ($this->id === null) {
             throw new LogicException('Entities\Source::delete(): у сущности нет id — сначала find() или create().');
         }
 
-        $this->deleter->sources($this->id);
-
-        return null;
+        return $this->deleter->sources($this->id);
     }
 }

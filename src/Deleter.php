@@ -104,6 +104,23 @@ class Deleter
     }
 
     /**
+     * Словарь типов, которые умеет `byType()`.
+     *
+     * Отдаётся наружу не ради удобства, а чтобы рассинхрон таблиц стал
+     * невозможным по построению. У свипа своя таблица (тип → где искать
+     * хвосты), у реестра — свой список; сверить их с нашей нечем, пока она
+     * приватна. А тип, потерянный в одной из таблиц, не ищется МОЛЧА: «удалено
+     * 0» в отчёте неотличимо от «не искали вовсе». Это тот же класс дефекта,
+     * что и тихий пустой массив, только этажом выше.
+     *
+     * @return list<string>
+     */
+    public function types(): array
+    {
+        return self::TYPES;
+    }
+
+    /**
      * Диспетчер для свипа: у реестра на руках пара (тип, id), а не готовая
      * коллекция. Родитель примечания и каталог элемента здесь не нужны —
      * приватные роуты резолвят их сами по id сущности (§6).
@@ -209,7 +226,7 @@ class Deleter
         return $this->deleteViaSet(
             'customers',
             '/ajax/v1/customers/set/',
-            array_values($this->ids($ids, 'delete customers')),
+            $this->ids($ids, 'delete customers'),
             true,
             'delete customers'
         );
@@ -262,7 +279,7 @@ class Deleter
         return $this->deleteViaSet(
             'catalog_elements',
             '/ajax/v1/catalog_elements/set/',
-            array_values($this->ids($ids, 'delete catalogElements')),
+            $this->ids($ids, 'delete catalogElements'),
             false,
             'delete catalogElements'
         );

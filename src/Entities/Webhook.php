@@ -53,17 +53,19 @@ class Webhook extends AbstractEntity
     /**
      * Отписка — настоящий hard delete, а не отключение.
      *
-     * Возврат `null` сохранён как есть: метод отгружен в этой форме. Пакетная
-     * и информативная форма — `$amo->webhooks->delete($destinations): bool`;
-     * обе ходят через один Deleter, разойтись им негде.
+     * Возврат сменился с `null` на `bool` осознанно, по той же причине, что и
+     * у `Entities\Source::delete()`: одна операция на двух уровнях (здесь и
+     * `$amo->webhooks->delete()`) обязана отвечать одинаково. Прежний `null`
+     * вдобавок нечего было проверять — `assertNull()` на удалении одинаково
+     * зелен и когда отписались, и когда метод молча ничего не сделал.
+     *
+     * @return bool false — подписки уже нет (404)
      *
      * @throws AmoCustomException
      */
-    public function unSubscribe(): null
+    public function unSubscribe(): bool
     {
-        $this->deleter->webhooks($this->destination);
-
-        return null;
+        return $this->deleter->webhooks($this->destination);
     }
 
     public function responsibleLead(): self
