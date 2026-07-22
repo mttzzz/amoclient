@@ -2,6 +2,7 @@
 
 namespace mttzzz\AmoClient\Tests\Resilience;
 
+use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
@@ -49,10 +50,19 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
     {
         $index = 0;
 
-        Http::fake(function ($request, $options) use (&$index, $responses) {
+        Http::fake(function (Request $request, array $options) use (&$index, $responses) {
+            $proxy = $options['proxy'] ?? null;
+            $auth = $request->header('Authorization')[0] ?? null;
+
+            /*
+             * Оба значения приходят из недр guzzle нетипизированными. Сужаем явно,
+             * а не обещаем тип на слово: харнесс существует ради утверждений о том,
+             * ЧТО именно ушло на попытке, и молча принятый не-string тут означал бы
+             * ассерт, сравнивающий null с null и всегда зелёный.
+             */
             $this->attempts[] = [
-                'proxy' => $options['proxy'] ?? null,
-                'auth' => $request->header('Authorization')[0] ?? null,
+                'proxy' => is_string($proxy) ? $proxy : null,
+                'auth' => is_string($auth) ? $auth : null,
             ];
 
             $response = $responses[$index] ?? $responses[count($responses) - 1];

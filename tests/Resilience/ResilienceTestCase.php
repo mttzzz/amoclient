@@ -2,6 +2,7 @@
 
 namespace mttzzz\AmoClient\Tests\Resilience;
 
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -38,7 +39,7 @@ abstract class ResilienceTestCase extends TestCase
         Config::set('amoclient.retries', 2);
         Config::set('amoclient.retryDelay', 0);
 
-        Schema::connection('octane')->create('accounts', function ($table) {
+        Schema::connection('octane')->create('accounts', function (Blueprint $table) {
             $table->integer('id')->primary();
             $table->string('subdomain');
             $table->string('domain');
@@ -46,12 +47,12 @@ abstract class ResilienceTestCase extends TestCase
             $table->integer('contact_phone_field_id')->nullable();
             $table->integer('contact_email_field_id')->nullable();
         });
-        Schema::connection('octane')->create('widgets', function ($table) {
+        Schema::connection('octane')->create('widgets', function (Blueprint $table) {
             $table->increments('id');
             $table->string('client_id');
             $table->string('name');
         });
-        Schema::connection('octane')->create('account_widget', function ($table) {
+        Schema::connection('octane')->create('account_widget', function (Blueprint $table) {
             $table->integer('account_id');
             $table->integer('widget_id');
             $table->boolean('active')->default(true);
