@@ -265,7 +265,7 @@ class NoteTest extends BaseAmoClient
 
         $this->assertEquals($sortedIds, $ids);
 
-        $filtered6 = $lead->notes->orderUpdatedAtAsc()->get();
+        $filtered6 = $lead->notes->orderByUpdatedAtAsc()->get();
         // Проверка, что массив не пустой
         $this->assertNotEmpty($filtered6);
 
@@ -276,7 +276,7 @@ class NoteTest extends BaseAmoClient
 
         $this->assertEquals($sortedUpdatedAtsAsc, $updatedAtsAsc);
 
-        $filtered7 = $lead->notes->orderUpdatedAtDesc()->get();
+        $filtered7 = $lead->notes->orderByUpdatedAtDesc()->get();
 
         // Проверка, что массив не пустой
         $this->assertNotEmpty($filtered7);
