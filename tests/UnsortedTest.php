@@ -114,21 +114,15 @@ class UnsortedTest extends BaseAmoClient
 
         $created2 = $sipEntity2->create();
 
-        // Проверка сортировки по created_at asc
+        /* orderCreatedAtAsc()/orderCreatedAtDesc() сняты: зонд лида показал, что order[created_at]
+         * на роуте неотсортированных не применяется вовсе — выдача всегда от новых к старым
+         * независимо от направления. Единственная реальная проверка — этот фиксированный порядок
+         * по умолчанию. created_at сравниваем как целые числа: это unix-таймстамп, не строка даты —
+         * старые ассерты гоняли его через strtotime(), которая на числовой строке отдаёт false,
+         * и оба ассерта молча сравнивали false с false, зелёные при любых данных и любом поведении API. */
         $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
-        $sortedAsc = $this->amoClient->unsorted->orderCreatedAtAsc()->get();
-        $this->assertLessThanOrEqual(
-            strtotime($sortedAsc[1]['created_at']),
-            strtotime($sortedAsc[0]['created_at'])
-        );
-
-        // Проверка сортировки по created_at desc
-        $this->amoClient->unsorted = new Unsorted($this->amoClient->http);
-        $sortedDesc = $this->amoClient->unsorted->orderCreatedAtDesc()->get();
-        $this->assertGreaterThanOrEqual(
-            strtotime($sortedDesc[1]['created_at']),
-            strtotime($sortedDesc[0]['created_at'])
-        );
+        $listed = $this->amoClient->unsorted->get();
+        $this->assertGreaterThanOrEqual((int) $listed[1]['created_at'], (int) $listed[0]['created_at']);
 
         /* accept(), в отличие от decline(), отдаёт настоящий id лида в ответе — трекаем сразу,
          * до ассертов ниже: упавший assert оставил бы созданный лид без ручной уборки (она —
