@@ -17,7 +17,7 @@ class ContactTest extends BaseAmoClient
         parent::setUp();
 
         $this->data = [
-            'name' => 'Test Contact',
+            'name' => $this->marked('Test Contact'),
         ];
 
         $this->contact = $this->amoClient->contacts->entity();
@@ -52,7 +52,7 @@ class ContactTest extends BaseAmoClient
     #[Depends('test_contact_create')]
     public function test_contact_update(int $contactId)
     {
-        $newName = 'Test Contact 2';
+        $newName = $this->marked('Test Contact 2');
         $contactCustomFieldId = null;
         $positionFieldExists = false;
 

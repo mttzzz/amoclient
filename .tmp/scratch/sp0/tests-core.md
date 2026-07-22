@@ -3,6 +3,36 @@
 Зона: 13 файлов из промпта лида. Ниже — по каждому файлу таблица «тест → тип → где создаётся → затрекан/нет/почему».
 Контракт `BaseAmoClient::track(string $type, int $id): int` — реализует `teardown-core` параллельно; я его не трогал, только вызываю.
 
+## Второй проход (маркер в payload, `BaseAmoClient::marked(string $value): string`, `teardown-core-2`)
+
+Задача: каждая сущность должна нести маркер не только в реестре (in-memory), но и в своих
+данных — иначе после фатала до `tearDownAfterClass()` она пропадёт из реестра вместе с процессом,
+а свип по маркеру её уже не найдёт. Прошёл те же 5 файлов, где что-то реально создаётся:
+
+| Файл | Что промаркировано |
+|---|---|
+| `AbstractModelTest.php` | `$name = $this->marked(uniqid('name_', true))` в `test_all_items`/`test_each` — единственная переменная, используется и в `entityData`, и в `filterName`, и в ассерте, конфликтов нет |
+| `CallTest.php` | `$source = $this->marked('asterisk')` — поле `source` звонка (в этой либе у `Call` нет вложенного `params`, `source`/`link` — верхнеуровневые свойства; выбрал `source`, т.к. `link` семантически URL и суффикс мог бы выглядеть как порча ссылки, хотя технически либа шлёт его как строку без валидации формата) |
+| `CatalogTest.php` | `setUp()`: `'name' => $this->marked('Test Catalog')`; `test_catalog_update`: `$newName = $this->marked('Test Catalog2')`; `test_catalog_element`: оба элемента (`'test element'`, `'TestElement entityData'` — второй завёл в переменную `$elementName2`, т.к. был буквально продублирован в ассерте) + переименование `'test 3'` при `update()` элемента |
+| `CompanyTest.php` | `setUp()`: `'name' => $this->marked('Test Company')`; `test_company_update`: `$newName = $this->marked('Test Company 2')` |
+| `ContactTest.php` | симметрично Company: `setUp()` + `test_contact_update` |
+
+**Осознанно НЕ тронул** (важно, чтобы не сломать автозаменой): `test_company_query('Test Company')`
+и `test_contact_query('Test Contact')` — литерал там не сравнивается в ассерте с промаркированной
+строкой, а используется как full-text `query()` поиск amo (substring/prefix-match) уже
+переименованной к моменту выполнения (порядок #[Depends]: `update` идёт раньше `query`) сущности.
+Короткий немаркированный литерал `'Test Company'` остаётся substring-совпадением независимо от
+того, добавляет ли `marked()` суффикс или префикс к полному имени (`'Test Company 2 <маркер>'`
+или `'<маркер> Test Company 2'` — оба содержат `'Test Company'` как подстроку). Если бы я
+пробросил туда `$this->data['name']` (= `marked('Test Company')`), а `marked()` добавляет суффикс,
+после `test_company_update` строка поиска `'Test Company <маркер>'` перестала бы быть подстрокой
+фактического имени `'Test Company 2 <маркер>'` (переставился порядок токенов) — тест сломался бы
+именно тем самым автозаменочным рефлексом, от которого лид предостерёг.
+
+`marked()` в `BaseAmoClient` ещё не существует на момент написания (её добавляет `teardown-core-2`
+параллельно) — вызовы написаны по контракту из сообщения лида, компиляция ждёт их коммита, как
+раньше было с `track()`.
+
 ## tests/AbstractModelTest.php
 
 | Тест | Тип | Где создаётся | Статус |

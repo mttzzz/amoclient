@@ -12,7 +12,7 @@ class AbstractModelTest extends BaseAmoClient
 
     public function test_all_items()
     {
-        $name = uniqid('name_', true);
+        $name = $this->marked(uniqid('name_', true));
         $leadId = $this->track('leads', $this->amoClient->leads->entityData(['name' => $name])->createGetId());
         $leads = $this->amoClient->leads->filterName($name)->allItems();
         $this->assertEquals($name, $leads[0]['name']);
@@ -24,7 +24,7 @@ class AbstractModelTest extends BaseAmoClient
 
     public function test_each()
     {
-        $name = uniqid('name_', true);
+        $name = $this->marked(uniqid('name_', true));
         $leadId = $this->track('leads', $this->amoClient->leads->entityData(['name' => $name])->createGetId());
         $leadId2 = $this->track('leads', $this->amoClient->leads->entityData(['name' => $name])->createGetId());
         $this->amoClient->leads->filterName($name)->each(function ($chunk) use ($name) {

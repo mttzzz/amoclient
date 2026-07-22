@@ -11,7 +11,7 @@ class CallTest extends BaseAmoClient
     {
         $phone = '375296117699';
         $link = 'https://ya.ru';
-        $source = 'asterisk';
+        $source = $this->marked('asterisk');
         $duration = 0;
         $uniq = rand();
 
