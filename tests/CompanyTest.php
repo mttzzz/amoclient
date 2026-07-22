@@ -17,7 +17,7 @@ class CompanyTest extends BaseAmoClient
         parent::setUp();
 
         $this->data = [
-            'name' => 'Test Company',
+            'name' => $this->marked('Test Company'),
         ];
 
         $this->company = $this->amoClient->companies->entity();
@@ -46,13 +46,13 @@ class CompanyTest extends BaseAmoClient
 
         $created = $response['_embedded']['companies'][0];
 
-        return $created['id'];
+        return $this->track('companies', $created['id']);
     }
 
     #[Depends('test_company_create')]
     public function test_company_update(int $companyId)
     {
-        $newName = 'Test Company 2';
+        $newName = $this->marked('Test Company 2');
         $this->company->id = $companyId;
         $this->company->name = $newName;
         $this->company->phoneSet(['11111111111', '22222222222']);
@@ -180,7 +180,7 @@ class CompanyTest extends BaseAmoClient
 
     public function test_company_create_get_id()
     {
-        $id = $this->company->createGetId();
+        $id = $this->track('companies', $this->company->createGetId());
         $this->assertIsInt($id);
 
         $response = $this->amoClient->ajax->postForm('/ajax/companies/multiple/delete/', ['ID' => [$id]]);

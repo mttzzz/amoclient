@@ -37,6 +37,8 @@ class User extends AbstractModel
      */
     public function find(int $id): array
     {
-        return $this->http->get("$this->entity/$id")->throw()->json();
+        $result = $this->http->get("$this->entity/$id")->throw()->json();
+
+        return is_array($result) ? $result : [];
     }
 }

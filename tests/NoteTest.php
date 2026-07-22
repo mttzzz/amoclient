@@ -19,7 +19,7 @@ class NoteTest extends BaseAmoClient
         parent::setUp();
 
         $this->lead = $this->amoClient->leads->entity();
-        $this->lead->name = 'Test Lead';
+        $this->lead->name = $this->marked('Test Lead');
         $this->lead->price = 1000;
         $this->lead->status_id = 142;
 
@@ -40,14 +40,14 @@ class NoteTest extends BaseAmoClient
         $created = $response['_embedded']['leads'][0];
         $this->lead->id = $created['id'];
 
-        return $created['id'];
+        return $this->track('leads', $created['id']);
     }
 
     #[Depends('test_lead_create')]
     public function test_note_common_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->common('test text');
+        $response = $lead->notes->entity()->common($this->marked('test text'));
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -67,14 +67,16 @@ class NoteTest extends BaseAmoClient
         $this->assertIsArray($filtered2);
         $this->assertEmpty($filtered2);
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
     public function test_note_call_in_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->callIn('unique_id', 120, 'http://example.com', '1234567890');
+        /* у callIn()/callOut() нет отдельного params.text — маркер кладём в params.link,
+         * второй из допустимых по контракту вариантов (§ marked()-требование от лида). */
+        $response = $lead->notes->entity()->callIn('unique_id', 120, $this->marked('http://example.com'), '1234567890');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -90,14 +92,16 @@ class NoteTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $filtered[0]);
         $this->assertEquals($created['id'], $filtered[0]['id']);
 
-        return $created['id'];
+        /* callIn()/callOut() создают note с note_type=call_in|call_out — семантически "звонок",
+         * в контракте track() отдельный тип 'calls', см. §7.6 research doc. */
+        return $this->track('calls', $created['id']);
     }
 
     #[Depends('test_lead_create')]
     public function test_note_call_out_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->callOut('unique_id', 120, 'http://example.com', '1234567890');
+        $response = $lead->notes->entity()->callOut('unique_id', 120, $this->marked('http://example.com'), '1234567890');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -113,14 +117,14 @@ class NoteTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $filtered[0]);
         $this->assertEquals($created['id'], $filtered[0]['id']);
 
-        return $created['id'];
+        return $this->track('calls', $created['id']);
     }
 
     #[Depends('test_lead_create')]
     public function test_note_service_message_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->serviceMessage('Текст для примечания', 'Сервис для примера');
+        $response = $lead->notes->entity()->serviceMessage($this->marked('Текст для примечания'), 'Сервис для примера');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -131,14 +135,14 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
     public function test_note_message_cashier_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->messageCashier('created', 'test text');
+        $response = $lead->notes->entity()->messageCashier('created', $this->marked('test text'));
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -149,14 +153,14 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
     public function test_note_invoice_paid_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->invoicePaid('test text', 'test service', 'http://example.com/icon.png');
+        $response = $lead->notes->entity()->invoicePaid($this->marked('test text'), 'test service', 'http://example.com/icon.png');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -167,14 +171,14 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
     public function test_note_geolocation_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->geolocation('test text', 'test address', '123.456', '78.910');
+        $response = $lead->notes->entity()->geolocation($this->marked('test text'), 'test address', '123.456', '78.910');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -185,14 +189,14 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
     public function test_note_sms_in_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->smsIn('test text', '1234567890');
+        $response = $lead->notes->entity()->smsIn($this->marked('test text'), '1234567890');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -203,7 +207,7 @@ class NoteTest extends BaseAmoClient
 
         $created = $response['_embedded']['notes'][0];
 
-        return $created['id'];
+        return $this->track('notes', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -218,7 +222,7 @@ class NoteTest extends BaseAmoClient
     public function test_note_sms_out_create(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->notes->entity()->smsOut('test text', '1234567890');
+        $response = $lead->notes->entity()->smsOut($this->marked('test text'), '1234567890');
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -228,6 +232,7 @@ class NoteTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $response['_embedded']['notes'][0]);
 
         $created = $response['_embedded']['notes'][0];
+        $this->track('notes', $created['id']);
 
         $filtered2 = $lead->notes->filterUpdatedAt(time() - 1000, time() + 1000)->get();
         $this->assertIsArray($filtered2);
@@ -237,7 +242,7 @@ class NoteTest extends BaseAmoClient
         $this->assertIsArray($filtered3);
         $this->assertEmpty($filtered3);
 
-        $filtered4 = $lead->notes->filterUpdatedAt(time() - 1000, time() + 1000)->orderIdAsc()->get();
+        $filtered4 = $lead->notes->filterUpdatedAt(time() - 1000, time() + 1000)->orderByIdAsc()->get();
         // Проверка, что массив не пустой
         $this->assertNotEmpty($filtered4);
 
@@ -248,7 +253,7 @@ class NoteTest extends BaseAmoClient
 
         $this->assertEquals($sortedIds, $ids);
 
-        $filtered5 = $lead->notes->filterUpdatedAt(time() - 1000, time() + 1000)->orderIdDesc()->get();
+        $filtered5 = $lead->notes->filterUpdatedAt(time() - 1000, time() + 1000)->orderByIdDesc()->get();
 
         // Проверка, что массив не пустой
         $this->assertNotEmpty($filtered5);
@@ -260,7 +265,7 @@ class NoteTest extends BaseAmoClient
 
         $this->assertEquals($sortedIds, $ids);
 
-        $filtered6 = $lead->notes->orderUpdatedAtAsc()->get();
+        $filtered6 = $lead->notes->orderByUpdatedAtAsc()->get();
         // Проверка, что массив не пустой
         $this->assertNotEmpty($filtered6);
 
@@ -271,7 +276,7 @@ class NoteTest extends BaseAmoClient
 
         $this->assertEquals($sortedUpdatedAtsAsc, $updatedAtsAsc);
 
-        $filtered7 = $lead->notes->orderUpdatedAtDesc()->get();
+        $filtered7 = $lead->notes->orderByUpdatedAtDesc()->get();
 
         // Проверка, что массив не пустой
         $this->assertNotEmpty($filtered7);
@@ -303,5 +308,10 @@ class NoteTest extends BaseAmoClient
         $this->assertIsArray($response);
         $this->assertArrayHasKey('status', $response);
         $this->assertEquals('success', $response['status']);
+        /* лид снесён вручную — снимаем его с учёта. Дети (notes/calls, затреканные выше по
+         * #[Depends]-цепочке) уходят с ним каскадом, но остаются в реестре: их forget() тут
+         * не сделать безопасно — #[Depends] с одним параметром не даёт их id в этой области
+         * видимости, см. флаг лиду. */
+        self::registry()->forget('leads', $leadId);
     }
 }

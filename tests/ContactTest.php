@@ -17,7 +17,7 @@ class ContactTest extends BaseAmoClient
         parent::setUp();
 
         $this->data = [
-            'name' => 'Test Contact',
+            'name' => $this->marked('Test Contact'),
         ];
 
         $this->contact = $this->amoClient->contacts->entity();
@@ -46,13 +46,13 @@ class ContactTest extends BaseAmoClient
 
         $created = $response['_embedded']['contacts'][0];
 
-        return $created['id'];
+        return $this->track('contacts', $created['id']);
     }
 
     #[Depends('test_contact_create')]
     public function test_contact_update(int $contactId)
     {
-        $newName = 'Test Contact 2';
+        $newName = $this->marked('Test Contact 2');
         $contactCustomFieldId = null;
         $positionFieldExists = false;
 
@@ -199,7 +199,7 @@ class ContactTest extends BaseAmoClient
 
     public function test_contact_create_get_id()
     {
-        $id = $this->contact->createGetId();
+        $id = $this->track('contacts', $this->contact->createGetId());
         $this->assertIsInt($id);
 
         $response = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$id]]);

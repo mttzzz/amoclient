@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\DB;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
@@ -65,21 +66,21 @@ class Lead extends AbstractEntity
     public bool $is_price_computed;
 
     /**
-     * @var array<mixed>
+     * @var array<int, array<string, mixed>>
      */
     public array $custom_fields_values = [];
 
     /**
-     * @var array<mixed>
+     * @var array<string, array<int, array<string, mixed>>>
      */
     public array $_embedded = [];
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      * @param  array<mixed>  $cf
      * @param  array<mixed>  $enums
      */
-    public function __construct($data, PendingRequest $http, array $cf, array $enums)
+    public function __construct(array $data, PendingRequest $http, array $cf, array $enums, Deleter $deleter)
     {
         parent::__construct($data, $http);
         $this->entity = 'leads';
@@ -87,7 +88,7 @@ class Lead extends AbstractEntity
         $this->enums = $enums;
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
-        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
+        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id, $deleter);
     }
 
     /**
@@ -96,7 +97,9 @@ class Lead extends AbstractEntity
     public function complex(): array
     {
         try {
-            return $this->http->post($this->entity.'/complex', [$this->toArray()])->throw()->json();
+            $result = $this->http->post($this->entity.'/complex', [$this->toArray()])->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
@@ -118,8 +121,10 @@ class Lead extends AbstractEntity
             throw new Exception('add withContacts() before call this function');
         }
         foreach ($this->_embedded['contacts'] as $contact) {
-            if ($contact['is_main']) {
-                return $contact['id'];
+            if ($contact['is_main'] ?? false) {
+                $id = $contact['id'] ?? null;
+
+                return is_numeric($id) ? (int) $id : null;
             }
         }
 
@@ -128,14 +133,22 @@ class Lead extends AbstractEntity
 
     public function getCompanyId(): ?int
     {
-        return $this->_embedded['companies'][0]['id'] ?? null;
+        $companyId = $this->_embedded['companies'][0]['id'] ?? null;
+
+        return is_numeric($companyId) ? (int) $companyId : null;
     }
 
     public function getCompanyName(): string
     {
         $companyId = $this->getCompanyId();
 
-        return $companyId ? $this->http->get("companies/$companyId")->json('name') : '';
+        if (! $companyId) {
+            return '';
+        }
+
+        $name = $this->http->get("companies/$companyId")->json('name');
+
+        return is_string($name) ? $name : '';
     }
 
     public function getPipelineName(): string
@@ -155,24 +168,23 @@ class Lead extends AbstractEntity
     public function getCatalogElementIds(int $catalogId): array
     {
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
-        foreach ($catalogElementIds as $key => &$catalogElementId) {
-            if ((int) $catalogElementId['metadata']['catalog_id'] === (int) $catalogId) {
-                $catalogElementId = $catalogElementId['id'];
-            } else {
-                unset($catalogElementIds[$key]);
+        $result = [];
+        foreach ($catalogElementIds as $key => $catalogElementId) {
+            if (self::catalogElementMetadataCatalogId($catalogElementId) === $catalogId) {
+                $result[$key] = self::catalogElementId($catalogElementId);
             }
         }
 
-        return $catalogElementIds;
+        return $result;
     }
 
     public function getCatalogQuantity(int $catalogId): int|float
     {
         $quantity = 0;
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
-        foreach ($catalogElementIds as $key => $catalogElementId) {
-            if ((int) $catalogElementId['metadata']['catalog_id'] === (int) $catalogId) {
-                $quantity += $catalogElementId['metadata']['quantity'];
+        foreach ($catalogElementIds as $catalogElementId) {
+            if (self::catalogElementMetadataCatalogId($catalogElementId) === $catalogId) {
+                $quantity += self::catalogElementMetadataQuantity($catalogElementId);
             }
         }
 
@@ -182,9 +194,9 @@ class Lead extends AbstractEntity
     public function getCatalogElementQuantity(int $catalogId, int $elementId): float|int
     {
         $catalogElementIds = $this->_embedded['catalog_elements'] ?? [];
-        foreach ($catalogElementIds as $key => $catalogElementId) {
-            if ((int) $catalogElementId['metadata']['catalog_id'] === (int) $catalogId && (int) $elementId == (int) $catalogElementId['id']) {
-                return $catalogElementId['metadata']['quantity'];
+        foreach ($catalogElementIds as $catalogElementId) {
+            if (self::catalogElementMetadataCatalogId($catalogElementId) === $catalogId && $elementId === self::catalogElementId($catalogElementId)) {
+                return self::catalogElementMetadataQuantity($catalogElementId);
             }
         }
 
@@ -201,9 +213,48 @@ class Lead extends AbstractEntity
         }
         $ids = [];
         foreach ($this->_embedded['contacts'] as $contact) {
-            $ids[] = $contact['id'];
+            $id = $contact['id'] ?? null;
+            if (is_numeric($id)) {
+                $ids[] = (int) $id;
+            }
         }
 
         return $ids;
+    }
+
+    /**
+     * catalog_elements[i]['metadata']['catalog_id'] — вложенная структура
+     * из ответа amo, значение по ключу типизировано как mixed; гардим
+     * is_array/is_numeric вместо каста mixed напрямую.
+     *
+     * @param  array<string, mixed>  $catalogElement
+     */
+    private static function catalogElementMetadataCatalogId(array $catalogElement): int
+    {
+        $metadata = $catalogElement['metadata'] ?? null;
+        $catalogId = is_array($metadata) ? ($metadata['catalog_id'] ?? null) : null;
+
+        return is_numeric($catalogId) ? (int) $catalogId : 0;
+    }
+
+    /**
+     * @param  array<string, mixed>  $catalogElement
+     */
+    private static function catalogElementMetadataQuantity(array $catalogElement): int|float
+    {
+        $metadata = $catalogElement['metadata'] ?? null;
+        $quantity = is_array($metadata) ? ($metadata['quantity'] ?? null) : null;
+
+        return is_numeric($quantity) ? $quantity + 0 : 0;
+    }
+
+    /**
+     * @param  array<string, mixed>  $catalogElement
+     */
+    private static function catalogElementId(array $catalogElement): int
+    {
+        $id = $catalogElement['id'] ?? null;
+
+        return is_numeric($id) ? (int) $id : 0;
     }
 }

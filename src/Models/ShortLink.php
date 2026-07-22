@@ -21,14 +21,16 @@ class ShortLink extends AbstractModel
     }
 
     /**
-     * @param  array<mixed>  $entities
+     * @param  list<Entities\AbstractEntity>  $entities
      * @return array<mixed>
      */
     public function create(array $entities): array
     {
         try {
             if (! empty($entities)) {
-                return $this->http->post($this->entity, $this->prepareEntities($entities))->throw()->json();
+                $result = $this->http->post($this->entity, $this->prepareEntities($entities))->throw()->json();
+
+                return is_array($result) ? $result : [];
             }
 
             return [];

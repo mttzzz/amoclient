@@ -3,6 +3,7 @@
 namespace mttzzz\AmoClient\Entities;
 
 use Illuminate\Http\Client\PendingRequest;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Models\CatalogElement;
 use mttzzz\AmoClient\Traits;
@@ -23,12 +24,12 @@ class Catalog extends AbstractEntity
 
     public string $test;
 
-    public function __construct($data, PendingRequest $http)
+    public function __construct($data, PendingRequest $http, Deleter $deleter)
     {
         parent::__construct($data, $http);
         $this->entity = 'catalogs';
         if ($this->id !== null) {
-            $this->elements = new CatalogElement($http, $this->id);
+            $this->elements = new CatalogElement($http, $this->id, $deleter);
         }
     }
 

@@ -21,7 +21,7 @@ class TaskTest extends BaseAmoClient
         parent::setUp();
 
         $this->lead = $this->amoClient->leads->entity();
-        $this->lead->name = 'Test Lead';
+        $this->lead->name = $this->marked('Test Lead');
         $this->lead->price = 1000;
         $this->lead->status_id = 142;
     }
@@ -40,7 +40,7 @@ class TaskTest extends BaseAmoClient
         $created = $response['_embedded']['leads'][0];
         $this->lead->id = $created['id'];
 
-        return $created['id'];
+        return $this->track('leads', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -57,7 +57,7 @@ class TaskTest extends BaseAmoClient
     public function test_task_add(int $leadId)
     {
         $lead = $this->amoClient->leads->entity($leadId);
-        $response = $lead->tasks->add('Test Task', null, time() + 3600, 3600, 1);
+        $response = $lead->tasks->add($this->marked('Test Task'), null, time() + 3600, 3600, 1);
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -68,7 +68,7 @@ class TaskTest extends BaseAmoClient
 
         $created = $response['_embedded']['tasks'][0];
 
-        return $created['id'];
+        return $this->track('tasks', $created['id']);
     }
 
     #[Depends('test_task_add')]
@@ -87,7 +87,7 @@ class TaskTest extends BaseAmoClient
 
         $lead = $this->amoClient->leads->entity($leadId);
         $lead->tasks->setResultText('sss');
-        $response = $lead->tasks->add('Test Task', null, time() + 3600, 3600, 1);
+        $response = $lead->tasks->add($this->marked('Test Task'), null, time() + 3600, 3600, 1);
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -97,6 +97,7 @@ class TaskTest extends BaseAmoClient
         $this->assertArrayHasKey('id', $response['_embedded']['tasks'][0]);
 
         $created = $response['_embedded']['tasks'][0];
+        $this->track('tasks', $created['id']);
 
         $aId = 16117840;
         $clientId = '00a140c1-7c52-4563-8b36-03f23754d255';
@@ -135,11 +136,13 @@ class TaskTest extends BaseAmoClient
         $this->amoClient = new AmoClientOctane($aId, $clientId);
         try {
             $customer = $this->amoClient->customers->entityData([
-                'name' => 'Test Customer',
+                'name' => $this->marked('Test Customer'),
                 'next_date' => 1270000,
             ])->create();
-            $this->amoClient->customers
-                ->entity($customer['_embedded']['customers'][0]['id'])->tasks->add('test');
+            $this->track('customers', $customer['_embedded']['customers'][0]['id']);
+            $customerTask = $this->amoClient->customers
+                ->entity($customer['_embedded']['customers'][0]['id'])->tasks->add($this->marked('test'));
+            $this->track('tasks', $customerTask['_embedded']['tasks'][0]['id']);
 
             $filtered8 = $this->amoClient->tasks->filterCustomer()->get();
             $this->assertEquals($filtered8[0]['entity_type'], 'customers');
@@ -196,7 +199,7 @@ class TaskTest extends BaseAmoClient
     {
         $lead = $this->amoClient->leads->entity($leadId);
         $lead->tasks->setResultText('sss');
-        $response = $lead->tasks->add('Test Task', null, time() + 3600, 3600, 1);
+        $response = $lead->tasks->add($this->marked('Test Task'), null, time() + 3600, 3600, 1);
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('_embedded', $response);
@@ -207,7 +210,7 @@ class TaskTest extends BaseAmoClient
 
         $created = $response['_embedded']['tasks'][0];
 
-        return $created['id'];
+        return $this->track('tasks', $created['id']);
     }
 
     #[Depends('test_lead_create')]
@@ -218,5 +221,9 @@ class TaskTest extends BaseAmoClient
         $this->assertIsArray($response);
         $this->assertArrayHasKey('status', $response);
         $this->assertEquals('success', $response['status']);
+        /* лид снесён вручную — снимаем его с учёта. Затреканные на этом лиде задачи
+         * (test_task_add и др.) уходят каскадом, но остаются в реестре — см. флаг лиду,
+         * тот же случай, что в NoteTest::test_lead_delete. */
+        self::registry()->forget('leads', $leadId);
     }
 }

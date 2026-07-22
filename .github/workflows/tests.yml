@@ -1,0 +1,100 @@
+name: tests
+
+# Матрица честности по Laravel. Либа dev-собрана на 13.x, а оба её потребителя
+# (octane, masterm) стоят в проде на 12.x — то есть ветка, на которой код
+# реально работает у пользователей, не проверялась ни разу. Пока прогонов на
+# 12.x нет, строчка «поддерживаем 12 и 13» в composer.json — обещание без
+# доказательства; эта джоба превращает его в проверяемое.
+#
+# Чего здесь намеренно НЕТ и почему: интеграционный сьют (`tests/*Test.php`,
+# всё, что наследует BaseAmoClient). Он создаёт живые сущности в боевом
+# аккаунте amo 16117840 и берёт токен из локальной копии прод-Postgres
+# (octane_pushka_biz). В CI нет ни аккаунта, ни базы, а несколько параллельных
+# прогонов против одного боевого аккаунта эскалируют 429 → 403 и блокируют его
+# целиком — включая рабочие интеграции клиента. Поэтому CI гоняет только то,
+# что в нём реально может пройти: `tests/Support` (чистая логика) и
+# `tests/Resilience` (Http::fake + sqlite in-memory). Интеграционный сьют
+# гоняется руками, последовательно, командой `composer test`.
+#
+# Стилевого гейта (`composer lint`) здесь тоже нет намеренно: release.yml на
+# master сам прогоняет pint и коммитит правки. Второй, блокирующий, гейт на тот
+# же стиль сделал бы PR красным за то, что мастер чинит автоматически.
+
+on:
+  push:
+    branches:
+      - master
+      - sp0-safety-net # рабочая ветка SP0; убрать строку после мержа
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.4']
+        laravel: ['12', '13']
+        include:
+          # testbench жёстко привязан к мажору фреймворка: 10.x → Laravel 12.x,
+          # 11.x → Laravel 13.x. Подменить один illuminate/http недостаточно —
+          # testbench утащит обратно свою ветку, и лег «Laravel 12» окажется
+          # фикцией, зелёной по недоразумению.
+          - laravel: '12'
+            illuminate: '^12.0'
+            testbench: '^10.1'
+          - laravel: '13'
+            illuminate: '^13.0'
+            testbench: '^11.1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, json, sqlite3, pdo_sqlite
+          coverage: none
+
+      # --strict: предупреждения валидатора здесь — дефекты упаковки, а не шум.
+      # Ровно так вскрылось, что либа не объявляла illuminate/http в require,
+      # хотя вся её поверхность построена на нём.
+      #
+      # --no-check-lock намеренно: composer.lock пинит одну ветку Laravel, а
+      # каждый лег матрицы пересобирает дерево под свою. Расхождение лока с
+      # легом здесь ожидаемо и ни о чём не сигналит.
+      - name: Валидация composer.json
+        run: composer validate --strict --no-check-lock
+
+      # --with, а не `composer require`: временный constraint не переписывает
+      # composer.json в рабочей копии, поэтому лег не может утечь в артефакты
+      # сборки. Обе подстановки — подмножества root-constraint'ов
+      # (^12.0 ⊂ ^12.0|^13.0, ^10.1 ⊂ ^10.1|^11.1), иначе composer откажет.
+      - name: Собрать дерево под Laravel ${{ matrix.laravel }}
+        run: >
+          composer update --prefer-dist --no-interaction --no-progress
+          --with "illuminate/http:${{ matrix.illuminate }}"
+          --with "orchestra/testbench:${{ matrix.testbench }}"
+
+      # Без этой проверки матрица остаётся номинальной: если resolver по любой
+      # причине отдаст не ту ветку, лег всё равно позеленеет и мы решим, что
+      # Laravel 12 проверен.
+      - name: Проверить, что встала заказанная ветка Laravel
+        run: |
+          installed=$(composer show laravel/framework | awk '/^versions/ {print $NF}')
+          echo "laravel/framework: $installed"
+          case "$installed" in
+            v${{ matrix.laravel }}.*) echo "ветка совпала с заказанной" ;;
+            *) echo "::error::ожидали Laravel ${{ matrix.laravel }}.x, встало $installed"; exit 1 ;;
+          esac
+
+      - name: phpstan (level max)
+        run: composer stan
+
+      - name: Тесты без сети и без amo
+        run: composer test:offline

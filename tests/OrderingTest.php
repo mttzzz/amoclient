@@ -2,7 +2,7 @@
 
 namespace mttzzz\AmoClient\Tests;
 
-class OrderTraitTest extends BaseAmoClient
+class OrderingTest extends BaseAmoClient
 {
     public function test_order_by_created_at_asc()
     {
@@ -10,6 +10,7 @@ class OrderTraitTest extends BaseAmoClient
         $this->assertIsArray($leads);
         $updatedAts = array_column($leads, 'created_at');
         $sortedUpdatedAtsAsc = $updatedAts;
+        sort($sortedUpdatedAtsAsc);
         $this->assertEquals($sortedUpdatedAtsAsc, $updatedAts);
     }
 

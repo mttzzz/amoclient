@@ -7,6 +7,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\DB;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
+use stdClass;
 
 trait CrudEntityTrait
 {
@@ -24,7 +25,9 @@ trait CrudEntityTrait
     public function update(): array
     {
         try {
-            return $this->http->patch($this->entity, [$this->toArray()])->throw()->json();
+            $result = $this->http->patch($this->entity, [$this->toArray()])->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
         }
@@ -38,7 +41,9 @@ trait CrudEntityTrait
     public function create(): array
     {
         try {
-            return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
+            $result = $this->http->post($this->entity, [$this->toArray()])->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
         }
@@ -49,7 +54,12 @@ trait CrudEntityTrait
      */
     public function createGetId(): int
     {
-        return $this->create()['_embedded'][$this->entity][0]['id'];
+        $embedded = $this->create()['_embedded'] ?? null;
+        $items = is_array($embedded) ? ($embedded[$this->entity] ?? null) : null;
+        $item = is_array($items) ? ($items[0] ?? null) : null;
+        $id = is_array($item) ? ($item['id'] ?? null) : null;
+
+        return is_numeric($id) ? (int) $id : 0;
     }
 
     public function setResponsibleUser(int $accountId, int $id): void
@@ -77,6 +87,12 @@ trait CrudEntityTrait
 
         $user = DB::connection('octane')->table('amo_users')->find($this->responsible_user_id);
 
-        return $user->name;
+        if (! $user instanceof stdClass) {
+            return null;
+        }
+
+        $name = $user->name ?? null;
+
+        return is_string($name) ? $name : null;
     }
 }

@@ -19,7 +19,7 @@ class Link extends AbstractEntity
     public array $metadata = [];
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      */
     public function __construct(array $data, PendingRequest $http, string $entity)
     {
@@ -34,7 +34,9 @@ class Link extends AbstractEntity
     {
         $str = Str::beforeLast($this->entity, '/');
         try {
-            return $this->http->post("$str/link", [$this->toArray()])->throw()->json();
+            $result = $this->http->post("$str/link", [$this->toArray()])->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
@@ -44,7 +46,9 @@ class Link extends AbstractEntity
     {
         $str = Str::beforeLast($this->entity, '/');
         try {
-            return $this->http->post("$str/unlink", [$this->toArray()])->throw()->json();
+            $this->http->post("$str/unlink", [$this->toArray()])->throw()->json();
+
+            return null;
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }

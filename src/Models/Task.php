@@ -3,17 +3,47 @@
 namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
+use mttzzz\AmoClient\Exceptions\AmoUnknownException;
 use mttzzz\AmoClient\Traits;
 
 class Task extends AbstractModel
 {
     use Traits\CrudTrait;
 
-    public function __construct(PendingRequest $http)
+    /* Поля по замеру §9.4: у задач работают id, created_at, complete_till.
+     * updated_at игнорируется — `asc` и `desc` дают одну и ту же страницу при
+     * HTTP 200, поэтому трейта ByUpdatedAt здесь нет и быть не должно. */
+    use Traits\Order\ByCompleteTill, Traits\Order\ByCreatedAt, Traits\Order\ById;
+
+    protected Deleter $deleter;
+
+    public function __construct(PendingRequest $http, Deleter $deleter)
     {
         parent::__construct($http);
         $this->entity = 'tasks';
+        $this->deleter = $deleter;
+    }
+
+    /**
+     * Удаление задач. Публичного механизма у амо нет — работает только
+     * приватный роут, поэтому ярус semver третий: обещается не «работает
+     * всегда», а «ломается громко и чинится patch-ом» (детали — в Deleter).
+     *
+     * @param  int|list<int>  $ids
+     * @return bool false — амо ответил HTTP 400 `{"status":"fail","id":N}`,
+     *              то есть задачи уже нет. «Уже нет» приходит здесь ошибочным
+     *              статусом, а не полем в теле двухсотки — разбирает это
+     *              Deleter, вызывающему достаточно bool
+     *
+     * @throws AmoCustomException
+     * @throws AmoUnknownException
+     */
+    public function delete(int|array $ids): bool
+    {
+        return $this->deleter->tasks($ids);
     }
 
     public function entity(?int $id = null): Entities\Task
@@ -111,20 +141,6 @@ class Task extends AbstractModel
     public function filterUpdatedAt(int $from, int $to): self
     {
         $this->filter['updated_at'] = ['from' => $from, 'to' => $to];
-
-        return $this;
-    }
-
-    public function orderByCompleteDesc(): self
-    {
-        $this->order['complete_till'] = 'desc';
-
-        return $this;
-    }
-
-    public function orderByCompleteAsc(): self
-    {
-        $this->order['complete_till'] = 'asc';
 
         return $this;
     }

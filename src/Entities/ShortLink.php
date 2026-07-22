@@ -24,7 +24,16 @@ class ShortLink extends AbstractEntity
     public function create(): array
     {
         try {
-            return $this->http->post($this->entity, [$this->toArray()])->throw()->json();
+            $result = $this->http->post($this->entity, [$this->toArray()])->throw()->json();
+            if (! is_array($result)) {
+                return [];
+            }
+
+            /* json() декодит объект amo API всегда с string-ключами, но
+             * стаб Response::json() типизирован как mixed — is_array()
+             * даёт array<mixed>, а не array<string, mixed>. */
+            /** @var array<string, mixed> $result */
+            return $result;
             // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
@@ -34,7 +43,12 @@ class ShortLink extends AbstractEntity
 
     public function createGetUrl(): string
     {
-        return $this->create()['_embedded']['short_links'][0]['url'];
+        $embedded = $this->create()['_embedded'] ?? null;
+        $shortLinks = is_array($embedded) ? ($embedded['short_links'] ?? null) : null;
+        $firstLink = is_array($shortLinks) ? ($shortLinks[0] ?? null) : null;
+        $url = is_array($firstLink) ? ($firstLink['url'] ?? null) : null;
+
+        return is_string($url) ? $url : '';
     }
 
     public function url(string $url): self

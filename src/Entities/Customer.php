@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Entities;
 use Exception;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
@@ -30,27 +31,27 @@ class Customer extends AbstractEntity
     public int $created_by;
 
     /**
-     * @var array<mixed>
+     * @var array<int, array<string, mixed>>
      */
     public array $custom_fields_values = [];
 
     /**
-     * @var array<mixed>
+     * @var array<string, array<int, array<string, mixed>>>
      */
     public array $_embedded = [];
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      * @param  array<mixed>  $cf
      */
-    public function __construct(array $data, PendingRequest $http, array $cf)
+    public function __construct(array $data, PendingRequest $http, array $cf, Deleter $deleter)
     {
         parent::__construct($data, $http);
         $this->entity = 'customers';
         $this->cf = $cf;
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
-        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
+        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id, $deleter);
     }
 
     /**
@@ -59,7 +60,9 @@ class Customer extends AbstractEntity
     public function complex(): array
     {
         try {
-            return $this->http->post($this->entity.'/complex', [$this->toArray()])->throw()->json();
+            $result = $this->http->post($this->entity.'/complex', [$this->toArray()])->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
@@ -81,8 +84,10 @@ class Customer extends AbstractEntity
             throw new Exception('add withContacts() before call this function');
         }
         foreach ($this->_embedded['contacts'] as $contact) {
-            if ($contact['is_main']) {
-                return $contact['id'];
+            if ($contact['is_main'] ?? false) {
+                $id = $contact['id'] ?? null;
+
+                return is_numeric($id) ? (int) $id : null;
             }
         }
 
@@ -91,7 +96,9 @@ class Customer extends AbstractEntity
 
     public function getCompanyId(): ?int
     {
-        return $this->_embedded['companies'][0]['id'] ?? null;
+        $companyId = $this->_embedded['companies'][0]['id'] ?? null;
+
+        return is_numeric($companyId) ? (int) $companyId : null;
     }
 
     /**
@@ -104,7 +111,10 @@ class Customer extends AbstractEntity
         }
         $ids = [];
         foreach ($this->_embedded['contacts'] as $contact) {
-            $ids[] = $contact['id'];
+            $id = $contact['id'] ?? null;
+            if (is_numeric($id)) {
+                $ids[] = (int) $id;
+            }
         }
 
         return $ids;

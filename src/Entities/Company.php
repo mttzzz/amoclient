@@ -4,6 +4,7 @@ namespace mttzzz\AmoClient\Entities;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Arr;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Models;
 use mttzzz\AmoClient\Traits;
 
@@ -14,12 +15,12 @@ class Company extends AbstractEntity
     public ?string $name;
 
     /**
-     * @var array<mixed>
+     * @var array<int, array<string, mixed>>
      */
     public array $custom_fields_values = [];
 
     /**
-     * @var array<mixed>
+     * @var array<string, array<int, array<string, mixed>>>
      */
     public array $_embedded = [];
 
@@ -32,18 +33,18 @@ class Company extends AbstractEntity
     public int $created_by;
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      * @param  array<mixed>  $cf
      * @param  array<mixed>  $enums
      */
-    public function __construct(array $data, PendingRequest $http, array $cf, array $enums)
+    public function __construct(array $data, PendingRequest $http, array $cf, array $enums, Deleter $deleter)
     {
         parent::__construct($data, $http);
         $this->entity = 'companies';
         $this->cf = $cf;
         $this->enums = $enums;
         // TODO:  сделать одинаково
-        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id);
+        $this->notes = new Models\Note($http, "{$this->entity}/{$this->id}", $this->id, $deleter);
         $this->tasks = new Task(['responsible_user_id' => $this->responsible_user_id], $http, $this->entity, $this->id);
         $this->links = new Models\Link($http, "{$this->entity}/{$this->id}");
     }
@@ -53,8 +54,13 @@ class Company extends AbstractEntity
      */
     public function getLeadIds(): array
     {
-        $leadIds = $this->toArray()['_embedded']['leads'] ?? [];
+        $embedded = $this->toArray()['_embedded'] ?? [];
+        $leads = is_array($embedded) ? ($embedded['leads'] ?? []) : [];
 
-        return count($leadIds) ? Arr::pluck($leadIds, 'id') : [];
+        if (! is_array($leads) || ! count($leads)) {
+            return [];
+        }
+
+        return array_map(static fn ($id) => is_numeric($id) ? (int) $id : 0, Arr::pluck($leads, 'id'));
     }
 }

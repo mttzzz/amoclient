@@ -20,47 +20,57 @@ class Ajax
     }
 
     /**
-     * @param  array<mixed>  $query
+     * @param  array<string, mixed>  $query
      * @return array<mixed>
      */
     public function get(string $url, array $query = []): array
     {
-        return $this->http->get($url, $query)->throw()->json();
+        $result = $this->http->get($url, $query)->throw()->json();
+
+        return is_array($result) ? $result : [];
     }
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      * @return array<mixed>
      */
     public function postJson(string $url, array $data = []): array
     {
-        return $this->http->asJson()->post($url, $data)->throw()->json();
+        $result = $this->http->asJson()->post($url, $data)->throw()->json();
+
+        return is_array($result) ? $result : [];
     }
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      * @return array<mixed>
      */
     public function postForm(string $url, array $data = []): array
     {
-        return $this->http->asForm()->post($url, $data)->throw()->json();
+        $result = $this->http->asForm()->post($url, $data)->throw()->json();
+
+        return is_array($result) ? $result : [];
     }
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      * @return array<mixed>
      */
     public function patch(string $url, array $data = []): array
     {
-        return $this->http->patch($url, $data)->throw()->json();
+        $result = $this->http->patch($url, $data)->throw()->json();
+
+        return is_array($result) ? $result : [];
     }
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      * @return array<mixed>
      */
     public function delete(string $url, array $data = []): array
     {
-        return $this->http->delete($url, $data)->throw()->json();
+        $result = $this->http->delete($url, $data)->throw()->json();
+
+        return is_array($result) ? $result : [];
     }
 }

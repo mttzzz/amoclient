@@ -14,12 +14,12 @@ class CatalogElement extends AbstractEntity
     public int $created_by;
 
     /**
-     * @var array<mixed>
+     * @var array<int, array<string, mixed>>
      */
     public array $custom_fields_values = [];
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      */
     public function __construct(array $data, PendingRequest $http, string $entity)
     {

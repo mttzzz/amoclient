@@ -18,7 +18,7 @@ class CustomerTest extends BaseAmoClient
         parent::setUp();
 
         $this->data = [
-            'name' => 'Test Customer',
+            'name' => $this->marked('Test Customer'),
             'next_date' => 1270000,
 
         ];
@@ -51,13 +51,13 @@ class CustomerTest extends BaseAmoClient
 
         $created = $response['_embedded']['customers'][0];
 
-        return $created['id'];
+        return $this->track('customers', $created['id']);
     }
 
     #[Depends('test_customer_create')]
     public function test_customer_update(int $customerId)
     {
-        $newName = 'Test Customer 2';
+        $newName = $this->marked('Test Customer 2');
         $this->customer->id = $customerId;
         $this->customer->name = $newName;
 
@@ -137,15 +137,18 @@ class CustomerTest extends BaseAmoClient
     {
         $response = $this->amoClient->ajax->postJson('/ajax/v1/customers/set/', ['request' => ['customers' => ['delete' => [$customerId]]]]);
         $this->assertCustomerDeleteAccepted($response);
+        self::registry()->forget('customers', $customerId);
     }
 
     public function test_customer_create_get_id()
     {
         $id = $this->customer->createGetId();
+        $this->track('customers', $id);
         $this->assertIsInt($id);
 
         $response = $this->amoClient->ajax->postJson('/ajax/v1/customers/set/', ['request' => ['customers' => ['delete' => [$id]]]]);
         $this->assertCustomerDeleteAccepted($response);
+        self::registry()->forget('customers', $id);
     }
 
     public function test_customer_not_found()

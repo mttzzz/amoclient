@@ -29,7 +29,7 @@ class Task extends AbstractEntity
     public ?int $complete_till;
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      */
     public function __construct(array $data, PendingRequest $http, string $entityType = 'leads', ?int $entityId = null)
     {

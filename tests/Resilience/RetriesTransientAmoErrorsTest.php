@@ -7,6 +7,7 @@ use GuzzleHttp\Psr7\Response as Psr7Response;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Queue\InteractsWithQueue;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Exceptions\AmoPaymentRequiredException;
 use mttzzz\AmoClient\Queue\RetriesTransientAmoErrors;
@@ -79,7 +80,15 @@ class RetriesTransientAmoErrorsTest extends TestCase
     }
 }
 
+/*
+ * Трейт зовёт `attempts()` и `release()` — их даёт ларавеловский
+ * InteractsWithQueue, а не он сам. Подключаем оба, чтобы заглушка была честной
+ * моделью настоящей джобы: без InteractsWithQueue трейт молча разваливается в
+ * рантайме на первой же транзиентной ошибке, и обнаружилось бы это в проде.
+ * Требование трейта к хосту стоит объявить явно в его phpdoc (хвост в SP1).
+ */
 class DummyAmoJob
 {
+    use InteractsWithQueue;
     use RetriesTransientAmoErrors;
 }

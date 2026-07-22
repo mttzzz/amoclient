@@ -18,7 +18,7 @@ class PipelineTest extends BaseAmoClient
         parent::setUp();
 
         $this->data = [
-            'name' => 'Test Pipeline',
+            'name' => $this->marked('Test Pipeline'),
             'sort' => 10,
             'is_main' => false,
         ];
@@ -50,20 +50,21 @@ class PipelineTest extends BaseAmoClient
         $pipelineEntityWithId = $this->amoClient->pipelines->entity($created['id']);
         $this->assertInstanceOf(Pipeline::class, $pipelineEntityWithId);
 
-        return $created['id'];
+        return $this->track('pipelines', $created['id']);
     }
 
     public function test_pipeline_change_default_statuses()
     {
 
         $pipeline = $this->amoClient->pipelines->entity();
-        $pipeline->name = 'testPipelineChangeSuccessStatus';
+        $pipeline->name = $this->marked('testPipelineChangeSuccessStatus');
         $pipeline->sort = 10;
         $pipeline->is_main = false;
         $pipeline->addStatus('статус 1', 1, '#fffeb2');
         $pipeline->changeSuccessStatus('test_success');
         $pipeline->changeFailStatus('test_fail');
         $pipelineId = $pipeline->create()['_embedded']['pipelines'][0]['id'];
+        $this->track('pipelines', $pipelineId);
 
         $pipeline = $this->amoClient->pipelines->find($pipelineId)->toArray();
         $statuses = $pipeline['_embedded']['statuses'];
@@ -71,16 +72,19 @@ class PipelineTest extends BaseAmoClient
         $this->assertEquals('test_success', $statuses[2]['name']);
         $this->assertEquals('test_fail', $statuses[3]['name']);
 
-        $response = $this->amoClient->ajax->postForm('/ajax/v1/pipelines/delete', ['request' => ['id' => $pipelineId]]);
-        $this->assertEquals(true, $response['response'][$pipelineId]);
-
+        /* Метод либы, не сырой ajax: тест обязан ходить тем же путём, что и потребители
+         * (§9.10 ресёрча — 204 успех, 400 NotSupportedChoice «уже нет», 422 «внутри лиды»,
+         * Deleter сворачивает это в bool). Снёс сам — снял с учёта: иначе реестр держит id,
+         * которого уже нет, и teardown девять раз подряд пытается снести удалённое. */
+        $this->assertTrue($this->amoClient->pipelines->delete($pipelineId));
+        self::registry()->forget('pipelines', $pipelineId);
     }
 
     #[Depends('test_pipeline_create')]
     public function test_pipeline_update(int $pipelineId)
     {
         $pipeline = $this->amoClient->pipelines->entity($pipelineId);
-        $newName = 'Test Pipeline2';
+        $newName = $this->marked('Test Pipeline2');
         $pipeline->name = $newName;
         $response = $pipeline->update();
         $this->assertEquals($newName, $response['name']);
@@ -98,8 +102,8 @@ class PipelineTest extends BaseAmoClient
     #[Depends('test_pipeline_update')]
     public function test_pipeline_delete(int $pipelineId)
     {
-        $response = $this->amoClient->ajax->postForm('/ajax/v1/pipelines/delete', ['request' => ['id' => $pipelineId]]);
-        $this->assertEquals(true, $response['response'][$pipelineId]);
+        $this->assertTrue($this->amoClient->pipelines->delete($pipelineId));
+        self::registry()->forget('pipelines', $pipelineId);
     }
 
     public function test_pipeline_create_exception()

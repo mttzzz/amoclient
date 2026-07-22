@@ -2,7 +2,9 @@
 
 namespace mttzzz\AmoClient\Entities;
 
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 class Webhook extends AbstractEntity
@@ -20,28 +22,50 @@ class Webhook extends AbstractEntity
 
     public int $sort;
 
+    private Deleter $deleter;
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function __construct(array $data, PendingRequest $http, Deleter $deleter)
+    {
+        parent::__construct($data, $http);
+        $this->deleter = $deleter;
+    }
+
     /**
      * @return array<mixed>
      */
     public function subscribe(): array
     {
         try {
-            return $this->http->post($this->entity, [
+            $result = $this->http->post($this->entity, [
                 'destination' => $this->destination,
                 'settings' => $this->settings,
             ])->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
     }
 
-    public function unSubscribe(): null
+    /**
+     * Отписка — настоящий hard delete, а не отключение.
+     *
+     * Возврат сменился с `null` на `bool` осознанно, по той же причине, что и
+     * у `Entities\Source::delete()`: одна операция на двух уровнях (здесь и
+     * `$amo->webhooks->delete()`) обязана отвечать одинаково. Прежний `null`
+     * вдобавок нечего было проверять — `assertNull()` на удалении одинаково
+     * зелен и когда отписались, и когда метод молча ничего не сделал.
+     *
+     * @return bool false — подписки уже нет (404)
+     *
+     * @throws AmoCustomException
+     */
+    public function unSubscribe(): bool
     {
-        try {
-            return $this->http->delete($this->entity, ['destination' => $this->destination])->throw()->json();
-        } catch (RequestException $e) {
-            throw new AmoCustomException($e);
-        }
+        return $this->deleter->webhooks($this->destination);
     }
 
     public function responsibleLead(): self

@@ -3,51 +3,81 @@
 namespace mttzzz\AmoClient\Models;
 
 use Illuminate\Http\Client\PendingRequest;
+use mttzzz\AmoClient\Deleter;
 use mttzzz\AmoClient\Entities;
+use mttzzz\AmoClient\Exceptions\AmoCustomException;
+use mttzzz\AmoClient\Exceptions\AmoUnknownException;
 use mttzzz\AmoClient\Helpers\OctaneAccount;
 use mttzzz\AmoClient\LazyCustomFields;
 use mttzzz\AmoClient\Traits;
 use mttzzz\AmoClient\Traits\Filter;
+use mttzzz\AmoClient\Traits\Order;
 
 class Contact extends AbstractModel
 {
     use Filter\Common, Filter\PhoneEmail;
-    use Traits\CrudTrait, Traits\OrderTrait, Traits\QueryTrait;
+    /* Поля по замеру §9.4: у контактов работают id, updated_at, name.
+     * created_at игнорируется — раньше поставлялся общим трейтом впустую. */
+    use Order\ById, Order\ByName, Order\ByUpdatedAt;
+
+    use Traits\CrudTrait, Traits\QueryTrait;
 
     private LazyCustomFields $lazyCf;
+
+    protected Deleter $deleter;
 
     /**
      * Коллекция примечаний по всем контактам (GET /contacts/notes)
      */
     public Note $notes;
 
-    public function __construct(PendingRequest $http, OctaneAccount $account, LazyCustomFields $lazyCf)
+    public function __construct(PendingRequest $http, OctaneAccount $account, LazyCustomFields $lazyCf, Deleter $deleter)
     {
         $this->fieldPhoneId = $account->contact_phone_field_id;
         $this->fieldEmailId = $account->contact_email_field_id;
         $this->lazyCf = $lazyCf;
+        $this->deleter = $deleter;
         $this->entity = 'contacts';
-        $this->notes = new Note($http, $this->entity, null);
+        $this->notes = new Note($http, $this->entity, null, $deleter);
 
         parent::__construct($http);
     }
 
     public function entity(?int $id = null): Entities\Contact
     {
-        return new Entities\Contact(['id' => $id], $this->http, $this->lazyCf->cf(), $this->lazyCf->enums());
+        return new Entities\Contact(['id' => $id], $this->http, $this->lazyCf->cf(), $this->lazyCf->enums(), $this->deleter);
     }
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      */
     public function entityData(array $data): Entities\Contact
     {
-        return new Entities\Contact($data, $this->http, $this->lazyCf->cf(), $this->lazyCf->enums());
+        return new Entities\Contact($data, $this->http, $this->lazyCf->cf(), $this->lazyCf->enums(), $this->deleter);
     }
 
     public function find(int $id): ?Entities\Contact
     {
-        return new Entities\Contact($this->findEntity($id), $this->http, $this->lazyCf->cf(), $this->lazyCf->enums());
+        return new Entities\Contact($this->findEntity($id), $this->http, $this->lazyCf->cf(), $this->lazyCf->enums(), $this->deleter);
+    }
+
+    /**
+     * Удаление контактов — в корзину, семантика как у сделок (тот же роут).
+     *
+     * @param  int|list<int>  $ids
+     * @return bool false — амо отказал сообщением «Недостаточно прав для
+     *              удаления…». Тем же ответом он отвечает и на повторное
+     *              удаление лежащего в корзине, и на настоящий отказ по правам:
+     *              какой из двух случаев произошёл, по ответу амо установить
+     *              невозможно. Значение выбрано так, чтобы повторный снос был
+     *              идемпотентным, но неоднозначность видна вызывающему
+     *
+     * @throws AmoCustomException
+     * @throws AmoUnknownException
+     */
+    public function delete(int|array $ids): bool
+    {
+        return $this->deleter->contacts($ids);
     }
 
     public function customFields(): CustomField

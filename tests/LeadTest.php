@@ -18,7 +18,7 @@ class LeadTest extends BaseAmoClient
         parent::setUp();
 
         $this->data = [
-            'name' => 'Test Lead',
+            'name' => $this->marked('Test Lead'),
         ];
 
         $this->lead = $this->amoClient->leads->entity();
@@ -57,13 +57,13 @@ class LeadTest extends BaseAmoClient
 
         $created = $response['_embedded']['leads'][0];
 
-        return $created['id'];
+        return $this->track('leads', $created['id']);
     }
 
     #[Depends('test_lead_create')]
     public function test_lead_update(int $leadId)
     {
-        $newName = 'Test Lead 2';
+        $newName = $this->marked('Test Lead 2');
         $this->lead->id = $leadId;
         $this->lead->name = $newName;
         $this->lead->price = 1000;
@@ -138,6 +138,9 @@ class LeadTest extends BaseAmoClient
         $this->assertIsArray($response);
         $this->assertArrayHasKey('status', $response);
         $this->assertEquals('success', $response['status']);
+        /* снёс сам — снял с учёта: иначе реестр держит id, которого уже нет, и teardown
+         * девять раз подряд пытается снести удалённое (ложный хвост в отчёте). */
+        self::registry()->forget('leads', $leadId);
     }
 
     public function test_lead_create_get_id()
@@ -145,6 +148,7 @@ class LeadTest extends BaseAmoClient
 
         $this->lead->setCF(449487, 879413, true);
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $found = $this->amoClient->leads->find($id)->toArray();
         $this->assertIsInt($id);
 
@@ -152,6 +156,7 @@ class LeadTest extends BaseAmoClient
         $this->assertIsArray($response);
         $this->assertArrayHasKey('status', $response);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
     }
 
     public function test_lead_not_found()
@@ -182,13 +187,16 @@ class LeadTest extends BaseAmoClient
 
     public function test_lead_set_entities()
     {
-        $contactId = $this->amoClient->contacts->entityData(['name' => 'test'])->createGetId();
-        $companyId = $this->amoClient->companies->entityData(['name' => 'test'])->createGetId();
+        $contactId = $this->amoClient->contacts->entityData(['name' => $this->marked('test')])->createGetId();
+        $this->track('contacts', $contactId);
+        $companyId = $this->amoClient->companies->entityData(['name' => $this->marked('test')])->createGetId();
+        $this->track('companies', $companyId);
 
         $this->lead->setContact($this->amoClient->contacts->entity($contactId));
         $this->lead->setCompany($this->amoClient->companies->entity($companyId));
-        $this->lead->name = 'testLeadSetEntities';
+        $this->lead->name = $this->marked('testLeadSetEntities');
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
 
         $lead = $this->amoClient->leads->withContacts()->find($id);
         $contactId2 = $lead->getMainContactId();
@@ -208,19 +216,23 @@ class LeadTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
         $response2 = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$contactId]]);
         $this->assertEquals('success', $response2['status']);
+        self::registry()->forget('contacts', $contactId);
 
         $response3 = $this->amoClient->ajax->postForm('/ajax/companies/multiple/delete/', ['ID' => [$companyId]]);
         $this->assertEquals('success', $response3['status']);
+        self::registry()->forget('companies', $companyId);
     }
 
     public function test_lead_get_contacts_ids_exception()
     {
 
-        $this->lead->name = 'testLeadGetContactsIdsException';
+        $this->lead->name = $this->marked('testLeadGetContactsIdsException');
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
 
         $lead = $this->amoClient->leads->find($id);
         $this->expectException(Exception::class);
@@ -231,13 +243,15 @@ class LeadTest extends BaseAmoClient
         } finally {
             $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
             $this->assertEquals('success', $response['status']);
+            self::registry()->forget('leads', $id);
         }
     }
 
     public function test_lead_get_main_contact_id_exception()
     {
-        $this->lead->name = 'testLeadGetMainContactIdException';
+        $this->lead->name = $this->marked('testLeadGetMainContactIdException');
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
 
         $lead = $this->amoClient->leads->find($id);
         $this->expectException(Exception::class);
@@ -247,19 +261,22 @@ class LeadTest extends BaseAmoClient
         } finally {
             $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
             $this->assertEquals('success', $response['status']);
+            self::registry()->forget('leads', $id);
         }
     }
 
     public function test_lead_get_main_contact_id_not_found()
     {
-        $this->lead->name = 'testLeadGetMainContactIdNotFound';
+        $this->lead->name = $this->marked('testLeadGetMainContactIdNotFound');
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $lead = $this->amoClient->leads->withContacts()->find($id);
         $contactId = $lead->getMainContactId();
         $this->assertNull($contactId);
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
     }
 
@@ -269,8 +286,9 @@ class LeadTest extends BaseAmoClient
         $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
         $catalogId2 = 4627;
         $catalogElements2 = $this->amoClient->catalogs->find($catalogId2)->elements->get();
-        $this->lead->name = 'testLeadGetCatalogElementIds';
+        $this->lead->name = $this->marked('testLeadGetCatalogElementIds');
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $leadEntity = $this->amoClient->leads->entity($id);
         $leadEntity->links->catalogElement($catalogElements[0]['id'], $catalogId)->link();
         $leadEntity->links->catalogElement($catalogElements2[0]['id'], $catalogId2)->link();
@@ -281,6 +299,7 @@ class LeadTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
     }
 
@@ -288,8 +307,9 @@ class LeadTest extends BaseAmoClient
     {
         $catalogId = 4265;
         $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
-        $this->lead->name = 'testLeadGetCatalogQuantity';
+        $this->lead->name = $this->marked('testLeadGetCatalogQuantity');
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $this->amoClient->leads->entity($id)->links->catalogElement($catalogElements[0]['id'], $catalogId)->link();
 
         $lead = $this->amoClient->leads->withCatalogElements()->find($id);
@@ -298,6 +318,7 @@ class LeadTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
     }
 
@@ -305,8 +326,9 @@ class LeadTest extends BaseAmoClient
     {
         $catalogId = 4265;
         $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
-        $this->lead->name = 'testLeadGetCatalogElementQuantity';
+        $this->lead->name = $this->marked('testLeadGetCatalogElementQuantity');
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $this->amoClient->leads->entity($id)->links->catalogElement($catalogElements[0]['id'], $catalogId, 10)->link();
 
         $lead = $this->amoClient->leads->withCatalogElements()->find($id);
@@ -318,6 +340,7 @@ class LeadTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
     }
 
@@ -325,8 +348,9 @@ class LeadTest extends BaseAmoClient
     {
         $catalogId = 4265;
         $catalogElements = $this->amoClient->catalogs->find($catalogId)->elements->get();
-        $this->lead->name = 'testLeadGetCatalogElementFloatQuantity';
+        $this->lead->name = $this->marked('testLeadGetCatalogElementFloatQuantity');
         $id = $this->lead->createGetId();
+        $this->track('leads', $id);
         $this->amoClient->leads->entity($id)->links->catalogElement($catalogElements[0]['id'], $catalogId, 11.5)->link();
 
         $lead = $this->amoClient->leads->withCatalogElements()->find($id);
@@ -335,6 +359,7 @@ class LeadTest extends BaseAmoClient
 
         $response = $this->amoClient->ajax->postForm('/ajax/leads/multiple/delete/', ['ID' => [$id]]);
         $this->assertEquals('success', $response['status']);
+        self::registry()->forget('leads', $id);
 
     }
 }

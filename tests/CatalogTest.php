@@ -18,7 +18,7 @@ class CatalogTest extends BaseAmoClient
         parent::setUp();
 
         $this->data = [
-            'name' => 'Test Catalog',
+            'name' => $this->marked('Test Catalog'),
             'type' => 'regular',
             'sort' => 10,
             'can_add_elements' => true,
@@ -61,13 +61,13 @@ class CatalogTest extends BaseAmoClient
         $catalogCustomFields = $catalogEntityWithId->customFields();
         $this->assertInstanceOf(CustomField::class, $catalogCustomFields);
 
-        return $created['id'];
+        return $this->track('catalogs', $created['id']);
     }
 
     #[Depends('test_catalog_create')]
     public function test_catalog_update(int $catalogId)
     {
-        $newName = 'Test Catalog2';
+        $newName = $this->marked('Test Catalog2');
         $this->catalog->id = $catalogId;
         $this->catalog->name = $newName;
 
@@ -93,14 +93,17 @@ class CatalogTest extends BaseAmoClient
         $catalog = $this->amoClient->catalogs->entity($catalogId);
         $catalogCustomFields = $catalog->customFields()->get();
         $elementEntity = $catalog->elements->entity();
-        $elementEntity->name = 'test element';
-        $elementEntity->create();
+        $elementEntity->name = $this->marked('test element');
+        $createdElement = $elementEntity->create();
+        $this->track('catalogElements', $createdElement['_embedded']['elements'][0]['id']);
 
+        $elementName2 = $this->marked('TestElement entityData');
         $elementEntity2 = $catalog->elements->entityData([
-            'name' => 'TestElement entityData',
+            'name' => $elementName2,
         ]);
         $createdWithEntityData = $elementEntity2->create();
-        $this->assertEquals($createdWithEntityData['_embedded']['elements'][0]['name'], 'TestElement entityData');
+        $this->track('catalogElements', $createdWithEntityData['_embedded']['elements'][0]['id']);
+        $this->assertEquals($createdWithEntityData['_embedded']['elements'][0]['name'], $elementName2);
 
         $elements = $catalog->elements->get();
 
@@ -111,7 +114,7 @@ class CatalogTest extends BaseAmoClient
         $this->assertEquals($elements[0]['id'], $filter[0]['id']);
 
         $elementEntity->id = $elements[0]['id'];
-        $elementEntity->name = 'test 3';
+        $elementEntity->name = $this->marked('test 3');
 
         $elementEntity->setCFByCode('PRICE', 120);
         $elementEntity->update();
@@ -132,7 +135,7 @@ class CatalogTest extends BaseAmoClient
 
     public function test_catalog_create_get_id()
     {
-        $id = $this->catalog->createGetId();
+        $id = $this->track('catalogs', $this->catalog->createGetId());
         $this->assertIsInt($id);
 
         $response = $this->amoClient->ajax->postForm('/ajax/v1/catalogs/set/', ['request' => ['catalogs' => ['delete' => $id]]]);

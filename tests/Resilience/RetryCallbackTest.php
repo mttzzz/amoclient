@@ -2,6 +2,7 @@
 
 namespace mttzzz\AmoClient\Tests\Resilience;
 
+use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -29,7 +30,7 @@ class RetryCallbackTest extends ResilienceTestCase
 
         $this->assertTrue($response->ok());
         Http::assertSentCount(2);
-        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer new-token'));
+        Http::assertSent(fn (Request $request) => $request->hasHeader('Authorization', 'Bearer new-token'));
     }
 
     public function test_401_without_rotation_does_not_retry(): void

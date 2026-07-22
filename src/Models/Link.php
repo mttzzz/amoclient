@@ -70,27 +70,31 @@ class Link extends AbstractModel
     }
 
     /**
-     * @param  array<mixed>  $entities
+     * @param  list<Entities\AbstractEntity>  $entities
      * @return array<mixed>
      */
     public function link(array $entities): array
     {
         $str = Str::beforeLast($this->entity, '/');
         try {
-            return $this->http->post("$str/link", $this->prepareEntities($entities))->throw()->json();
+            $result = $this->http->post("$str/link", $this->prepareEntities($entities))->throw()->json();
+
+            return is_array($result) ? $result : [];
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
     }
 
     /**
-     * @param  array<mixed>  $entities
+     * @param  list<Entities\AbstractEntity>  $entities
      */
     public function unlink(array $entities): null
     {
         $str = Str::beforeLast($this->entity, '/');
         try {
-            return $this->http->post("$str/unlink", $this->prepareEntities($entities))->throw()->json();
+            $this->http->post("$str/unlink", $this->prepareEntities($entities))->throw()->json();
+
+            return null;
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
         }
