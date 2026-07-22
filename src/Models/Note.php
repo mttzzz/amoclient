@@ -107,35 +107,38 @@ class Note extends AbstractModel
         return $this;
     }
 
-    public function orderUpdatedAtAsc(): self
+    /**
+     * Имена приведены к общей форме `orderBy…` — были `orderUpdatedAt…` и
+     * `orderId…`, без `By`. Разнобой не косметический: искали трейтовую форму,
+     * не нашли и заключили, что сортировки у примечаний нет вовсе, — и на этом
+     * основании было выдано лишнее задание.
+     *
+     * `OrderTrait` целиком не подключён намеренно: он принёс бы ещё
+     * `created_at`, которого нет среди допустимых полей примечаний.
+     * Официальный справочник (§9) называет ровно два — `updated_at` и `id`, —
+     * они и выставлены; `updated_at` вдобавок подтверждён зондом (§8.7), а
+     * `id` — тестом, сверяющим фактический порядок выдачи, а не форму запроса.
+     * Пренебрежение этим списком уже стоило зонда на задачах: там
+     * `order[updated_at]` игнорируется при HTTP 200 (§8.8), то есть метод по
+     * неподтверждённому полю оказался бы тихим no-op.
+     */
+    public function orderByUpdatedAtAsc(): self
     {
-        $this->order = []; // обнуляем сортировку, потому как может быть только 1
-        $this->order['updated_at'] = 'asc';
-
-        return $this;
+        return $this->orderBy('updated_at', 'asc');
     }
 
-    public function orderUpdatedAtDesc(): self
+    public function orderByUpdatedAtDesc(): self
     {
-        $this->order = []; // обнуляем сортировку, потому как может быть только 1
-        $this->order['updated_at'] = 'desc';
-
-        return $this;
+        return $this->orderBy('updated_at', 'desc');
     }
 
-    public function orderIdAsc(): self
+    public function orderByIdAsc(): self
     {
-        $this->order = []; // обнуляем сортировку, потому как может быть только 1
-        $this->order['id'] = 'asc';
-
-        return $this;
+        return $this->orderBy('id', 'asc');
     }
 
-    public function orderIdDesc(): self
+    public function orderByIdDesc(): self
     {
-        $this->order = []; // обнуляем сортировку, потому как может быть только 1
-        $this->order['id'] = 'desc';
-
-        return $this;
+        return $this->orderBy('id', 'desc');
     }
 }
