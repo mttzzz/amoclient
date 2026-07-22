@@ -111,5 +111,4 @@ class Note extends AbstractModel
 
         return $this;
     }
-
 }

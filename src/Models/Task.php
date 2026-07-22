@@ -12,6 +12,7 @@ use mttzzz\AmoClient\Traits;
 class Task extends AbstractModel
 {
     use Traits\CrudTrait;
+
     /* Поля по замеру §9.4: у задач работают id, created_at, complete_till.
      * updated_at игнорируется — `asc` и `desc` дают одну и ту же страницу при
      * HTTP 200, поэтому трейта ByUpdatedAt здесь нет и быть не должно. */
@@ -143,5 +144,4 @@ class Task extends AbstractModel
 
         return $this;
     }
-
 }

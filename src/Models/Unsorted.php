@@ -141,5 +141,4 @@ class Unsorted extends AbstractModel
 
         return $this;
     }
-
 }

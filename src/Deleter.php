@@ -720,7 +720,7 @@ class Deleter
             if ($status !== 'ok') {
                 throw new AmoUnknownException(
                     $operation,
-                    "ожидался status ok либо «".self::PRIVATE_NO_NOTE_STATUS."» на {$action} id={$id}",
+                    'ожидался status ok либо «'.self::PRIVATE_NO_NOTE_STATUS."» на {$action} id={$id}",
                     $response
                 );
             }

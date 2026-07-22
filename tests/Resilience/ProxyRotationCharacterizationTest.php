@@ -2,9 +2,11 @@
 
 namespace mttzzz\AmoClient\Tests\Resilience;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use mttzzz\AmoClient\AmoClientOctane;
 
@@ -126,7 +128,7 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
         $amo = new AmoClientOctane(self::ACCOUNT_ID);
 
         /* гонка ночной ротации: октан записал новый токен после конструирования клиента */
-        \Illuminate\Support\Facades\DB::connection('octane')->table('account_widget')
+        DB::connection('octane')->table('account_widget')
             ->where('account_id', self::ACCOUNT_ID)
             ->update(['access_token' => 'new-token']);
 
@@ -167,7 +169,7 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
         try {
             (new AmoClientOctane(self::ACCOUNT_ID))->http->get('account');
             $this->fail('Ожидали ConnectionException после исчерпания попыток');
-        } catch (\Illuminate\Http\Client\ConnectionException) {
+        } catch (ConnectionException) {
             /* ожидаемо */
         }
 
