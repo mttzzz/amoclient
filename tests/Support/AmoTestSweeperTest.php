@@ -1,0 +1,242 @@
+<?php
+
+namespace mttzzz\AmoClient\Tests\Support;
+
+use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionMethod;
+use RuntimeException;
+
+/**
+ * Тесты гарда свипа. Сети, БД и amo здесь нет вовсе — это чистая логика,
+ * поэтому сьют гоняется в CI (`composer test:offline`).
+ *
+ * Почему они обязаны существовать: гард — единственное, что отделяет уборку
+ * тестового мусора от сноса клиентских данных в боевом аккаунте 16117840.
+ * Сломать его правкой на одну строку легко, а обнаружить поломку без этих
+ * тестов можно будет только по факту — на боевых данных.
+ */
+class AmoTestSweeperTest extends TestCase
+{
+    /**
+     * Типы, которые обещает контракт удаления (Deleter::TYPES + реестр).
+     * Список продублирован здесь намеренно: он тут в роли ожидания теста, а не
+     * источника истины — иначе сверка сравнивала бы значение само с собой.
+     *
+     * @var list<string>
+     */
+    private const CONTRACT_TYPES = [
+        'leads', 'contacts', 'companies', 'customers', 'catalogs', 'catalogElements',
+        'tasks', 'notes', 'calls', 'pipelines', 'sources', 'webhooks',
+    ];
+
+    /**
+     * @return iterable<string, array{string, array<string, mixed>, bool}>
+     */
+    public static function markerCases(): iterable
+    {
+        $marker = AmoTestSweeper::TEST_MARKER;
+
+        yield 'маркер в name' => ['leads', ['id' => 1, 'name' => "lead {$marker}"], true];
+        yield 'чужой лид' => ['leads', ['id' => 1, 'name' => 'Реальная сделка клиента'], false];
+
+        /* Ровно тот случай, ради которого маркер сделан нонсом: человеческое
+         * «тест» живёт в настоящих клиентских данных и маркером быть не может. */
+        yield 'человеческое «тест» — не маркер' => ['leads', ['id' => 1, 'name' => 'Тест кухни'], false];
+
+        /* Гард смотрит в поле-носитель, а не по всему payload: помеченное
+         * примечание на чужой сделке не делает саму сделку нашей. */
+        yield 'маркер в окружении, а не в поле-носителе' => [
+            'leads',
+            ['id' => 1, 'name' => 'Сделка клиента', '_embedded' => ['notes' => [['text' => $marker]]]],
+            false,
+        ];
+
+        yield 'регистр важен' => ['leads', ['id' => 1, 'name' => strtoupper($marker)], false];
+        yield 'у задачи носитель text' => ['tasks', ['id' => 2, 'text' => "todo {$marker}"], true];
+        yield 'у задачи носитель не name' => ['tasks', ['id' => 2, 'name' => $marker], false];
+        yield 'примечание помечено params.text' => ['notes', ['id' => 3, 'params' => ['text' => $marker]], true];
+        yield 'чужое примечание' => ['notes', ['id' => 3, 'params' => ['text' => 'звонил клиент']], false];
+
+        /* Звонок — примечание особого типа, носитель тот же params. */
+        yield 'звонок помечен params.source' => [
+            'calls',
+            ['id' => 4, 'params' => ['source' => $marker, 'phone' => '375296117699']],
+            true,
+        ];
+
+        yield 'вебхук помечен destination' => ['webhooks', ['id' => 5, 'destination' => "https://example.com/{$marker}"], true];
+        yield 'чужой вебхук' => ['webhooks', ['id' => 5, 'destination' => 'https://client.example/hook'], false];
+        yield 'воронка помечена name' => ['pipelines', ['id' => 6, 'name' => "воронка {$marker}"], true];
+        yield 'боевая воронка' => ['pipelines', ['id' => 6, 'name' => 'Продажи'], false];
+
+        /* Тип без поля-носителя пометить нечем — значит и сносить нечего. */
+        yield 'тип вне таблицы' => ['shortLinks', ['id' => 7, 'name' => $marker], false];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    #[DataProvider('markerCases')]
+    public function test_marker_is_recognised_only_in_the_carrier_field(string $type, array $payload, bool $expected): void
+    {
+        $this->assertSame($expected, SweepTarget::isMarked($type, $payload));
+    }
+
+    /**
+     * @return iterable<string, array{string, array<string, mixed>, int|string|null}>
+     */
+    public static function addressingCases(): iterable
+    {
+        $marker = AmoTestSweeper::TEST_MARKER;
+
+        yield 'помеченный лид адресуется id' => ['leads', ['id' => 42, 'name' => $marker], 42];
+        yield 'непомеченное цели не даёт' => ['leads', ['id' => 42, 'name' => 'чужой'], null];
+        yield 'помечено, но без id' => ['leads', ['name' => $marker], null];
+        yield 'id=0 не адрес' => ['leads', ['id' => 0, 'name' => $marker], null];
+
+        /* Вебхук — единственный тип, который роут удаления адресует не id. */
+        yield 'вебхук адресуется destination' => [
+            'webhooks',
+            ['id' => 5, 'destination' => "https://example.com/{$marker}"],
+            "https://example.com/{$marker}",
+        ];
+        yield 'вебхук с пустым destination неадресуем' => ['webhooks', ['id' => 5, 'destination' => ''], null];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    #[DataProvider('addressingCases')]
+    public function test_target_carries_the_handle_deleter_expects(string $type, array $payload, int|string|null $expected): void
+    {
+        $target = SweepTarget::fromMarked($type, $payload);
+
+        $this->assertSame($expected, $target?->handle);
+    }
+
+    /**
+     * Несущее свойство гарда: цель нельзя собрать в обход фабрики. Если
+     * конструктор когда-нибудь откроют, «снести лишнее» снова станет обычной
+     * ошибкой в коде, а не невозможной операцией.
+     */
+    public function test_target_cannot_be_constructed_around_the_factory(): void
+    {
+        $constructor = (new ReflectionClass(SweepTarget::class))->getConstructor();
+
+        $this->assertNotNull($constructor);
+        $this->assertTrue($constructor->isPrivate());
+    }
+
+    /**
+     * Дыра в покрытии не роняет свип и не видна в отчёте: тип просто перестаёт
+     * искаться, а «удалено 0» выглядит как успех. Так однажды выпали pipelines.
+     */
+    public function test_sweep_covers_every_type_of_the_delete_contract(): void
+    {
+        $covered = AmoTestSweeper::coveredTypes();
+        sort($covered);
+
+        $contract = self::CONTRACT_TYPES;
+        sort($contract);
+
+        $this->assertSame($contract, $covered);
+    }
+
+    public function test_semantics_and_marker_fields_agree(): void
+    {
+        $withSemantics = AmoTestSweeper::coveredTypes();
+        $withMarkerField = SweepTarget::knownTypes();
+
+        sort($withSemantics);
+        sort($withMarkerField);
+
+        $this->assertSame($withSemantics, $withMarkerField);
+    }
+
+    /**
+     * Неизвестный тип обязан быть громким: молчаливое «ну попробуем» означало
+     * бы непроверенный вызов удаления по боевому аккаунту.
+     */
+    public function test_unknown_type_is_refused_loudly(): void
+    {
+        $semanticFor = new ReflectionMethod(AmoTestSweeper::class, 'semanticFor');
+
+        $this->expectException(LogicException::class);
+
+        $semanticFor->invoke(new AmoTestSweeper, 'shortLinks');
+    }
+
+    /**
+     * amo отдаёт на 500 не JSON, а полноценную HTML-страницу, и она приезжает
+     * внутрь сообщения исключения. Без чистки отчёт об уборке превращается в
+     * вывалившуюся вёрстку, за которой не видно ни одной настоящей причины.
+     */
+    public function test_html_error_page_is_collapsed_into_one_readable_line(): void
+    {
+        $reason = new ReflectionMethod(AmoTestSweeper::class, 'reason');
+
+        $result = $reason->invoke(new AmoTestSweeper, new RuntimeException(
+            "HTTP request returned status code 500:\n<html><head><title>500</title></head>\n<body>\n  <h1>Внутренняя ошибка</h1>\n</body></html>"
+        ));
+
+        if (! is_string($result)) {
+            $this->fail('reason() обязан возвращать строку');
+        }
+
+        $this->assertStringNotContainsString('<', $result);
+        $this->assertStringContainsString('Внутренняя ошибка', $result);
+        $this->assertLessThanOrEqual(300, mb_strlen($result));
+    }
+
+    /**
+     * Корзина и удаление насовсем — разные вещи, и отчёт обязан называть их
+     * разными словами: для leads/contacts/companies purge недоступен нигде,
+     * и «удалено» про них было бы враньём (решение владельца №2).
+     */
+    public function test_report_names_trash_and_deletion_differently(): void
+    {
+        $rendered = AmoTestSweeper::render([
+            'marker' => AmoTestSweeper::TEST_MARKER,
+            'window' => ['days' => 3, 'from' => 0, 'to' => 0],
+            'purged' => ['tasks' => 3],
+            'trashed' => ['leads' => 4],
+            'unverified' => ['customers' => 1],
+            'failed' => [],
+            'scanned' => ['tasks' => 120, 'leads' => 4],
+            'warnings' => [],
+        ]);
+
+        $this->assertStringContainsString('Удалено насовсем:', $rendered);
+        $this->assertStringContainsString('Отправлено в корзину', $rendered);
+        $this->assertStringContainsString('purge недоступен нигде', $rendered);
+        $this->assertStringContainsString('жёсткость удаления не проверена', $rendered);
+    }
+
+    /**
+     * «Удалено 0» без числа просмотренного неотличимо от «дискавери мертва»;
+     * и то и другое печатается как успешная уборка.
+     */
+    public function test_empty_report_does_not_read_as_a_clean_account(): void
+    {
+        $rendered = AmoTestSweeper::render([
+            'marker' => AmoTestSweeper::TEST_MARKER,
+            'window' => ['days' => 3, 'from' => 0, 'to' => 0],
+            'purged' => [],
+            'trashed' => [],
+            'unverified' => [],
+            'failed' => [],
+            'scanned' => [],
+            'warnings' => [],
+        ]);
+
+        $this->assertStringContainsString('Просмотрено: ничего (дискавери не отработала)', $rendered);
+
+        /* Типы, которые amo не даёт снести в принципе, обязаны быть названы —
+         * иначе пустой отчёт читается как доказательство чистоты аккаунта. */
+        $this->assertStringContainsString('shortLinks', $rendered);
+        $this->assertStringContainsString('unsorted', $rendered);
+    }
+}

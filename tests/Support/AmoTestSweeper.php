@@ -245,7 +245,7 @@ final class AmoTestSweeper
      */
     private function assertTablesAgree(): void
     {
-        $withSemantics = array_keys(self::SEMANTICS);
+        $withSemantics = self::coveredTypes();
         $withMarkerField = SweepTarget::knownTypes();
 
         sort($withSemantics);
@@ -262,6 +262,27 @@ final class AmoTestSweeper
         ));
     }
 
+    /**
+     * Типы, за которые свип берётся: у каждого есть семантика удаления.
+     *
+     * Публичный не ради удобства, а ради проверяемости: дыра в покрытии
+     * (тип контракта, которого свип не ищет) не роняет ничего и не видна в
+     * отчёте — её ловит только сверка списков, а сверить приватную константу
+     * тест не может.
+     *
+     * @return list<string>
+     */
+    public static function coveredTypes(): array
+    {
+        return array_keys(self::SEMANTICS);
+    }
+
+    /**
+     * @return self::SEMANTIC_* ровно одна из трёх категорий отчёта, а не любая
+     *                          строка: счётчик в delete() пишет по этому ключу,
+     *                          и произвольная строка завела бы в отчёте
+     *                          четвёртую категорию, которую никто не печатает
+     */
     private function semanticFor(string $type): string
     {
         $semantic = self::SEMANTICS[$type] ?? null;
