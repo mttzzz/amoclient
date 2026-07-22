@@ -66,15 +66,20 @@ abstract class BaseAmoClient extends TestCase
 
     protected function getEnvironmentSetUp($app)
     {
-        // Настроить тестовую базу данных
+        /* Тесты интеграционные: токен аккамунта 16117840 и account_amo_user
+         * читаются из локальной Postgres-копии прод-БД octane_pushka_biz
+         * (pgsync sync). Прежний MySQL root@3306 был мёртвым хвостом. */
         $app['config']->set('database.default', 'octane');
         $app['config']->set('database.connections.octane', [
-            'driver' => 'mysql',
-            'host' => 'localhost',
-            'port' => 3306,
+            'driver' => 'pgsql',
+            'host' => '127.0.0.1',
+            'port' => 5432,
             'database' => 'octane_pushka_biz',
-            'username' => 'root',
-            'password' => 'root',
+            'username' => 'mttzzzz',
+            'password' => '',
+            'charset' => 'utf8',
+            'search_path' => 'public',
+            'sslmode' => 'prefer',
         ]);
     }
 }
