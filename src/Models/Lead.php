@@ -15,9 +15,9 @@ use mttzzz\AmoClient\Traits\Order;
 class Lead extends AbstractModel
 {
     use Filter\Common, Filter\Lead;
+
     /* Поля по замеру §9.4: у сделок работают id, updated_at, created_at. */
     use Order\ByCreatedAt, Order\ById, Order\ByUpdatedAt;
-
     use Traits\CrudTrait, Traits\QueryTrait;
 
     private LazyCustomFields $lazyCf;

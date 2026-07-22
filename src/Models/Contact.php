@@ -16,10 +16,10 @@ use mttzzz\AmoClient\Traits\Order;
 class Contact extends AbstractModel
 {
     use Filter\Common, Filter\PhoneEmail;
+
     /* Поля по замеру §9.4: у контактов работают id, updated_at, name.
      * created_at игнорируется — раньше поставлялся общим трейтом впустую. */
     use Order\ById, Order\ByName, Order\ByUpdatedAt;
-
     use Traits\CrudTrait, Traits\QueryTrait;
 
     private LazyCustomFields $lazyCf;
