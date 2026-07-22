@@ -240,6 +240,48 @@ class AmoTestSweeperTest extends TestCase
     }
 
     /**
+     * Роут воронок игнорирует page и отдаёт коллекцию целиком на любой
+     * странице (§9.12). Без гарда на повтор обход такого роута не завершается
+     * по данным вообще: свип собирал одни и те же 41 запись десять раз, упирался
+     * в потолок страниц и девять раз шёл сносить уже снесённое.
+     */
+    public function test_repeated_page_is_recognised_as_ignored_pagination(): void
+    {
+        $repeats = new ReflectionMethod(AmoTestSweeper::class, 'repeatsPreviousPage');
+        $page = [['id' => 1], ['id' => 2]];
+
+        $this->assertTrue($repeats->invoke(null, $page, $page), 'та же страница — пагинация проигнорирована');
+        $this->assertFalse($repeats->invoke(null, $page, [['id' => 3], ['id' => 4]]), 'другая страница — обход продолжается');
+
+        /* Первой странице не с чем сравниваться, и это не повтор. */
+        $this->assertFalse($repeats->invoke(null, $page, null));
+    }
+
+    /**
+     * Вторая сетка к тому же дефекту: даже если дискавери снова вернёт одну
+     * сущность дважды, снос уйдёт один раз. Повторный снос стоит запросов к
+     * аккаунту с лимитом 7 rps и завышает число в отчёте.
+     */
+    public function test_same_target_is_processed_once_per_sweep(): void
+    {
+        $sweeper = new AmoTestSweeper;
+        $alreadyProcessed = new ReflectionMethod(AmoTestSweeper::class, 'alreadyProcessed');
+
+        $marker = AmoTestSweeper::TEST_MARKER;
+        $pipeline = SweepTarget::fromMarked('pipelines', ['id' => 11129786, 'name' => $marker]);
+        $again = SweepTarget::fromMarked('pipelines', ['id' => 11129786, 'name' => $marker]);
+        $other = SweepTarget::fromMarked('pipelines', ['id' => 11129787, 'name' => $marker]);
+
+        $this->assertNotNull($pipeline);
+        $this->assertNotNull($again);
+        $this->assertNotNull($other);
+
+        $this->assertFalse($alreadyProcessed->invoke($sweeper, $pipeline));
+        $this->assertTrue($alreadyProcessed->invoke($sweeper, $again), 'та же цель второй раз — снос не повторяем');
+        $this->assertFalse($alreadyProcessed->invoke($sweeper, $other), 'другая воронка — обрабатывается');
+    }
+
+    /**
      * amo отдаёт на 500 не JSON, а полноценную HTML-страницу, и она приезжает
      * внутрь сообщения исключения. Без чистки отчёт об уборке превращается в
      * вывалившуюся вёрстку, за которой не видно ни одной настоящей причины.

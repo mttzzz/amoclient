@@ -190,6 +190,18 @@ final class AmoTestSweeper
     private int $deleted = 0;
 
     /**
+     * Уже обработанные цели, «тип:адрес». Нужен потому, что дискавери может
+     * вернуть одну сущность дважды — так и вышло на роуте воронок, который
+     * игнорирует page (§9.12): свип девять раз ходил сносить уже снесённое.
+     * Гард на повтор страницы убирает эту причину, дедуп ограничивает
+     * последствия любой следующей: повторный снос стоит запросов к аккаунту с
+     * лимитом 7 rps и врёт в отчёте числом.
+     *
+     * @var array<string, true>
+     */
+    private array $processed = [];
+
+    /**
      * @param  int  $windowDays  Глубина скана для типов без полнотекстового поиска
      *                           (tasks/notes/calls ищутся фильтром по updated_at).
      */
@@ -218,6 +230,7 @@ final class AmoTestSweeper
         $from = $to - ($this->windowDays * 86400);
 
         $this->deleted = 0;
+        $this->processed = [];
         $this->report = [
             /* Инструмент удаляет в боевой CRM: из выхлопа должно быть видно, в какой именно. */
             'account' => $amo->accountId,
@@ -268,6 +281,10 @@ final class AmoTestSweeper
      */
     private function delete(AmoClientOctane $amo, SweepTarget $target): void
     {
+        if ($this->alreadyProcessed($target)) {
+            return;
+        }
+
         if ($this->deleted >= self::DELETE_BUDGET) {
             return;
         }
@@ -358,6 +375,26 @@ final class AmoTestSweeper
     public static function coveredTypes(): array
     {
         return array_keys(self::SEMANTICS);
+    }
+
+    /**
+     * Первое обращение к цели отдаёт false и запоминает её, все следующие —
+     * true. Дедуп по паре «тип + адрес»: пересечений между коллекциями нет
+     * (примечания сделок и контактов — разные выборки, элементы разных
+     * каталогов тоже), поэтому повтор здесь всегда означает дубль дискавери,
+     * а не две разные сущности.
+     */
+    private function alreadyProcessed(SweepTarget $target): bool
+    {
+        $key = $target->type.':'.$target->ref();
+
+        if (isset($this->processed[$key])) {
+            return true;
+        }
+
+        $this->processed[$key] = true;
+
+        return false;
     }
 
     /**
@@ -613,6 +650,7 @@ final class AmoTestSweeper
 
         try {
             $pageSize = null;
+            $previousChunk = null;
 
             for ($page = 1; $page <= self::MAX_PAGES; $page++) {
                 $chunk = $model->page($page)->limit(self::SCAN_PAGE_LIMIT)->get();
@@ -620,6 +658,36 @@ final class AmoTestSweeper
                 if ($chunk === []) {
                     break;
                 }
+
+                /*
+                 * Страница повторилась — роут игнорирует page и отдаёт
+                 * коллекцию целиком. Снято на живом аккаунте (§9.12):
+                 * /leads/pipelines возвращает одни и те же 40 записей на
+                 * page=1, 2 и 10, причём limit там тоже игнорируется. Без
+                 * этого гарда цикл по такому роуту не завершается по данным
+                 * вообще: свип десять раз собирал одно и то же (410 строк
+                 * вместо 41), упирался в потолок страниц и девять раз пытался
+                 * снести уже снесённую воронку.
+                 *
+                 * Гард универсален: он не про воронки, а про любой роут,
+                 * который молча проигнорировал пагинацию — превращает
+                 * невидимую проблему в штатное завершение обхода.
+                 */
+                if (self::repeatsPreviousPage($chunk, $previousChunk)) {
+                    /*
+                     * Если повторившаяся страница была ПОЛНОЙ, за ней могут
+                     * лежать недостижимые записи: page проигнорирован, а limit
+                     * соблюдён — добраться до остатка нечем. Неполная страница
+                     * такого вопроса не оставляет: это вся коллекция.
+                     */
+                    if ($pageSize !== null && count($chunk) >= $pageSize) {
+                        $this->report['warnings'][] = "{$label}: роут игнорирует page и отдал ту же полную страницу — записи за её пределами недостижимы, свип их не видел";
+                    }
+
+                    break;
+                }
+
+                $previousChunk = $chunk;
 
                 /* Сколько строк amo реально отдаёт за страницу — берём из ответа
                  * (см. SCAN_PAGE_LIMIT: запрошенное значение может быть срезано). */
@@ -665,6 +733,21 @@ final class AmoTestSweeper
         $this->report['scanned'][$type === false ? $label : $type] = ($this->report['scanned'][$type === false ? $label : $type] ?? 0) + count($rows);
 
         return $rows;
+    }
+
+    /**
+     * Повторила ли страница предыдущую — признак того, что роут проигнорировал
+     * page. Сравниваем страницы целиком: внутри одного скана данные не
+     * меняются (удаление идёт после того, как скан полностью отработал),
+     * поэтому побайтовое совпадение здесь означает именно повтор выдачи, а не
+     * совпадение по случайности.
+     *
+     * @param  array<mixed>  $chunk  страница как её отдал amo, без нормализации
+     * @param  array<mixed>|null  $previous
+     */
+    private static function repeatsPreviousPage(array $chunk, ?array $previous): bool
+    {
+        return $previous !== null && $chunk === $previous;
     }
 
     /**
