@@ -1,0 +1,27 @@
+# Что не нужно потребителю в рантайме — не уезжает в дистрибутив пакета.
+#
+# Packagist отдаёт zip, собранный `git archive`, и без этого файла в vendor/
+# каждого потребителя приезжает весь репозиторий целиком: исследования на
+# тысячи строк, интеграционный сьют, конфиги CI. Мажор — правильный момент
+# это исправить.
+#
+# ВАЖНО: config/ здесь намеренно НЕТ. `AmoClientServiceProvider` читает
+# `__DIR__.'/../config/amoclient.php'` через mergeConfigFrom() и публикует его
+# же — исключение каталога сломало бы пакет в рантайме, причём не при
+# установке, а при первом обращении к конфигу.
+
+/docs               export-ignore
+/tests              export-ignore
+/bin                export-ignore
+/.github            export-ignore
+/.tmp               export-ignore
+
+phpunit.xml         export-ignore
+phpunit.xml.bak     export-ignore
+phpstan.neon        export-ignore
+.styleci.yml        export-ignore
+.infisical.json     export-ignore
+composer.lock       export-ignore
+
+.gitattributes      export-ignore
+.gitignore          export-ignore
