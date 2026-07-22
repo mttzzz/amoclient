@@ -46,7 +46,7 @@ class ContactTest extends BaseAmoClient
 
         $created = $response['_embedded']['contacts'][0];
 
-        return $created['id'];
+        return $this->track('contacts', $created['id']);
     }
 
     #[Depends('test_contact_create')]
@@ -199,7 +199,7 @@ class ContactTest extends BaseAmoClient
 
     public function test_contact_create_get_id()
     {
-        $id = $this->contact->createGetId();
+        $id = $this->track('contacts', $this->contact->createGetId());
         $this->assertIsInt($id);
 
         $response = $this->amoClient->ajax->postForm('/ajax/contacts/multiple/delete/', ['ID' => [$id]]);

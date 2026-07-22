@@ -46,7 +46,7 @@ class CompanyTest extends BaseAmoClient
 
         $created = $response['_embedded']['companies'][0];
 
-        return $created['id'];
+        return $this->track('companies', $created['id']);
     }
 
     #[Depends('test_company_create')]
@@ -180,7 +180,7 @@ class CompanyTest extends BaseAmoClient
 
     public function test_company_create_get_id()
     {
-        $id = $this->company->createGetId();
+        $id = $this->track('companies', $this->company->createGetId());
         $this->assertIsInt($id);
 
         $response = $this->amoClient->ajax->postForm('/ajax/companies/multiple/delete/', ['ID' => [$id]]);

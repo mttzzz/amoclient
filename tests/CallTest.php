@@ -43,6 +43,7 @@ class CallTest extends BaseAmoClient
             ->create();
 
         $this->assertArrayHasKey('id', $createdCalls['_embedded']['calls'][0]);
+        $this->track('calls', $createdCalls['_embedded']['calls'][0]['id']);
 
     }
 

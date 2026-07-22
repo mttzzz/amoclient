@@ -61,7 +61,7 @@ class CatalogTest extends BaseAmoClient
         $catalogCustomFields = $catalogEntityWithId->customFields();
         $this->assertInstanceOf(CustomField::class, $catalogCustomFields);
 
-        return $created['id'];
+        return $this->track('catalogs', $created['id']);
     }
 
     #[Depends('test_catalog_create')]
@@ -94,12 +94,14 @@ class CatalogTest extends BaseAmoClient
         $catalogCustomFields = $catalog->customFields()->get();
         $elementEntity = $catalog->elements->entity();
         $elementEntity->name = 'test element';
-        $elementEntity->create();
+        $createdElement = $elementEntity->create();
+        $this->track('catalogElements', $createdElement['_embedded']['elements'][0]['id']);
 
         $elementEntity2 = $catalog->elements->entityData([
             'name' => 'TestElement entityData',
         ]);
         $createdWithEntityData = $elementEntity2->create();
+        $this->track('catalogElements', $createdWithEntityData['_embedded']['elements'][0]['id']);
         $this->assertEquals($createdWithEntityData['_embedded']['elements'][0]['name'], 'TestElement entityData');
 
         $elements = $catalog->elements->get();
@@ -132,7 +134,7 @@ class CatalogTest extends BaseAmoClient
 
     public function test_catalog_create_get_id()
     {
-        $id = $this->catalog->createGetId();
+        $id = $this->track('catalogs', $this->catalog->createGetId());
         $this->assertIsInt($id);
 
         $response = $this->amoClient->ajax->postForm('/ajax/v1/catalogs/set/', ['request' => ['catalogs' => ['delete' => $id]]]);
