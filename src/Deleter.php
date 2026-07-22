@@ -20,10 +20,9 @@ use mttzzz\AmoClient\Exceptions\AmoUnknownException;
  * которая уже развела транспортный retry-колбэк и `RetriesTransientAmoErrors`
  * по охвату (решение по архитектуре 4.0, п. 9).
  *
- * ПЯТЬ ЛИЦ ОДНОГО ФАКТА «СУЩНОСТИ УЖЕ НЕТ» — главная причина, по которой это
+ * ШЕСТЬ ЛИЦ ОДНОГО ФАКТА «СУЩНОСТИ УЖЕ НЕТ» — главная причина, по которой это
  * знание обязано лежать в одном классе, а не расползаться по вызывающим. Амо
- * сообщает об одном и том же пятью несовместимыми способами, четыре из которых
- * приходятся на ajax и приватный роут (§8.6):
+ * сообщает об одном и том же шестью несовместимыми способами:
  *
  * | Канал | Как выглядит «уже нет» |
  * |---|---|
@@ -31,15 +30,18 @@ use mttzzz\AmoClient\Exceptions\AmoUnknownException;
  * | `/private/notes/edit2.php`, ПРИМЕЧАНИЕ и ЗВОНОК | HTTP **200**, `{"status":"no note","id":N}` |
  * | `/ajax/{тип}/multiple/delete/` | HTTP 200, `{"status":"fail","errors":["Недостаточно прав для удаления …"]}` |
  * | `/ajax/v1/{раздел}/set/` | HTTP 200, `errors[].code === 404` |
- * | публичный v4 | HTTP 404 |
+ * | публичный v4, ВОРОНКИ | HTTP **400**, `validation-errors[].errors[].code === "NotSupportedChoice"`, `path === "id"` |
+ * | публичный v4, остальные | HTTP 404 |
  *
  * Первые две строки — один роут и один глагол на соседних типах, и они
  * противоположны по знаку: у задачи «уже нет» это ошибка, у примечания —
- * успех. Отсюда правило, стоившее нам отдельного зонда: классификатор, знающий
- * три представления из пяти, ломает идемпотентность на четвёртом МОЛЧА —
- * лишний бросок неотличим от честной ошибки.
+ * успех. Последние две — один и тот же публичный v4, где воронки отвечают не
+ * как все. Отсюда правило, стоившее нам двух отдельных находок: классификатор,
+ * знающий пять представлений из шести, ломает идемпотентность на шестом МОЛЧА
+ * — лишний бросок неотличим от честной ошибки, а teardown уходит в повторы
+ * (на воронках это дало девять попыток подряд, ни одной успешной).
  *
- * Ни teardown, ни свип, ни потребитель не должны знать ни одного из пяти —
+ * Ни teardown, ни свип, ни потребитель не должны знать ни одного из шести —
  * они читают `bool`.
  *
  * ЯРУС SEMVER. Часть операций ниже ходит в приватные роуты амо
@@ -391,8 +393,15 @@ class Deleter
      * там, где публичного механизма нет, иначе завязываемся на нестабильный
      * контракт задаром.
      *
+     * ШЕСТОЕ ЛИЦО «УЖЕ НЕТ» — здесь оно не 404, а HTTP 400 с телом
+     * `{"validation-errors":[{"errors":[{"code":"NotSupportedChoice",
+     * "path":"id",…}]}],"detail":"Request validation failed"}`. Амо валидирует
+     * `id` против списка существующих воронок, и отсутствующая не «не найдена»,
+     * а «не входит в допустимые варианты». Пока это не распознавалось, teardown
+     * получал исключение и ретраил снос девять раз подряд, ни разу не пройдя.
+     *
      * @param  int|list<int>  $ids
-     * @return bool false — воронки уже нет (404)
+     * @return bool false — воронки уже нет: либо 404, либо 400 NotSupportedChoice
      *
      * @throws AmoCustomException
      */
@@ -401,10 +410,80 @@ class Deleter
         $confirmed = true;
 
         foreach ($this->ids($ids, 'delete pipelines') as $id) {
-            $confirmed = $this->deleteViaApi("leads/pipelines/{$id}") && $confirmed;
+            $confirmed = $this->deleteViaApi(
+                "leads/pipelines/{$id}",
+                [],
+                $this->pipelineIdIsNotAChoice(...)
+            ) && $confirmed;
         }
 
         return $confirmed;
+    }
+
+    /**
+     * `NotSupportedChoice` по пути `id` в ответе 400 — форма, которой амо
+     * сообщает, что воронки с таким id среди существующих нет.
+     *
+     * Сузили до этой связки намеренно: любой другой 400 остаётся громким.
+     * Признаём и оговорку — амо может отдавать тот же код и на воронку, которую
+     * удалить НЕЛЬЗЯ (основную либо непустую); отличить по ответу нечем. Как и
+     * у сделок с «Недостаточно прав», неоднозначность здесь принадлежит амо, и
+     * прятать её нельзя: `false` означает «не подтверждено», а не «удалено».
+     */
+    private function pipelineIdIsNotAChoice(RequestException $e): bool
+    {
+        if ($e->response->status() !== 400) {
+            return false;
+        }
+
+        $body = $e->response->json();
+
+        if (! is_array($body)) {
+            return false;
+        }
+
+        foreach ($this->validationErrors($body) as $error) {
+            if (! is_array($error)) {
+                continue;
+            }
+
+            if (($error['code'] ?? null) === 'NotSupportedChoice' && ($error['path'] ?? null) === 'id') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Плоский список `validation-errors[*].errors[*]` из ответа амо.
+     *
+     * @param  array<mixed>  $body
+     * @return list<mixed>
+     */
+    private function validationErrors(array $body): array
+    {
+        $groups = $body['validation-errors'] ?? null;
+
+        if (! is_array($groups)) {
+            return [];
+        }
+
+        $result = [];
+
+        foreach ($groups as $group) {
+            $errors = is_array($group) ? ($group['errors'] ?? null) : null;
+
+            if (! is_array($errors)) {
+                continue;
+            }
+
+            foreach ($errors as $error) {
+                $result[] = $error;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -661,11 +740,17 @@ class Deleter
      * Публичный v4 DELETE. 404 — не ошибка, а «сущности уже нет»: повторный
      * снос обязан быть идемпотентным, иначе второй прогон teardown ложно падает.
      *
+     * `$alsoAlreadyGone` — дополнительный распознаватель «уже нет» для тех
+     * типов, у которых амо отвечает не 404: у воронок это 400 с
+     * `NotSupportedChoice`. Передаётся точечно, а не зашит здесь, чтобы чужая
+     * четырёхсотка у sources и webhooks осталась громкой.
+     *
      * @param  array<string, mixed>  $data
+     * @param  (callable(RequestException): bool)|null  $alsoAlreadyGone
      *
      * @throws AmoCustomException
      */
-    private function deleteViaApi(string $path, array $data = []): bool
+    private function deleteViaApi(string $path, array $data = [], ?callable $alsoAlreadyGone = null): bool
     {
         try {
             $this->http->delete($path, $data)->throw();
@@ -673,6 +758,10 @@ class Deleter
             return true;
         } catch (RequestException $e) {
             if ($e->response->status() === 404) {
+                return false;
+            }
+
+            if ($alsoAlreadyGone !== null && $alsoAlreadyGone($e)) {
                 return false;
             }
 
