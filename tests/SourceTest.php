@@ -2,7 +2,7 @@
 
 namespace mttzzz\AmoClient\Tests;
 
-class sourceTest extends BaseAmoClient
+class SourceTest extends BaseAmoClient
 {
     public function test_source()
     {
