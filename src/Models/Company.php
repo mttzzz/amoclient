@@ -37,7 +37,7 @@ class Company extends AbstractModel
     }
 
     /**
-     * @param  array<mixed>  $data
+     * @param  array<string, mixed>  $data
      */
     public function entityData(array $data): Entities\Company
     {

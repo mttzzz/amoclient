@@ -20,12 +20,20 @@ class Webhook extends AbstractModel
 
     public function find(string $destination): Entities\Webhook
     {
-        $data = $this->http->get($this->entity, ['filter' => ['destination' => $destination]])->throw()->json() ?? [];
-        if (isset($data['_embedded']['webhooks'][0])) {
-            return new Entities\Webhook($data['_embedded']['webhooks'][0], $this->http);
-        } else {
-            return new Entities\Webhook([], $this->http);
+        $result = $this->http->get($this->entity, ['filter' => ['destination' => $destination]])->throw()->json();
+        $data = is_array($result) ? $result : [];
+
+        $embedded = $data['_embedded'] ?? null;
+        $webhooks = is_array($embedded) ? ($embedded['webhooks'] ?? null) : null;
+        $webhook = is_array($webhooks) ? ($webhooks[0] ?? null) : null;
+
+        if (is_array($webhook)) {
+            /* amo API отдаёт JSON-объект — ключи всегда строки, но json()
+             * типизирован как mixed, is_array() даёт лишь array<mixed>. */
+            /** @var array<string, mixed> $webhook */
+            return new Entities\Webhook($webhook, $this->http);
         }
 
+        return new Entities\Webhook([], $this->http);
     }
 }

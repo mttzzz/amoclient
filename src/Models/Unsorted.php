@@ -35,7 +35,9 @@ class Unsorted extends AbstractModel
             $data['user_id'] = $userId;
         }
         try {
-            return $this->http->delete("{$this->entity}/{$uid}/decline", $data)->throw()->json();
+            $result = $this->http->delete("{$this->entity}/{$uid}/decline", $data)->throw()->json();
+
+            return is_array($result) ? $result : [];
             // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
@@ -56,7 +58,9 @@ class Unsorted extends AbstractModel
             $data['status_id'] = $statusId;
         }
         try {
-            return $this->http->post("{$this->entity}/{$uid}/accept", $data)->throw()->json();
+            $result = $this->http->post("{$this->entity}/{$uid}/accept", $data)->throw()->json();
+
+            return is_array($result) ? $result : [];
             // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
             throw new AmoCustomException($e);
@@ -80,30 +84,43 @@ class Unsorted extends AbstractModel
 
     public function filterCategorySip(): self
     {
-        $this->filter['category'][] = 'sip';
+        $this->addFilterCategory('sip');
 
         return $this;
     }
 
     public function filterCategoryMail(): self
     {
-        $this->filter['category'][] = 'mail';
+        $this->addFilterCategory('mail');
 
         return $this;
     }
 
     public function filterCategoryForms(): self
     {
-        $this->filter['category'][] = 'forms';
+        $this->addFilterCategory('forms');
 
         return $this;
     }
 
     public function filterCategoryChats(): self
     {
-        $this->filter['category'][] = 'chats';
+        $this->addFilterCategory('chats');
 
         return $this;
+    }
+
+    /**
+     * $this->filter — array<string, mixed>, значение по 'category' для
+     * phpstan mixed, поэтому не аппендим напрямую (offsetAccess на mixed),
+     * а гардим is_array() перед [].
+     */
+    private function addFilterCategory(string $category): void
+    {
+        $categories = $this->filter['category'] ?? [];
+        $categories = is_array($categories) ? $categories : [];
+        $categories[] = $category;
+        $this->filter['category'] = $categories;
     }
 
     public function filterPipelineId(int $pipelineId): self

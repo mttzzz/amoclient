@@ -4,28 +4,38 @@ namespace mttzzz\AmoClient\Traits;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use mttzzz\AmoClient\Entities\AbstractEntity;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 trait CrudTrait
 {
     /**
-     * @return array<mixed>
+     * @return array<string, mixed>
      *
      * @throws AmoCustomException
      */
     protected function findEntity(int $id): array
     {
         try {
-            return $this->http->get($this->entity.'/'.$id,
+            $result = $this->http->get($this->entity.'/'.$id,
                 ['with' => implode(',', $this->with)])
-                ->throw()->json() ?? [];
+                ->throw()->json();
+
+            if (! is_array($result)) {
+                return [];
+            }
+
+            /* amo API отдаёт JSON-объект — ключи всегда строки, но json()
+             * типизирован как mixed, is_array() даёт лишь array<mixed>. */
+            /** @var array<string, mixed> $result */
+            return $result;
         } catch (ConnectionException|RequestException $e) {
             throw new AmoCustomException($e);
         }
     }
 
     /**
-     * @param  array<mixed>  $entities
+     * @param  list<AbstractEntity>  $entities
      * @return array<mixed>
      *
      * @throws AmoCustomException
@@ -34,7 +44,9 @@ trait CrudTrait
     {
         try {
             if (! empty($entities)) {
-                return $this->http->post($this->entity, $this->prepareEntities($entities))->throw()->json();
+                $result = $this->http->post($this->entity, $this->prepareEntities($entities))->throw()->json();
+
+                return is_array($result) ? $result : [];
             }
 
             return [];
@@ -45,7 +57,7 @@ trait CrudTrait
     }
 
     /**
-     * @param  array<mixed>  $entities
+     * @param  list<AbstractEntity>  $entities
      * @return array<mixed>
      *
      * @throws AmoCustomException
@@ -54,7 +66,9 @@ trait CrudTrait
     {
         try {
             if (! empty($entities)) {
-                return $this->http->patch($this->entity, $this->prepareEntities($entities))->throw()->json();
+                $result = $this->http->patch($this->entity, $this->prepareEntities($entities))->throw()->json();
+
+                return is_array($result) ? $result : [];
             }
 
             return [];

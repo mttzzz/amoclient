@@ -32,8 +32,14 @@ class Account extends AbstractModel
                 $query['with'] = implode(',', $this->with);
             }
             $data = $this->http->get($this->entity, $query)->throw()->json();
-            $data = is_null($data) ? [] : $data;
 
+            if (! is_array($data)) {
+                return [];
+            }
+
+            /* amo API отдаёт JSON-объект — ключи всегда строки, но json()
+             * типизирован как mixed, is_array() даёт лишь array<mixed>. */
+            /** @var array<string, mixed> $data */
             return $data;
         } catch (RequestException $e) {
             throw new AmoCustomException($e);

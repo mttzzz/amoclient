@@ -30,30 +30,43 @@ class Note extends AbstractModel
 
     public function filterCallIn(): self
     {
-        $this->filter['note_type'][] = 'call_in';
+        $this->addFilterNoteType('call_in');
 
         return $this;
     }
 
     public function filterCallOut(): self
     {
-        $this->filter['note_type'][] = 'call_out';
+        $this->addFilterNoteType('call_out');
 
         return $this;
     }
 
     public function filterEmail(): self
     {
-        $this->filter['note_type'][] = 'amomail_message';
+        $this->addFilterNoteType('amomail_message');
 
         return $this;
     }
 
     public function filterCommon(): self
     {
-        $this->filter['note_type'][] = 'common';
+        $this->addFilterNoteType('common');
 
         return $this;
+    }
+
+    /**
+     * $this->filter — array<string, mixed>, значение по 'note_type' для
+     * phpstan mixed, поэтому не аппендим напрямую (offsetAccess на mixed),
+     * а гардим is_array() перед [].
+     */
+    private function addFilterNoteType(string $type): void
+    {
+        $types = $this->filter['note_type'] ?? [];
+        $types = is_array($types) ? $types : [];
+        $types[] = $type;
+        $this->filter['note_type'] = $types;
     }
 
     public function filterUpdatedAt(int $from, int $to): self

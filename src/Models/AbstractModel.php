@@ -6,6 +6,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use mttzzz\AmoClient\Entities\AbstractEntity;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 
 abstract class AbstractModel
@@ -49,7 +50,7 @@ abstract class AbstractModel
                 }
             }
             $data = $this->http->get($this->entity, $query)->throw()->json();
-            $data = is_null($data) ? [] : $data;
+            $data = is_array($data) ? $data : [];
 
             if (isset($data['_embedded']) && is_array($data['_embedded'])) {
                 $embeddedData = Arr::first($data['_embedded']);
@@ -57,6 +58,13 @@ abstract class AbstractModel
                 $embeddedData = $data;
             }
 
+            if (! is_array($embeddedData)) {
+                return [];
+            }
+
+            /* amo API отдаёт JSON-объект — ключи всегда строки, но json()
+             * типизирован как mixed, is_array() даёт лишь array<mixed>. */
+            /** @var array<string, mixed> $embeddedData */
             return $embeddedData;
             // @codeCoverageIgnoreStart
         } catch (RequestException $e) {
@@ -88,16 +96,17 @@ abstract class AbstractModel
     }
 
     /**
-     * @param  array<mixed>  $entities
-     * @return array<mixed>
+     * @param  list<AbstractEntity>  $entities
+     * @return list<array<string, mixed>>
      */
     protected function prepareEntities(array $entities): array
     {
-        foreach ($entities as $key => $entity) {
-            $entities[$key] = $entity->toArray();
+        $result = [];
+        foreach ($entities as $entity) {
+            $result[] = $entity->toArray();
         }
 
-        return $entities;
+        return $result;
     }
 
     public function each(callable $function, int $limit = 150): void
@@ -122,10 +131,13 @@ abstract class AbstractModel
     public function allItems(int $limit = 150): array
     {
         $result = [];
-        $this->each(function ($items) use (&$result) {
+        $this->each(function (array $items) use (&$result) {
             $result = array_merge($result, $items);
         }, $limit);
 
+        /* $result мутируется по ссылке внутри замыкания each() — phpstan
+         * не протаскивает уточнённый тип через byref-захват. */
+        /** @var array<int, array<string, mixed>> $result */
         return $result;
     }
 }
