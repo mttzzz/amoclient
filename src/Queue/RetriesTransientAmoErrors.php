@@ -26,6 +26,7 @@ use Throwable;
  * Транзиент: сетевые сбои, 5xx, 401 (гонка ротации токена),
  * 402 при payed=true в octane (ложь амо).
  */
+/* @phpstan-ignore trait.unused (миксин для Job-классов consumer-проектов — используется в tests/Resilience, но phpstan.neon анализирует только src/, поэтому ни один класс в src/ на неё не ссылается) */
 trait RetriesTransientAmoErrors
 {
     /* Абсолютный горизонт ретраев; Laravel фиксирует его в payload при dispatch. */

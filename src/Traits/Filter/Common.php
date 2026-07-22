@@ -69,14 +69,20 @@ trait Common
     public function filterCustomField(int $fieldId, mixed $value): self
     {
         $value = is_array($value) ? $value : [$value];
-        $this->filter['custom_fields_values'][$fieldId] = $value;
+        $customFields = $this->filter['custom_fields_values'] ?? [];
+        $customFields = is_array($customFields) ? $customFields : [];
+        $customFields[$fieldId] = $value;
+        $this->filter['custom_fields_values'] = $customFields;
 
         return $this;
     }
 
     public function filterCustomFieldFromTo(int $fieldId, int $from, int $to): self
     {
-        $this->filter['custom_fields_values'][$fieldId] = compact('from', 'to');
+        $customFields = $this->filter['custom_fields_values'] ?? [];
+        $customFields = is_array($customFields) ? $customFields : [];
+        $customFields[$fieldId] = compact('from', 'to');
+        $this->filter['custom_fields_values'] = $customFields;
 
         return $this;
     }

@@ -16,9 +16,19 @@ trait PhoneTrait
         $phones = [];
         if ($this->custom_fields_values) {
             foreach ($this->custom_fields_values as $f) {
-                if (isset($f['field_code']) && $f['field_code'] === 'PHONE') {
-                    foreach ($f['values'] as $v) {
-                        $phones[] = $v['value'];
+                if (! isset($f['field_code']) || $f['field_code'] !== 'PHONE') {
+                    continue;
+                }
+
+                $values = $f['values'] ?? null;
+                if (! is_array($values)) {
+                    continue;
+                }
+
+                foreach ($values as $v) {
+                    $value = is_array($v) ? ($v['value'] ?? null) : null;
+                    if (is_string($value)) {
+                        $phones[] = $value;
                     }
                 }
             }
@@ -53,7 +63,12 @@ trait PhoneTrait
     public function phoneAdd(string $phone): self
     {
         $key = key($this->phoneGet());
-        $this->custom_fields_values[$key]['values'][] = ['value' => $phone, 'enum_code' => 'WORK'];
+        if (is_int($key)) {
+            $values = $this->custom_fields_values[$key]['values'] ?? null;
+            $values = is_array($values) ? $values : [];
+            $values[] = ['value' => $phone, 'enum_code' => 'WORK'];
+            $this->custom_fields_values[$key]['values'] = $values;
+        }
 
         return $this;
     }
@@ -70,7 +85,9 @@ trait PhoneTrait
         foreach ($phones as $phone) {
             $values[] = ['value' => $phone, 'enum_code' => 'WORK'];
         }
-        $this->custom_fields_values[$key]['values'] = $values;
+        if (is_int($key)) {
+            $this->custom_fields_values[$key]['values'] = $values;
+        }
 
         return $this;
     }
@@ -81,10 +98,17 @@ trait PhoneTrait
     public function phoneDelete(int $phone): self
     {
         $key = key($this->phoneGet());
-        foreach ($this->custom_fields_values[$key]['values'] as $index => $value) {
-            $phoneContact = preg_replace('/[^0-9.]+/', '', $value['value']);
-            if ((string) $phone === $phoneContact) {
-                unset($this->custom_fields_values[$key]['values'][$index]);
+        if (is_int($key)) {
+            $values = $this->custom_fields_values[$key]['values'] ?? null;
+            if (is_array($values)) {
+                foreach ($values as $index => $value) {
+                    $phoneValue = is_array($value) ? ($value['value'] ?? null) : null;
+                    $phoneContact = preg_replace('/[^0-9.]+/', '', is_scalar($phoneValue) ? (string) $phoneValue : '');
+                    if ((string) $phone === $phoneContact) {
+                        unset($values[$index]);
+                    }
+                }
+                $this->custom_fields_values[$key]['values'] = $values;
             }
         }
 

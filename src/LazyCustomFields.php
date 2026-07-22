@@ -3,6 +3,7 @@
 namespace mttzzz\AmoClient;
 
 use Illuminate\Support\Facades\DB;
+use stdClass;
 
 /*
  * Ленивый загрузчик account_custom_fields для AmoClientOctane.
@@ -27,7 +28,7 @@ final class LazyCustomFields
     {
         $this->load();
 
-        return $this->cf;
+        return $this->cf ?? [];
     }
 
     /** @return array<int|string, string|null> */
@@ -35,7 +36,7 @@ final class LazyCustomFields
     {
         $this->load();
 
-        return $this->enums;
+        return $this->enums ?? [];
     }
 
     private function load(): void
@@ -52,8 +53,27 @@ final class LazyCustomFields
         $cf = [];
         $enums = [];
         foreach ($rows as $row) {
-            $cf[$row->id] = $row->type;
-            $enums[$row->id] = is_array($row->enums) ? json_encode($row->enums) : $row->enums;
+            /* raw SQL-строка — PDO отдаёт stdClass, но select() типизирован
+             * как array (без generics), гардим перед доступом к свойствам. */
+            if (! $row instanceof stdClass) {
+                continue;
+            }
+
+            $id = $row->id ?? null;
+            if (! is_int($id) && ! is_string($id)) {
+                continue;
+            }
+
+            $type = $row->type ?? null;
+            $cf[$id] = is_string($type) ? $type : '';
+
+            $rowEnums = $row->enums ?? null;
+            if (is_array($rowEnums)) {
+                $encoded = json_encode($rowEnums);
+                $enums[$id] = $encoded === false ? null : $encoded;
+            } else {
+                $enums[$id] = is_string($rowEnums) ? $rowEnums : null;
+            }
         }
 
         $this->cf = $cf;
