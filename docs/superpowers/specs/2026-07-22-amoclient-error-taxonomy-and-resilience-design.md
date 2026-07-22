@@ -90,6 +90,8 @@ AmoCRM отвечает не по контракту (см. кейсы выше)
 | `AmoValidationException` | ❌ | ❌ | настоящий bad request (есть `validation-errors`) — наш баг, алертить |
 | `AmoUnknownException` | ❌ | ❌ | **не классифицировано — громкая тревога (см. 2.3)** |
 
+**Дискриминаторы 400** (подтверждены кодом офф. SDK, см. 2.5): настоящий bad request несёт массив **`validation-errors`** в теле → `AmoValidationException`; 400 **без** `validation-errors`, но с `detail` ≈ «повторите попытку/системная ошибка» → `AmoSystemRetryException` (код врёт). Повод всегда берём из поля **`detail`**.
+
 ### 2.2 Два классификатора
 `PublicApiErrorClassifier` и `AjaxErrorClassifier` реализуют общий интерфейс `classify(status, body, headers, previous): AmoException`. Публичный работает с RFC-7807-подобными телами (`title/type/status/detail`, `validation-errors`); ajax — со своим диалектом (коды вида `Error 282.`/`Error 426.`, HTML, нестандартные обёртки). Классификаторы намеренно **раздельны** — семантика каналов не пересекается. Точка входа выбирает классификатор по каналу вызова.
 
@@ -99,6 +101,25 @@ AmoCRM отвечает не по контракту (см. кейсы выше)
 ### 2.4 Transport resilience
 - **Retry:** проксирование-ротация только на `ConnectionException` (недоступность прокси); на 5xx — ограниченный ретрай без прокси-чурна; на 429 — уважать `Retry-After`.
 - **Circuit breaker (opt-in):** реализуется в либе, работает через инжектируемый PSR-16 cache. Включается **пер-инстанс клиента** (batch-синк AccountUpdate — вкл; real-time виджет-вызовы вроде lead-lookup/client-info — выкл, юзер ждёт ответа). Первый вызов, получивший «Amo down»-сигнал (`AmoServerException`/`AmoConnectionException`), открывает брейкер на короткий TTL; последующие вызовы при открытом брейкере быстро отклоняются (типизированной ошибкой) без похода в сеть. Half-open: одна проба после TTL.
+
+### 2.5 Baseline из официальной библиотеки `amocrm/amocrm-api-php`
+Их публичный SDK даёт **грубый** baseline для `PublicApiErrorClassifier`. Приватного ajax там нет by design — его правила растим только из реальных захватов (браузер/Sentry).
+
+| Их обработка (публичное v4) | Наш тип |
+|---|---|
+| `ConnectException` (Guzzle) | `AmoConnectionException` |
+| 429 → `AmoCRMApiTooManyRequestsException` | `AmoRateLimitException` |
+| 401 → `AmoCRMoAuthApiException` (несёт `detail`) | `AmoAuthException` |
+| 204 → `AmoCRMApiNoContentException` | успех/пусто — не ошибка |
+| 400 **с** `validation-errors` → `AmoCRMApiErrorResponseException` | `AmoValidationException` |
+| тело не JSON (HTML) → `AmoCRMApiException("Response body is not json")` | `AmoServerException` (если 5xx) |
+| прочее non-success → generic `AmoCRMApiException` | **наша доработка** (см. ниже) |
+
+Подтверждённые их кодом дискриминаторы: канонический повод в поле **`detail`**; **наличие `validation-errors`** = настоящий 400; **не-JSON тело** на ошибке = типичный HTML-гейтвей 5xx.
+
+Чего офф. либа **НЕ** различает (наша production-доработка на основе живых инцидентов): `402/403/404`, `5xx`-как-класс, «код-врёт» 400 с retry-текстом, и весь **ajax**-диалект. Контракта `isRetryable/isSilenceable/retryAfter` у них тоже нет — это наш слой.
+
+Ref: `https://github.com/amocrm/amocrm-api-php/blob/master/src/AmoCRM/Client/AmoCRMApiRequest.php` (`checkHttpStatus`, `parseResponse`).
 
 ---
 
