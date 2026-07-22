@@ -33,15 +33,18 @@ trait CustomFieldTrait
         $values = is_array($value) ? $value : [$value];
 
         foreach ($values as $key => $value) {
-            $values[$key] = $isEnumId ? ['enum_id' => (int) $value] : ['value' => $this->setValue($id, $value)];
+            $values[$key] = $isEnumId ? ['enum_id' => is_numeric($value) ? (int) $value : 0] : ['value' => $this->setValue($id, $value)];
         }
 
         if (isset($this->enums[$id])) {
             if (empty($values)) {
                 $this->custom_fields_values[] = ['field_id' => $id, 'values' => null];
             } else {
-                $enums = Arr::pluck(json_decode($this->enums[$id], true), 'value', 'id');
-                if (in_array($value, $enums) || array_key_exists($value, $enums) || in_array('WORK', $enums)) {
+                $enumsJson = $this->enums[$id];
+                $decodedEnums = is_string($enumsJson) ? json_decode($enumsJson, true) : null;
+                $enums = is_array($decodedEnums) ? Arr::pluck($decodedEnums, 'value', 'id') : [];
+                $enumKey = is_int($value) || is_string($value) ? $value : null;
+                if (in_array($value, $enums) || ($enumKey !== null && array_key_exists($enumKey, $enums)) || in_array('WORK', $enums)) {
                     $this->custom_fields_values[] = ['field_id' => $id, 'values' => $values];
                 }
             }
@@ -59,17 +62,17 @@ trait CustomFieldTrait
             switch ($type) {
                 case 'textarea':
                 case 'multitext':
-                    return (string) $value;
+                    return self::toScalarString($value);
                 case 'url':
-                    return Str::limit((string) $value, 2000, '');
+                    return Str::limit(self::toScalarString($value), 2000, '');
                 case 'text':
-                    return Str::limit((string) $value, 255, '');
+                    return Str::limit(self::toScalarString($value), 255, '');
                 case 'numeric':
-                    return (float) $value;
+                    return is_numeric($value) ? (float) $value : 0.0;
                 case 'date_time':
                 case 'date':
                     try {
-                        $value = strip_tags((string) $value);
+                        $value = strip_tags(self::toScalarString($value));
 
                         return is_numeric($value) ?
                             Carbon::createFromTimestamp($value)->timestamp :
@@ -86,12 +89,12 @@ trait CustomFieldTrait
                     return (bool) $value;
                 case 'birthday':
                     try {
-                        $value = strip_tags($value);
-                        $value = is_string($value) && ! is_numeric($value) ?
+                        $value = strip_tags(self::toScalarString($value));
+                        $parsed = ! is_numeric($value) ?
                             Carbon::parseFromLocale(str_replace('&nbsp;', ' ', $value), 'ru') :
                             Carbon::createFromTimestamp((int) $value);
 
-                        return $value->format('Y-m-d\\TH:i:sP');
+                        return $parsed->format('Y-m-d\\TH:i:sP');
                     } catch (Exception $e) {
                         Telegram::log([
                             'value' => $value,
@@ -106,8 +109,16 @@ trait CustomFieldTrait
         return $value;
     }
 
+    /* amo-значения кастомных полей приходят как mixed (форма/API), а не
+     * приводятся кастом напрямую — level: max запрещает cast mixed → string
+     * без гарда. */
+    private static function toScalarString(mixed $value): string
+    {
+        return is_scalar($value) ? (string) $value : '';
+    }
+
     /**
-     * @return array<array<string, mixed>>
+     * @return array<int, array<string, mixed>>
      */
     public function getCF(int $id): array
     {
@@ -116,7 +127,7 @@ trait CustomFieldTrait
     }
 
     /**
-     * @return array<array<string, mixed>>
+     * @return array<int, array<string, mixed>>
      */
     public function getCFByCode(string $code): array
     {
@@ -126,17 +137,35 @@ trait CustomFieldTrait
 
     public function getCFV(int $id): mixed
     {
-        return Arr::first($this->getCF($id))['values'][0]['value'] ?? null;
+        return self::firstCFValue($this->getCF($id), 'value');
     }
 
     public function getCFVByCode(string $code): mixed
     {
-        return Arr::first($this->getCFByCode(Str::upper($code)))['values'][0]['value'] ?? null;
+        return self::firstCFValue($this->getCFByCode(Str::upper($code)), 'value');
     }
 
     public function getCFE(int $id): ?int
     {
-        return Arr::first($this->getCF($id))['values'][0]['enum_id'] ?? null;
+        $enumId = self::firstCFValue($this->getCF($id), 'enum_id');
+
+        return is_numeric($enumId) ? (int) $enumId : null;
+    }
+
+    /**
+     * values[0][$key] первого элемента $cf — сама структура custom_fields_values
+     * динамическая (форма amo API), поэтому гардим is_array() на каждом
+     * уровне вместо offset-доступа на mixed.
+     *
+     * @param  array<int, array<string, mixed>>  $cf
+     */
+    private static function firstCFValue(array $cf, string $key): mixed
+    {
+        $first = Arr::first($cf);
+        $values = is_array($first) ? ($first['values'] ?? null) : null;
+        $firstValue = is_array($values) ? ($values[0] ?? null) : null;
+
+        return is_array($firstValue) ? ($firstValue[$key] ?? null) : null;
     }
 
     /**
@@ -146,10 +175,22 @@ trait CustomFieldTrait
     {
         $names = [];
         $f = Arr::first($this->getCF($id));
-        if ($f) {
-            foreach ($f['values'] as $value) {
-                $el = $this->http->get("catalogs/{$value['catalog_id']}/elements/{$value['catalog_element_id']}")->json();
-                $names[] = $el['name'];
+        $values = is_array($f) ? ($f['values'] ?? null) : null;
+
+        if (is_array($values)) {
+            foreach ($values as $value) {
+                if (! is_array($value)) {
+                    continue;
+                }
+
+                $catalogId = self::toScalarString($value['catalog_id'] ?? null);
+                $catalogElementId = self::toScalarString($value['catalog_element_id'] ?? null);
+                $el = $this->http->get("catalogs/{$catalogId}/elements/{$catalogElementId}")->json();
+                $name = is_array($el) ? ($el['name'] ?? null) : null;
+
+                if (is_string($name)) {
+                    $names[] = $name;
+                }
             }
         }
 
@@ -162,9 +203,20 @@ trait CustomFieldTrait
     public function getCFVM(int $id): array
     {
         $f = $this->getCF($id);
-        /** @var array<int, array<string, mixed>> $values */
-        $values = Arr::first($f)['values'] ?? [];
+        $first = Arr::first($f);
+        $values = is_array($first) ? ($first['values'] ?? []) : [];
+        $values = is_array($values) ? $values : [];
 
-        return count($f) ? collect($values)->pluck('value')->toArray() : [];
+        if (! count($f)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($values as $item) {
+            $value = is_array($item) ? ($item['value'] ?? null) : null;
+            $result[] = is_scalar($value) ? (string) $value : '';
+        }
+
+        return $result;
     }
 }

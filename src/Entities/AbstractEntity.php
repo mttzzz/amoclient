@@ -21,7 +21,7 @@ abstract class AbstractEntity
     public int $responsible_user_id = 0;
 
     /**
-     * @var array<mixed>
+     * @var array<int, array<string, mixed>>
      **/
     public array $custom_fields_values = [];
 

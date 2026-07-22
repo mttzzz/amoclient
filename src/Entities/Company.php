@@ -14,7 +14,7 @@ class Company extends AbstractEntity
     public ?string $name;
 
     /**
-     * @var array<mixed>
+     * @var array<int, array<string, mixed>>
      */
     public array $custom_fields_values = [];
 

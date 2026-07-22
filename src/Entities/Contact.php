@@ -20,7 +20,7 @@ class Contact extends AbstractEntity
     public int $created_by;
 
     /**
-     * @var array<mixed>
+     * @var array<int, array<string, mixed>>
      */
     public array $custom_fields_values = [];
 

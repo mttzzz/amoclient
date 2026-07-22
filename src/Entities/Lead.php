@@ -65,7 +65,7 @@ class Lead extends AbstractEntity
     public bool $is_price_computed;
 
     /**
-     * @var array<mixed>
+     * @var array<int, array<string, mixed>>
      */
     public array $custom_fields_values = [];
 
