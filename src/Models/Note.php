@@ -38,10 +38,11 @@ class Note extends AbstractModel
      * Это свойство роута амо, а не недосмотр библиотеки.
      *
      * @param  int|list<int>  $ids
-     * @return bool false — амо ответил HTTP 400 `{"status":"fail","id":N}`,
-     *              то есть примечания уже нет. «Уже нет» приходит здесь ошибочным
-     *              статусом, а не полем в теле двухсотки — разбирает это
-     *              Deleter, вызывающему достаточно bool
+     * @return bool false — амо ответил HTTP 200 `{"status":"no note","id":N}`,
+     *              то есть примечания уже нет. У задач тот же факт выглядит иначе
+     *              (400 + `status:fail`) — один приватный роут отвечает на
+     *              соседних типах по-разному, разбирает это Deleter,
+     *              вызывающему достаточно bool
      *
      * @throws AmoCustomException
      * @throws AmoUnknownException
