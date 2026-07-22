@@ -16,12 +16,12 @@
     ],
     "require": {
         "php": "^8.1|^8.2|^8.3|^8.4",
-        "mttzzz/laravel-telegram-log": "*"
+        "illuminate/http": "^12.0|^13.0",
+        "mttzzz/laravel-telegram-log": "^2.4"
     },
     "require-dev": {
         "phpunit/phpunit": "^12.5",
         "guzzlehttp/guzzle": "^7.11",
-        "illuminate/http": "^12.0|^13.0",
         "orchestra/testbench": "^10.1|^11.1",
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.18"
@@ -45,7 +45,7 @@
         "lint": "pint --test"
     },
     "scripts-descriptions": {
-        "stan": "phpstan level max по src",
+        "stan": "phpstan level max: src + страховочная сетка тестов (tests/Support, tests/Resilience, BaseAmoClient). Легаси-сьют tests/*Test.php вне анализа — отдельная кампания",
         "test": "Весь сьют. Включает интеграционный: бьёт в боевой аккаунт amo 16117840 и читает токен из локальной копии прод-Postgres octane_pushka_biz. В CI неприменим",
         "test:offline": "Только то, что живёт без сети и без amo: tests/Support (чистая логика) + tests/Resilience (Http::fake + sqlite in-memory). Это и гоняет CI",
         "test:sweep": "Финальная сетка от хвостов: снести из amo сущности, помеченные AmoTestSweeper::TEST_MARKER. Умолчание — окно 3 суток, шире через --days=N",

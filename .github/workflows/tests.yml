@@ -61,11 +61,15 @@ jobs:
           extensions: dom, curl, libxml, mbstring, json, sqlite3, pdo_sqlite
           coverage: none
 
+      # --strict: предупреждения валидатора здесь — дефекты упаковки, а не шум.
+      # Ровно так вскрылось, что либа не объявляла illuminate/http в require,
+      # хотя вся её поверхность построена на нём.
+      #
       # --no-check-lock намеренно: composer.lock пинит одну ветку Laravel, а
       # каждый лег матрицы пересобирает дерево под свою. Расхождение лока с
       # легом здесь ожидаемо и ни о чём не сигналит.
       - name: Валидация composer.json
-        run: composer validate --no-check-lock
+        run: composer validate --strict --no-check-lock
 
       # --with, а не `composer require`: временный constraint не переписывает
       # composer.json в рабочей копии, поэтому лег не может утечь в артефакты
