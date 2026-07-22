@@ -82,10 +82,8 @@ abstract class BaseAmoClient extends TestCase
      */
     private static ?TestEntityRegistry $registry = null;
 
-    /* Клиент для сноса строится ЛЕНИВО и один раз на прогон (постройка = запрос
-     * в octane за токеном, платить им на каждый класс незачем). Лениво, а не из
-     * $this->amoClient: tearDownAfterClass() и shutdown-хук статические, живого
-     * инстанса теста в них нет. */
+    /* Клиент для сноса — ЗАХВАЧЕННЫЙ в setUp(), пока приложение ещё живо.
+     * Собрать его в момент уборки невозможно, см. sweepClient(). */
     private static ?AmoClientOctane $sweepClient = null;
 
     private static bool $shutdownHookRegistered = false;
@@ -363,12 +361,21 @@ abstract class BaseAmoClient extends TestCase
     }
 
     /**
-     * Клиент для сноса: лениво, один раз на прогон.
+     * Клиент для сноса — только захваченный в setUp(), здесь он не собирается.
      *
-     * Постройка может упасть сама (например, shutdown-хук после нормального
-     * прогона работает уже по разобранному приложению Testbench — фасады DB и
-     * Config мертвы). Это не повод молчать: реестр в этот момент непуст, значит
-     * в боевом аккаунте лежит хвост, и его id надо назвать.
+     * Собрать его в момент уборки НЕЛЬЗЯ, и это не осторожность, а измеренный
+     * факт: Testbench разбирает приложение в tearDown() КАЖДОГО теста
+     * (ApplicationTestingHooks::tearDownTheApplicationTestingHooks — flush()
+     * и `app = null`), поэтому в tearDownAfterClass(), а тем более в
+     * shutdown-хуке, живого контейнера уже нет. Постройка падает на резолве
+     * `config` («Target class [config] does not exist»), и тогда не выполняется
+     * уборка ЦЕЛОГО класса, а не одной сущности.
+     *
+     * Уже собранный клиент разбор переживает: PendingRequest на отправке не
+     * трогает ни фасадов, ни контейнера (проверено по вендору), Deleter и Ajax
+     * тоже. Контейнер нужен ровно двум веткам ретрая — перечитыванию токена на
+     * 401 и снапшоту accounts.payed на 402; обе ходят через DB-фасад и после
+     * разбора упадут — но упадут в catch свипа, с названным типом и id.
      */
     private static function sweepClient(): ?AmoClientOctane
     {
@@ -376,25 +383,17 @@ abstract class BaseAmoClient extends TestCase
             return self::$sweepClient;
         }
 
-        try {
-            return self::$sweepClient = new AmoClientOctane(self::ACCOUNT_ID, self::CLIENT_ID);
-        } catch (Throwable $e) {
+        fwrite(STDERR, "\n[teardown] КЛИЕНТ НЕ ЗАХВАЧЕН (setUp не отработал?) — уборка не выполнена\n");
+
+        foreach (self::registry()->all() as $entry) {
             fwrite(STDERR, sprintf(
-                "\n[teardown] КЛИЕНТ НЕ СОБРАН, уборка не выполнена — %s: %s\n",
-                $e::class,
-                $e->getMessage()
+                "[teardown] ХВОСТ В AMO: %s id=%s\n",
+                $entry['type'],
+                (string) $entry['id']
             ));
-
-            foreach (self::registry()->all() as $entry) {
-                fwrite(STDERR, sprintf(
-                    "[teardown] ХВОСТ В AMO: %s id=%s\n",
-                    $entry['type'],
-                    (string) $entry['id']
-                ));
-            }
-
-            return null;
         }
+
+        return null;
     }
 
     /**
@@ -460,6 +459,13 @@ abstract class BaseAmoClient extends TestCase
         // Создать экземпляр AmoClientOctane
         $this->amoClient = new AmoClientOctane(self::ACCOUNT_ID, self::CLIENT_ID);
 
+        /* Захват клиента для уборки, пока приложение живо: собрать его в
+         * tearDownAfterClass()/shutdown-хуке нельзя (см. sweepClient()).
+         * Переприсваивание на каждом setUp бесплатно — клиент всё равно
+         * построен для самого теста — и держит ссылку на самую свежую сборку,
+         * то есть на только что перечитанный токен. */
+        self::$sweepClient = $this->amoClient;
+
         if (! self::$shutdownHookRegistered) {
             self::$shutdownHookRegistered = true;
 
@@ -469,11 +475,11 @@ abstract class BaseAmoClient extends TestCase
              * контракте Deleter (уже удалённое даёт false, а не исключение),
              * так что двойной снос не выглядит провалом.
              *
-             * Известная граница: после НОРМАЛЬНОГО прогона хук отрабатывает уже
-             * по разобранному приложению Testbench, и запрос через фасады может
-             * упасть сам. Это не потеря: в норме реестр к этому моменту пуст
-             * (снёс tearDownAfterClass), а если в нём что-то осталось — падение
-             * поймано и id напечатан в STDERR. */
+             * Приложение Testbench к этому моменту разобрано, поэтому хук
+             * работает захваченным клиентом и ничего не конструирует: сборка
+             * тут падала бы на резолве `config`. Ветки ретрая, которым нужен
+             * DB-фасад (401 и 402), после разбора упадут — но в catch свипа,
+             * с названным типом и id. */
             register_shutdown_function(static function (): void {
                 self::sweepTrackedEntities();
             });
