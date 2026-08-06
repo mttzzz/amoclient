@@ -5,6 +5,7 @@ namespace mttzzz\AmoClient\Queue;
 use DateTimeInterface;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use mttzzz\AmoClient\Exceptions\AmoCustomException;
 use mttzzz\AmoClient\Exceptions\AmoPaymentRequiredException;
 use Throwable;
@@ -24,7 +25,8 @@ use Throwable;
  *    (горизонт исчерпан).
  *
  * Транзиент: сетевые сбои, 5xx, 401 (гонка ротации токена),
- * 402 при payed=true в octane (ложь амо).
+ * 402 при payed=true в octane (ложь амо), 404-HTML от web-роутера амо
+ * (запрос не доехал до контроллера; JSON-404 от API — постоянная ошибка).
  */
 /* @phpstan-ignore trait.unused (миксин для Job-классов consumer-проектов — используется в tests/Resilience, но phpstan.neon анализирует только src/, поэтому ни один класс в src/ на неё не ссылается) */
 trait RetriesTransientAmoErrors
@@ -63,12 +65,39 @@ trait RetriesTransientAmoErrors
             return true;
         }
 
-        $status = match (true) {
-            $e instanceof RequestException => $e->response->status(),
-            $previous instanceof RequestException => $previous->response->status(),
+        $httpError = match (true) {
+            $e instanceof RequestException => $e,
+            $previous instanceof RequestException => $previous,
             default => null,
         };
 
-        return $status === 401 || ($status !== null && $status >= 500);
+        if ($httpError === null) {
+            return false;
+        }
+
+        $status = $httpError->response->status();
+
+        /*
+         * 404 двух сортов. JSON «Not Found» от API — сущность реально
+         * отсутствует, ретрай бессмыслен. HTML-страница 404 от web-роутера
+         * амо — запрос не доехал до контроллера (глюк их фронта на приватных
+         * ajax-эндпойнтах; инцидент masterm 2026-08-06, ajax/todo/calendar) —
+         * транзиент.
+         */
+        if ($status === 404) {
+            return self::isAmoWebRouterHtml($httpError->response);
+        }
+
+        return $status === 401 || $status >= 500;
+    }
+
+    /* HTML распознаём по Content-Type или телу-разметке: API амо отвечает только JSON. */
+    private static function isAmoWebRouterHtml(Response $response): bool
+    {
+        if (str_contains(strtolower($response->header('Content-Type')), 'text/html')) {
+            return true;
+        }
+
+        return str_starts_with(ltrim($response->body()), '<');
     }
 }

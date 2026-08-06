@@ -3,6 +3,19 @@
 Заметные изменения библиотеки. Формат — [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 версии — [semver](https://semver.org/lang/ru/).
 
+## [4.0.2] — 2026-08-06
+
+### Исправлено
+
+**HTML-404 от web-роутера амо признаётся транзиентом.** `Queue\RetriesTransientAmoErrors::isTransientAmoError()`
+теперь различает два сорта 404: JSON «Not Found» от API (сущность реально отсутствует — постоянная
+ошибка, как раньше) и HTML-страницу 404 от web-роутера амо (запрос не доехал до контроллера — глюк
+их фронта, замечен на приватных ajax-эндпойнтах: `ajax/todo/calendar`). Второй сорт — транзиент:
+джоба уходит в release с backoff вместо потери вебхука (инцидент masterm 2026-08-06).
+
+Различитель — `Content-Type: text/html` либо тело, начинающееся с разметки (`<`): API амо отвечает
+только JSON. Прочие 4xx не задеты.
+
 ## [4.0.1] — 2026-07-22
 
 ### Исправлено
@@ -361,4 +374,6 @@ Floor `^7.8.2` — это пол самого `illuminate/http`: когда он
 Двигать `guzzlehttp/guzzle` под 4.0.0 не нужно: floor `^7.8.2` ниже всего, что стоит в живых
 проектах.
 
+[4.0.2]: https://github.com/mttzzz/amoclient/releases/tag/4.0.2
+[4.0.1]: https://github.com/mttzzz/amoclient/releases/tag/4.0.1
 [4.0.0]: https://github.com/mttzzz/amoclient/releases/tag/4.0.0

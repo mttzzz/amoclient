@@ -32,6 +32,7 @@ class RetriesTransientAmoErrorsTest extends TestCase
         $this->assertTrue(DummyAmoJob::isTransientAmoError($this->requestException(503)));
         $this->assertTrue(DummyAmoJob::isTransientAmoError($this->requestException(401)));
         $this->assertFalse(DummyAmoJob::isTransientAmoError($this->requestException(400)));
+        $this->assertFalse(DummyAmoJob::isTransientAmoError($this->requestException(404))); /* JSON-404 — постоянная */
         $this->assertFalse(DummyAmoJob::isTransientAmoError(new RuntimeException('boom')));
 
         /* обёрнутый 5xx (AmoCustomException поверх RequestException) — транзиент */
@@ -47,6 +48,42 @@ class RetriesTransientAmoErrorsTest extends TestCase
         $real = new AmoPaymentRequiredException($this->requestException(402));
         $real->accountPayed = false;
         $this->assertFalse(DummyAmoJob::isTransientAmoError($real));
+    }
+
+    public function test_html_404_from_amo_web_router_is_transient(): void
+    {
+        /* штамп инцидента masterm 2026-08-06: web-роутер амо отдал свою
+           HTML-страницу на ajax/todo/calendar — контроллер недостижим, транзиент */
+        $htmlPage = "<!doctype html>\n<!--[if IE 7]>     <html class=\"ie lte8\"> <![endif]-->\n<html><body>404</body></html>";
+
+        $this->assertTrue(DummyAmoJob::isTransientAmoError(
+            $this->requestExceptionWith(404, $htmlPage, ['Content-Type' => 'text/html; charset=utf-8'])
+        ));
+
+        /* Content-Type достаточен и без разметки в теле */
+        $this->assertTrue(DummyAmoJob::isTransientAmoError(
+            $this->requestExceptionWith(404, 'Not Found', ['Content-Type' => 'text/html'])
+        ));
+
+        /* тело-разметка достаточна без Content-Type (+ ведущие пробелы); обёртка не мешает */
+        $this->assertTrue(DummyAmoJob::isTransientAmoError(
+            new AmoCustomException($this->requestExceptionWith(404, "  \n<html><body>x</body></html>", []))
+        ));
+
+        /* JSON-404 от API — сущность реально удалена, НЕ транзиент */
+        $this->assertFalse(DummyAmoJob::isTransientAmoError(
+            $this->requestExceptionWith(404, '{"title":"Not Found","status":404}', ['Content-Type' => 'application/problem+json'])
+        ));
+
+        /* пустое тело без Content-Type — постоянная */
+        $this->assertFalse(DummyAmoJob::isTransientAmoError(
+            $this->requestExceptionWith(404, '', [])
+        ));
+
+        /* HTML на прочих 4xx семантику не меняет */
+        $this->assertFalse(DummyAmoJob::isTransientAmoError(
+            $this->requestExceptionWith(403, $htmlPage, ['Content-Type' => 'text/html'])
+        ));
     }
 
     public function test_backoff_progression(): void
@@ -76,6 +113,14 @@ class RetriesTransientAmoErrorsTest extends TestCase
     {
         return new RequestException(
             new Response(new Psr7Response($status, [], '{"error":"x"}'))
+        );
+    }
+
+    /** @param  array<string, string>  $headers */
+    private function requestExceptionWith(int $status, string $body, array $headers): RequestException
+    {
+        return new RequestException(
+            new Response(new Psr7Response($status, $headers, $body))
         );
     }
 }
