@@ -40,9 +40,8 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
 
         $this->attempts = [];
 
-        /* реальный источник прокси — app.proxy/app.secondProxy, а НЕ amoclient.proxies */
-        Config::set('app.proxy', self::PROXY_ONE);
-        Config::set('app.secondProxy', self::PROXY_TWO);
+        /* источник цепочки маршрутов — amoclient.proxies (порядок = приоритет) */
+        Config::set('amoclient.proxies', [self::PROXY_ONE, self::PROXY_TWO, null]);
     }
 
     /**
@@ -95,7 +94,7 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
         $response = (new AmoClientOctane(self::ACCOUNT_ID))->http->get('account');
 
         $this->assertTrue($response->ok());
-        /* app.proxy → app.secondProxy → null (прямое соединение последним) */
+        /* порядок из amoclient.proxies: PROXY_ONE → PROXY_TWO → null (напрямую) */
         $this->assertSame([self::PROXY_ONE, self::PROXY_TWO, null], $this->proxiesUsed());
     }
 
@@ -133,10 +132,13 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
     public function test_read_timeout_does_not_rotate_proxy(): void
     {
         /*
-         * Read-таймаут: соединение УСТАНОВЛЕНО (connect_time > 0), запрос принят,
+         * Read-таймаут: соединение УСТАНОВЛЕНО и запрос УШЁЛ (pretransfer_time > 0),
          * амо молчит. Самый дорогой случай ротации — каждый лишний заход стоит
          * полного `timeout`, поэтому пул прокси умножал простой на свой размер,
          * не давая ни одного шанса на успех: все три захода идут в один бэкенд.
+         *
+         * Числа в handler-контексте — не выдумка: снято в проде на
+         * pushka.amocrm.ru с ->withOptions(['timeout' => 0.35]).
          */
         $this->fakeAttempts([
             fn () => throw new ConnectionException(
@@ -146,7 +148,14 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
                     'cURL error 28: Operation timed out after 25001 milliseconds with 0 bytes received',
                     new GuzzlePsrRequest('GET', 'https://example.amocrm.ru/api/v4/account'),
                     null,
-                    ['errno' => 28, 'connect_time' => 0.042, 'total_time' => 25.001],
+                    [
+                        'errno' => 28,
+                        'connect_time' => 0.089,
+                        'appconnect_time' => 0.147,
+                        'pretransfer_time' => 0.147,
+                        'starttransfer_time' => 0.0,
+                        'total_time' => 25.001,
+                    ],
                 ),
             ),
             Http::response(['id' => self::ACCOUNT_ID], 200),
@@ -163,14 +172,84 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
         $this->assertSame([self::PROXY_ONE], $this->proxiesUsed());
     }
 
+    public function test_broken_proxy_tunnel_rotates_proxy(): void
+    {
+        /*
+         * ИНЦИДЕНТ 14.08.2026, ~50% ошибок на всех веб-ручках, которые ходят в
+         * амо синхронно (например POST /widgets/{id}/unidoc/v1/documents → 500
+         * «Unknown error (ConnectionException)»).
+         *
+         * Прокси-микротик отвечал `HTTP/1.1 200 OK` на CONNECT, а в готовый
+         * туннель на Client Hello присылал НЕ TLS → `cURL error 35: wrong
+         * version number`. TCP-рукопожатие с прокси при этом состоялось, то есть
+         * `connect_time > 0`, и прежний различитель (`connect_time`) считал это
+         * «амо принял запрос и молчит» — маршрут не менялся, хотя следующий
+         * маршрут отвечал нормально.
+         *
+         * Различитель обязан ключеваться на `pretransfer_time`: он > 0 ровно
+         * тогда, когда запрос УШЁЛ в сеть. Ноль означает «ничего не отправлено» —
+         * маршрут непригоден, и повтор по другому маршруту не только имеет шанс,
+         * но и безопасен для не-идемпотентных методов.
+         *
+         * Числа — снятые в проде на pushka.amocrm.ru через микротик.
+         */
+        $this->fakeAttempts([
+            fn () => throw new ConnectionException(
+                'cURL error 35: TLS connect error: error:0A00010B:SSL routines::wrong version number',
+                0,
+                new GuzzleConnectException(
+                    'cURL error 35: TLS connect error: error:0A00010B:SSL routines::wrong version number',
+                    new GuzzlePsrRequest('GET', 'https://example.amocrm.ru/api/v4/account'),
+                    null,
+                    [
+                        'errno' => 35,
+                        'connect_time' => 0.029,
+                        'appconnect_time' => 0.0,
+                        'pretransfer_time' => 0.0,
+                        'starttransfer_time' => 0.0,
+                        'total_time' => 0.088,
+                    ],
+                ),
+            ),
+            Http::response(['id' => self::ACCOUNT_ID], 200),
+        ]);
+
+        $response = (new AmoClientOctane(self::ACCOUNT_ID))->http->get('account');
+
+        $this->assertTrue($response->ok());
+        $this->assertSame([self::PROXY_ONE, self::PROXY_TWO], $this->proxiesUsed());
+    }
+
+    public function test_route_chain_ignores_app_proxy_config(): void
+    {
+        /*
+         * app.proxy/app.secondProxy — общий конфиг потребителя для сервисов,
+         * которым нужен конкретный exit-IP (в octane это BY-справочники). Амо в
+         * таком exit-IP не нуждается, а чтение этих ключей либой означало, что
+         * маршрут амо меняется вместе с чужой настройкой и мимо
+         * `amoclient.proxies`. Именно так прод оказался целиком на микротике,
+         * пока в `amoclient.proxies` стояло «сначала напрямую».
+         */
+        Config::set('amoclient.proxies', [null]);
+        Config::set('app.proxy', self::PROXY_ONE);
+        Config::set('app.secondProxy', self::PROXY_TWO);
+
+        $this->fakeAttempts([Http::response(['id' => self::ACCOUNT_ID], 200)]);
+
+        $response = (new AmoClientOctane(self::ACCOUNT_ID))->http->get('account');
+
+        $this->assertTrue($response->ok());
+        $this->assertSame([null], $this->proxiesUsed());
+    }
+
     public function test_unreachable_path_still_rotates_proxy(): void
     {
         /*
          * Позитивный контроль к двум тестам выше: различитель обязан РАЗЛИЧАТЬ.
-         * Соединение не состоялось вовсе (connect_time = 0) — это ровно тот случай,
-         * ради которого пул прокси и существует, и здесь ротация обязана работать.
-         * Без этого теста «не ротирует» проходило бы и при полностью сломанном
-         * различителе, который не ротирует никогда.
+         * Соединиться не удалось вовсе — запрос не ушёл (pretransfer_time = 0),
+         * это ровно тот случай, ради которого пул прокси и существует, и здесь
+         * ротация обязана работать. Без этого теста «не ротирует» проходило бы и
+         * при полностью сломанном различителе, который не ротирует никогда.
          */
         $this->fakeAttempts([
             fn () => throw new ConnectionException(
@@ -180,7 +259,14 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
                     'cURL error 7: Failed to connect to proxy-one port 8080: Connection refused',
                     new GuzzlePsrRequest('GET', 'https://example.amocrm.ru/api/v4/account'),
                     null,
-                    ['errno' => 7, 'connect_time' => 0.0, 'total_time' => 0.003],
+                    [
+                        'errno' => 7,
+                        'connect_time' => 0.0,
+                        'appconnect_time' => 0.0,
+                        'pretransfer_time' => 0.0,
+                        'starttransfer_time' => 0.0,
+                        'total_time' => 0.0002,
+                    ],
                 ),
             ),
             Http::response(['id' => self::ACCOUNT_ID], 200),

@@ -142,20 +142,23 @@ class AmoClientOctane
             ? "https://{$octaneAccount->subdomain}.kommo.com/api/v4"
             : "https://{$octaneAccount->subdomain}.amocrm.{$octaneAccount->domain}/api/v4";
 
-        // Собираем уникальные прокси в порядке приоритета
-        /** @var array<int, string|null> $proxies */
-        $proxies = [];
-        if ($proxy) {
-            $proxies[] = $proxy;
-        }
-        if (config('app.proxy') && ! in_array(config('app.proxy'), $proxies)) {
-            $proxies[] = config('app.proxy');
-        }
-        if (config('app.secondProxy') && ! in_array(config('app.secondProxy'), $proxies)) {
-            $proxies[] = config('app.secondProxy');
-        }
-        // Добавляем null как последний вариант (без прокси)
-        $proxies[] = null;
+        /*
+         * Цепочка маршрутов — из `amoclient.proxies`, порядок = приоритет.
+         * Явный аргумент конструктора идёт первым: у свипа/разового скрипта
+         * бывает маршрут на один вызов.
+         *
+         * Раньше сюда читались `app.proxy`/`app.secondProxy` потребителя —
+         * общий конфиг для сервисов, которым нужен конкретный exit-IP. Амо в
+         * exit-IP не нуждается, а связка означала, что маршрут амо меняется
+         * вместе с чужой настройкой и мимо `amoclient.proxies`. Так прод octane
+         * целиком оказался на офисном микротике, пока в `amoclient.proxies`
+         * стояло «сначала напрямую» (инцидент 14.08.2026: микротик рвал ~50%
+         * TLS-туннелей, каждый второй синхронный запрос виджета отдавал 500).
+         *
+         * Цепочка соблюдается буквально: прямое соединение — такой же маршрут
+         * (`null`) в списке, а не молчаливо дописанный последний шанс.
+         */
+        $proxies = self::proxyChain($proxy);
 
         $proxyIndex = 0;
         $maxProxyAttempts = count($proxies);
@@ -232,7 +235,7 @@ class AmoClientOctane
                  * минутами, а не задержкой внутри одного запроса.
                  */
                 $shouldRetry = $exception instanceof HttpClientConnectionException
-                    && self::pathIsUnreachable($exception);
+                    && self::requestNeverLeft($exception);
 
                 if ($shouldRetry && $proxyIndex < $maxProxyAttempts - 1) {
                     $proxyIndex++;
@@ -307,21 +310,62 @@ class AmoClientOctane
     }
 
     /**
-     * Установить соединение не удалось вовсе — то есть сетевой путь недостижим.
+     * Цепочка маршрутов запроса в порядке приоритета.
      *
-     * Guzzle кладёт в `ConnectException` и невозможность соединиться, и таймаут
-     * ожидания ответа: обе фазы приходят одним типом, поэтому различаем по факту,
-     * а не по классу. Различитель — `connect_time` из handler-контекста curl:
-     * ноль означает, что рукопожатие не состоялось (мёртвый маршрут, DNS, отказ
-     * в соединении) и другой прокси имеет шанс помочь; положительное значение
-     * означает, что соединение было установлено и молчал уже сам амо — менять
-     * маршрут бессмысленно.
+     * `null` — прямое соединение, полноправный элемент списка. Пустой конфиг
+     * означает «только напрямую»: пустая цепочка обнулила бы бюджет попыток
+     * (`retries * count($proxies)`), то есть выключила бы запросы вообще.
      *
-     * Когда контекста нет (например, стаб в тестах потребителя), считаем путь
-     * недостижимым: это прежнее поведение, и ошибиться в эту сторону дешевле —
-     * лишняя попытка против несделанной.
+     * @return array<int, string|null>
      */
-    private static function pathIsUnreachable(HttpClientConnectionException $e): bool
+    private static function proxyChain(?string $explicit): array
+    {
+        /** @var array<int, string|null> $chain */
+        $chain = [];
+
+        if ($explicit !== null && $explicit !== '') {
+            $chain[] = $explicit;
+        }
+
+        $configured = Config::get('amoclient.proxies', [null]);
+
+        foreach (is_array($configured) ? $configured : [null] as $candidate) {
+            $route = is_string($candidate) && $candidate !== '' ? $candidate : null;
+
+            if (! in_array($route, $chain, true)) {
+                $chain[] = $route;
+            }
+        }
+
+        return $chain === [] ? [null] : $chain;
+    }
+
+    /**
+     * Запрос не ушёл в сеть — значит маршрут непригоден и другой имеет шанс.
+     *
+     * Guzzle кладёт в `ConnectException` всё, что случилось до получения
+     * ответа: и «соединиться не удалось», и «TLS не поднялся», и «амо принял
+     * запрос и молчит». Один тип на три разных решения, поэтому различаем по
+     * факту из handler-контекста curl, а не по классу.
+     *
+     * Различитель — `pretransfer_time`: он становится положительным ровно в тот
+     * момент, когда curl начал отправлять запрос. Ноль означает, что до сети не
+     * дошло ничего (мёртвый маршрут, DNS, отказ в соединении, порванный
+     * CONNECT-туннель прокси) — повтор по другому маршруту имеет шанс и
+     * безопасен даже для не-идемпотентных методов: на проводе не было байтов.
+     * Положительное значение означает read-таймаут: запрос у амо, менять
+     * маршрут бессмысленно и опасно (повтор мог бы продублировать запись).
+     *
+     * `connect_time` на этой роли не годился: с HTTP-прокси в цепочке он
+     * измеряет TCP до ПРОКСИ, поэтому «туннель есть, а TLS в нём рвётся»
+     * (`cURL error 35`) выглядело как молчащий амо, и клиент оставался на
+     * сломанном маршруте.
+     *
+     * Когда контекста нет (например, стаб в тестах потребителя), считаем, что
+     * запрос не ушёл: ошибиться в эту сторону дешевле — лишняя попытка против
+     * несделанной.
+     */
+    private static function requestNeverLeft(HttpClientConnectionException $e): bool
     {
         $previous = $e->getPrevious();
 
@@ -329,8 +373,8 @@ class AmoClientOctane
             return true;
         }
 
-        $connectTime = $previous->getHandlerContext()['connect_time'] ?? null;
+        $pretransferTime = $previous->getHandlerContext()['pretransfer_time'] ?? null;
 
-        return ! (is_numeric($connectTime) && $connectTime > 0);
+        return ! (is_numeric($pretransferTime) && $pretransferTime > 0);
     }
 }
