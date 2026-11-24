@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use mttzzz\AmoClient\AmoClientOctane;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /*
  * CHARACTERIZATION-сьют транспорта: пришпиливает поведение, которое либа имеет
@@ -132,29 +133,31 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
     public function test_read_timeout_does_not_rotate_proxy(): void
     {
         /*
-         * Read-таймаут: соединение УСТАНОВЛЕНО и запрос УШЁЛ (pretransfer_time > 0),
+         * Read-таймаут: соединение УСТАНОВЛЕНО и запрос УШЁЛ (request_size > 0),
          * амо молчит. Самый дорогой случай ротации — каждый лишний заход стоит
          * полного `timeout`, поэтому пул прокси умножал простой на свой размер,
          * не давая ни одного шанса на успех: все три захода идут в один бэкенд.
          *
-         * Числа в handler-контексте — не выдумка: снято в проде на
-         * pushka.amocrm.ru с ->withOptions(['timeout' => 0.35]).
+         * Числа в handler-контексте — не выдумка: замер curl 8.22.0, прокси открыл
+         * туннель, TLS-сервер за ним принял запрос (50 байт) и молчит. На curl
+         * 8.17.0 картина та же: request_size 50, pretransfer_time 0.0041.
          */
         $this->fakeAttempts([
             fn () => throw new ConnectionException(
-                'cURL error 28: Operation timed out after 25001 milliseconds with 0 bytes received',
+                'cURL error 28: Operation timed out after 3500 milliseconds with 0 bytes received',
                 0,
                 new GuzzleConnectException(
-                    'cURL error 28: Operation timed out after 25001 milliseconds with 0 bytes received',
+                    'cURL error 28: Operation timed out after 3500 milliseconds with 0 bytes received',
                     new GuzzlePsrRequest('GET', 'https://example.amocrm.ru/api/v4/account'),
                     null,
                     [
                         'errno' => 28,
-                        'connect_time' => 0.089,
-                        'appconnect_time' => 0.147,
-                        'pretransfer_time' => 0.147,
+                        'connect_time' => 0.000103,
+                        'appconnect_time' => 0.003262,
+                        'pretransfer_time' => 0.003292,
                         'starttransfer_time' => 0.0,
-                        'total_time' => 25.001,
+                        'total_time' => 3.501031,
+                        'request_size' => 50,
                     ],
                 ),
             ),
@@ -186,12 +189,15 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
          * «амо принял запрос и молчит» — маршрут не менялся, хотя следующий
          * маршрут отвечал нормально.
          *
-         * Различитель обязан ключеваться на `pretransfer_time`: он > 0 ровно
-         * тогда, когда запрос УШЁЛ в сеть. Ноль означает «ничего не отправлено» —
-         * маршрут непригоден, и повтор по другому маршруту не только имеет шанс,
-         * но и безопасен для не-идемпотентных методов.
+         * Различитель обязан ключеваться на то, УШЁЛ ли запрос, — `request_size`:
+         * сам CONNECT в счётчик не входит, поэтому здесь ноль. Маршрут непригоден,
+         * и повтор по другому маршруту не только имеет шанс, но и безопасен для
+         * не-идемпотентных методов. `pretransfer_time` в проде 14.08.2026 здесь
+         * был 0.0, но с curl 8.21.0 на отказе он равен общему времени
+         * (curl/curl#23325) — на нём 4.0.4 перестала менять маршрут и в этом случае.
          *
-         * Числа — снятые в проде на pushka.amocrm.ru через микротик.
+         * Числа — воспроизведение на curl 8.22.0: фейковый прокси отвечает `200`
+         * на CONNECT и сразу шлёт в туннель не-TLS.
          */
         $this->fakeAttempts([
             fn () => throw new ConnectionException(
@@ -203,11 +209,12 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
                     null,
                     [
                         'errno' => 35,
-                        'connect_time' => 0.029,
+                        'connect_time' => 0.000098,
                         'appconnect_time' => 0.0,
-                        'pretransfer_time' => 0.0,
-                        'starttransfer_time' => 0.0,
-                        'total_time' => 0.088,
+                        'pretransfer_time' => 0.000863,
+                        'starttransfer_time' => 0.000863,
+                        'total_time' => 0.000864,
+                        'request_size' => 0,
                     ],
                 ),
             ),
@@ -246,26 +253,32 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
     {
         /*
          * Позитивный контроль к двум тестам выше: различитель обязан РАЗЛИЧАТЬ.
-         * Соединиться не удалось вовсе — запрос не ушёл (pretransfer_time = 0),
+         * Соединиться не удалось вовсе — запрос не ушёл (request_size = 0),
          * это ровно тот случай, ради которого пул прокси и существует, и здесь
          * ротация обязана работать. Без этого теста «не ротирует» проходило бы и
          * при полностью сломанном различителе, который не ротирует никогда.
+         *
+         * Так и случилось с curl 8.21+: контекст здесь был снят на старом curl
+         * (pretransfer_time 0.0), тест оставался зелёным, а в проде смена
+         * маршрута не срабатывала вовсе (MASTERM-PUSHKA-BIZ-4H, 24.11.2026).
+         * Теперь числа — замер curl 8.22.0: прокси отказывает в соединении.
          */
         $this->fakeAttempts([
             fn () => throw new ConnectionException(
-                'cURL error 7: Failed to connect to proxy-one port 8080: Connection refused',
+                'cURL error 7: Failed to connect to example.amocrm.ru:443 over proxy proxy-one after 0 ms: Could not connect to server',
                 0,
                 new GuzzleConnectException(
-                    'cURL error 7: Failed to connect to proxy-one port 8080: Connection refused',
+                    'cURL error 7: Failed to connect to example.amocrm.ru:443 over proxy proxy-one after 0 ms: Could not connect to server',
                     new GuzzlePsrRequest('GET', 'https://example.amocrm.ru/api/v4/account'),
                     null,
                     [
                         'errno' => 7,
                         'connect_time' => 0.0,
                         'appconnect_time' => 0.0,
-                        'pretransfer_time' => 0.0,
-                        'starttransfer_time' => 0.0,
-                        'total_time' => 0.0002,
+                        'pretransfer_time' => 0.000101,
+                        'starttransfer_time' => 0.000101,
+                        'total_time' => 0.000102,
+                        'request_size' => 0,
                     ],
                 ),
             ),
@@ -276,6 +289,77 @@ class ProxyRotationCharacterizationTest extends ResilienceTestCase
 
         $this->assertTrue($response->ok());
         $this->assertSame([self::PROXY_ONE, self::PROXY_TWO], $this->proxiesUsed());
+    }
+
+    /**
+     * Connect-таймаут, снятый на двух поколениях curl: SYN в чёрную дыру
+     * (192.0.2.1), connect-таймаут 2 с на 8.17.0 и 10 с на 8.22.0.
+     *
+     * @return array<string, array{0: array<string, float|int>}>
+     */
+    public static function connectTimeoutContexts(): array
+    {
+        return [
+            /* прежняя база прода (PHP 8.4.21): незаполненные таймеры — нули */
+            'curl 8.17.0' => [[
+                'errno' => 28,
+                'connect_time' => 0.0,
+                'appconnect_time' => 0.0,
+                'pretransfer_time' => 0.0,
+                'starttransfer_time' => 0.0,
+                'total_time' => 2.001631,
+                'request_size' => 0,
+            ]],
+            /* база PHP 8.4.27: curl дописал таймеры общим временем (curl/curl#23325) */
+            'curl 8.22.0' => [[
+                'errno' => 28,
+                'connect_time' => 0.0,
+                'appconnect_time' => 0.0,
+                'pretransfer_time' => 10.00196,
+                'starttransfer_time' => 10.00196,
+                'total_time' => 10.001961,
+                'request_size' => 0,
+            ]],
+        ];
+    }
+
+    /**
+     * @param  array<string, float|int>  $context
+     */
+    #[DataProvider('connectTimeoutContexts')]
+    public function test_connect_timeout_rotates_proxy_on_any_curl(array $context): void
+    {
+        /*
+         * ИНЦИДЕНТ masterm 24.11.2026 (MASTERM-PUSHKA-BIZ-4H). Ночной sync задач:
+         * прямой маршрут до kuhnimodul.amocrm.ru не соединился за 10 с, и ошибка
+         * вылетела с ПЕРВОЙ попытки, хотя офисный прокси в те же секунды ходил
+         * на те же адреса амо.
+         *
+         * Различитель 4.0.4 смотрел на pretransfer_time, а с curl 8.21.0 он на
+         * неудачном запросе равен общему времени: connect-таймаут читался как
+         * «запрос ушёл, амо молчит», и на curl 8.21+ маршрут не менялся ни на
+         * одном сетевом отказе. request_size честен на обоих поколениях: ничего
+         * не отправлено — ноль.
+         *
+         * Цепочка как у masterm: сначала напрямую, затем прокси.
+         */
+        Config::set('amoclient.proxies', [null, self::PROXY_ONE, self::PROXY_TWO]);
+        $message = sprintf('cURL error 28: Connection timed out after %d milliseconds', (int) round($context['total_time'] * 1000));
+
+        $this->fakeAttempts([
+            fn () => throw new ConnectionException($message, 0, new GuzzleConnectException(
+                $message,
+                new GuzzlePsrRequest('GET', 'https://example.amocrm.ru/api/v4/account'),
+                null,
+                $context,
+            )),
+            Http::response(['id' => self::ACCOUNT_ID], 200),
+        ]);
+
+        $response = (new AmoClientOctane(self::ACCOUNT_ID))->http->get('account');
+
+        $this->assertTrue($response->ok());
+        $this->assertSame([null, self::PROXY_ONE], $this->proxiesUsed());
     }
 
     public function test_401_retries_with_fresh_token_without_rotating_proxy(): void
